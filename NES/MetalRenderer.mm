@@ -90,7 +90,11 @@ SystemNES NESConsole;
     
         self.pipelineEmulationOutputToFrameBufferTexture = [self.device newRenderPipelineStateWithDescriptor:pipelineEmulationOutputToFrameBufferTextureDesc error:nil];
         
-        if(!NESConsole.InsertCartridge(pakData.bytes, (uint32_t)pakData.length))
+        if(NESConsole.InsertCartridge(pakData.bytes, (uint32_t)pakData.length))
+        {
+            NESConsole.PowerOn();
+        }
+        else
         {
             NSLog(@"Insert Cartridge failed!!!");
         }

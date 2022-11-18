@@ -18,6 +18,7 @@ public:
     CPU6502(IOBus& bus);
     ~CPU6502();
     
+    void PowerOn();
     void Reset();
     void Tick();
     
@@ -65,6 +66,7 @@ private:
     void InitInstructions();
     void ERROR(uint8_t Tn);
     
+    void SEI(uint8_t Tn); void CLD(uint8_t Tn);
     void INC_zpg(uint8_t Tn);
 };
 

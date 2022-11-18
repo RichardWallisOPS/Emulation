@@ -79,14 +79,36 @@ void CPU6502::ConditionalSetFlag(uint8_t flag, bool bCondition)
     }
 }
 
-void CPU6502::Reset()
+void CPU6502::PowerOn()
 {
     m_a = 0;
     m_x = 0;
     m_y = 0;
-    m_stack = 0;
-    m_flags = 0;
-    m_pc = 0;
+    m_stack = 0xFD;
+    m_flags = 0x34;
+    
+    // set pc to contents of reset vector
+    uint8_t lowResetVector = m_bus.cpuRead(0xFFFC);
+    uint8_t highResetVector = m_bus.cpuRead(0xFFFD);
+    m_pc = uint16FromRegisterPair(highResetVector, lowResetVector);
+    
+    m_instructionCounter = 0;
+    m_instructionCycles = 0;
+    m_opData = 0;
+    m_opCode = 0;
+    m_operandH = 0;
+    m_operandL = 0;
+}
+
+void CPU6502::Reset()
+{
+    m_stack -= 3;
+    SetFlag(Flag_IRQDisable);
+    
+    // set pc to contents of reset vector
+    uint8_t lowResetVector = m_bus.cpuRead(0xFFFC);
+    uint8_t highResetVector = m_bus.cpuRead(0xFFFD);
+    m_pc = uint16FromRegisterPair(highResetVector, lowResetVector);
     
     m_instructionCounter = 0;
     m_instructionCycles = 0;
@@ -115,6 +137,16 @@ void CPU6502::Tick()
 
 void CPU6502::InitInstructions()
 {
+    m_Instructions[0x78].m_function = &CPU6502::CLD;
+    m_Instructions[0x78].m_instruction = "CLD";
+    m_Instructions[0x78].m_addressMode = "";
+    m_Instructions[0x78].m_cycles = 2;
+
+    m_Instructions[0xD8].m_function = &CPU6502::SEI;
+    m_Instructions[0xD8].m_instruction = "SEI";
+    m_Instructions[0xD8].m_addressMode = "";
+    m_Instructions[0xD8].m_cycles = 2;
+    
     m_Instructions[0xE6].m_function = &CPU6502::INC_zpg;
     m_Instructions[0xE6].m_instruction = "INC";
     m_Instructions[0xE6].m_addressMode = "zpg";
@@ -126,6 +158,22 @@ void CPU6502::ERROR(uint8_t Tn)
     CPUInstruction& instruction = m_Instructions[m_opCode];
     printf("Halted on instruction opCode=0x%02X %s %s\n", m_opCode, instruction.m_instruction, instruction.m_addressMode);
     *(volatile char*)(0) = 5;
+}
+
+void CPU6502::SEI(uint8_t Tn)
+{
+    if(Tn == 1)
+    {
+        SetFlag(Flag_IRQDisable);
+    }
+}
+
+void CPU6502::CLD(uint8_t Tn)
+{
+    if(Tn == 1)
+    {
+        ClearFlag(Flag_Decimal);
+    }
 }
 
 // Inc memory location in zero page

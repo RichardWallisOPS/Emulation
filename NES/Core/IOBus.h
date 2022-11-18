@@ -1,5 +1,5 @@
 //
-//  Bus.h
+//  IOBus.h
 //  NES
 //
 //  Created by richardwallis on 15/11/2022.

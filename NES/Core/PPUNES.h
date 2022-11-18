@@ -18,6 +18,7 @@ public:
     PPUNES(IOBus& bus);
     ~PPUNES();
     
+    void PowerOn();
     void Reset();
     void Tick();
 

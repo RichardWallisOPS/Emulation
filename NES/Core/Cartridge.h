@@ -26,6 +26,8 @@ private:
     uint8_t* m_pPakData;
     uint8_t* m_pPrg;
     uint8_t* m_pChr;
+    uint32_t m_nProgramSize;
+    uint32_t m_nCharacterSize;
 };
 
 #endif /* Cartridge_h */

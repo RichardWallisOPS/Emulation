@@ -13,14 +13,16 @@ Cartridge::Cartridge(uint8_t const* pPakData, uint8_t nPakPrgCount, uint8_t nPak
 : m_pPakData(nullptr)
 , m_pPrg(nullptr)
 , m_pChr(nullptr)
+, m_nProgramSize(0)
+, m_nCharacterSize(0)
 {
-    const uint32_t nProgramSize = (16384 * (uint32_t)nPakPrgCount);
-    const uint32_t nCharacterSize = (8192 * (uint32_t)nPakChrCount);
-    const uint32_t nCartDataSize = nProgramSize + nCharacterSize;
+    m_nProgramSize = (16384 * (uint32_t)nPakPrgCount);
+    m_nCharacterSize = (8192 * (uint32_t)nPakChrCount);
+    const uint32_t nCartDataSize = m_nProgramSize + m_nCharacterSize;
                                 
     m_pPakData = new uint8_t[nCartDataSize];
     m_pPrg = m_pPakData + 0;
-    m_pChr = m_pPakData + nProgramSize;
+    m_pChr = m_pPakData + m_nProgramSize;
     
     memcpy(m_pPakData, pPakData, nCartDataSize);
 }
@@ -35,6 +37,8 @@ Cartridge::~Cartridge()
     
     m_pPrg = nullptr;
     m_pChr = nullptr;
+    m_nProgramSize = 0;
+    m_nCharacterSize = 0;
 }
 
 uint8_t Cartridge::cpuRead(uint16_t address)
@@ -47,22 +51,10 @@ uint8_t Cartridge::cpuRead(uint16_t address)
         }
         else if(address >= 0x8000 && address <= 0xFFFF)
         {
-            uint32_t cartAddress = address - 0x8000;
+            // mapper 0 logic
+            uint32_t cartAddress = (address - 0x8000) % m_nProgramSize;
             return m_pPrg[cartAddress];
         }
-        // mapper set interuppt vectors
-//        else if(address >= 0xFFFA && address < 0xFFFB)
-//        {
-//            // NMI
-//        }
-//        else if(address >= 0xFFFA && address < 0xFFFB)
-//        {
-//            // Reset
-//        }
-//        else if(address >= 0xFFFA && address < 0xFFFB)
-//        {
-//            // IRQ/BRK vector
-//        }
     }
     return 0;
 }
@@ -71,23 +63,10 @@ void Cartridge::cpuWrite(uint16_t address, uint8_t byte)
 {
     if(address >= 0x8000 && address <= 0xFFFF)
     {
-        // NOP if rom
-        //uint32_t cartAddress = address - 0x8000;
+        // mapper 0 logic - rom
+        //uint32_t cartAddress = (address - 0x8000) % m_nProgramSize;
         //m_pPrg[cartAddress] = byte;
     }
-    // mapper set interupt vectors
-//    else if(address >= 0xFFFA && address < 0xFFFB)
-//    {
-//        // NMI
-//    }
-//    else if(address >= 0xFFFA && address < 0xFFFB)
-//    {
-//        // Reset
-//    }
-//    else if(address >= 0xFFFA && address < 0xFFFB)
-//    {
-//        // IRQ/BRK
-//    }
 }
 
 uint8_t Cartridge::ppuRead(uint16_t address)

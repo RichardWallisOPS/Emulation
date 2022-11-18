@@ -19,6 +19,11 @@ PPUNES::~PPUNES()
 
 }
 
+void PPUNES::PowerOn()
+{
+
+}
+
 void PPUNES::Reset()
 {
 

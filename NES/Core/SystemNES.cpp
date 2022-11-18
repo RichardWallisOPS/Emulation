@@ -12,24 +12,27 @@
 // 2A03 [CPU+APU+IO]; This implementation has CPU saparate with APU+IO inside the System
 // Cart is currently only mapper 0, todo make generic to allow other mapper implementations
 
+// TODO Confirm cold / reset values across System / CPU / APU
+
 // NEXT TASKs:
-// 1) Set startup values for CPU and SYSTEM, PPU later
-// 2) Implement instructions: finish inc's, then simple 2 byte ones. 3 byte, 4 byte etc
-// 3) Load a cartridge and see the errors fly in the instruction error trap
-// 4) Implement any missing ones that trap
+// 1) Implement instructions: finish inc's, then simple 2 byte ones. 3 byte, 4 byte etc
+// 2) Load a cartridge and see the errors fly in the instruction error trap
+// 3) Implement any missing ones that trap
 
 
 #include "SystemNES.h"
 #include <string>
 
 SystemNES::SystemNES()
-: m_cycleCount(0)
+: m_bPowerOn(false)
+, m_cycleCount(0)
 , m_cpu(*this)
 , m_ppu(*this)
 , m_pCart(nullptr)
 {
     // Note: Cold and Reset states maybe different for the system, cpu and ppu
     memset(m_ram, 0x00, nRamSize);
+    memset(m_apuRegisters, 0x00, nAPURegisterCount);
 }
 
 SystemNES::~SystemNES()
@@ -39,14 +42,17 @@ SystemNES::~SystemNES()
 
 void SystemNES::Reset()
 {
+    m_cycleCount = 0;
+    
     m_ppu.Reset();
     m_cpu.Reset();
     
-    memset(m_ram, 0xE6, nRamSize);    // NOTE TEST instruction, put back to zero
+    // TODO apu registers
 }
 
 void SystemNES::EjectCartridge()
 {
+    m_bPowerOn = false;
      if(m_pCart != nullptr)
     {
         delete m_pCart;
@@ -56,10 +62,7 @@ void SystemNES::EjectCartridge()
 
 bool SystemNES::InsertCartridge(void const* pData, uint32_t dataSize)
 {
-    Reset();
     EjectCartridge();
-    
-    uint8_t const* pPakBytes = (uint8_t const*)pData;
     
     struct iNesheader
     {
@@ -73,6 +76,13 @@ bool SystemNES::InsertCartridge(void const* pData, uint32_t dataSize)
         uint8_t m_flags10;
         uint8_t m_flagsUnused[5];
     };
+    
+    if(pData == nullptr || dataSize < sizeof(iNesheader))
+    {
+        return false;
+    }
+        
+    uint8_t const* pPakBytes = (uint8_t const*)pData;
     
     iNesheader const* pHeader = (iNesheader const*)pPakBytes;
     uint8_t const* pCartData = pPakBytes + sizeof(iNesheader);
@@ -88,6 +98,13 @@ bool SystemNES::InsertCartridge(void const* pData, uint32_t dataSize)
     return true;
 }
 
+void SystemNES::PowerOn()
+{
+    m_ppu.PowerOn();
+    m_cpu.PowerOn();
+    m_bPowerOn = true;
+}
+
 void SystemNES::Tick()
 {
     // NTSC:
@@ -95,6 +112,7 @@ void SystemNES::Tick()
     // PPU clock    = 21.477272 /  4 = 5.369318 MHz
     // CPU clock    = 21.477272 / 12 = 1.789773 MHz
     // 3 PPU clock ticks to 1 CPU clock tick
+    if(m_bPowerOn)
     {
         ++m_cycleCount;
         m_ppu.Tick();
@@ -117,6 +135,8 @@ uint8_t SystemNES::cpuRead(uint16_t address)
     else if(address >= 0x4000 && address <= 0x401F)
     {
         // APU and IO registers
+        uint16_t memAddress = address - 0x4000;
+        return m_apuRegisters[memAddress];
     }
     else if(address >= 0x4020 && address < 0xFFFF && m_pCart != nullptr)
     {
@@ -136,11 +156,12 @@ void SystemNES::cpuWrite(uint16_t address, uint8_t Byte)
     }
     else if(address >= 0x4000 && address <= 0x401F)
     {
-    
+        uint16_t memAddress = address - 0x4000;
+        m_apuRegisters[memAddress] = Byte;
     }
     else if(address >= 0x4020 && address < 0xFFFF && m_pCart != nullptr)
     {
-        return m_pCart->cpuWrite(address, Byte);
+        m_pCart->cpuWrite(address, Byte);
     }
 }
 
