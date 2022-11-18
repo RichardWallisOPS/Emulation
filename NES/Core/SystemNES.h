@@ -34,7 +34,7 @@ public:
     virtual void ppuWrite(uint16_t address, uint8_t byte) override;
 
 private:
-    uint64_t    cycleCount;
+    uint64_t    m_cycleCount;
     uint8_t     m_ram[nRamSize];
     CPU6502     m_cpu;
     PPUNES      m_ppu;

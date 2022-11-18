@@ -14,17 +14,16 @@
 
 // NEXT TASKs:
 // 1) Set startup values for CPU and SYSTEM, PPU later
-// 2) Load a cartridge and see the errors fly in the instruction error trap
-// 3) Implement instructions: finish inc's, then simple 2 byte ones. 3 byte, 4 byte etc
-// 4) Allow a cart to execute
-// 5) Implement any missing ones that trap
+// 2) Implement instructions: finish inc's, then simple 2 byte ones. 3 byte, 4 byte etc
+// 3) Load a cartridge and see the errors fly in the instruction error trap
+// 4) Implement any missing ones that trap
 
 
 #include "SystemNES.h"
 #include <string>
 
 SystemNES::SystemNES()
-: cycleCount(0)
+: m_cycleCount(0)
 , m_cpu(*this)
 , m_ppu(*this)
 , m_pCart(nullptr)
@@ -43,7 +42,7 @@ void SystemNES::Reset()
     m_ppu.Reset();
     m_cpu.Reset();
     
-    memset(m_ram, 0xE6, nRamSize);    // NOTE TEST instruction put back to zero
+    memset(m_ram, 0xE6, nRamSize);    // NOTE TEST instruction, put back to zero
 }
 
 void SystemNES::EjectCartridge()
@@ -97,10 +96,10 @@ void SystemNES::Tick()
     // CPU clock    = 21.477272 / 12 = 1.789773 MHz
     // 3 PPU clock ticks to 1 CPU clock tick
     {
-        ++cycleCount;
+        ++m_cycleCount;
         m_ppu.Tick();
         
-        if(cycleCount % 3 == 0)
+        if(m_cycleCount % 3 == 0)
         {
             m_cpu.Tick();
         }

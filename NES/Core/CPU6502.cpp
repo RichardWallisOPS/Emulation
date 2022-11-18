@@ -9,6 +9,18 @@
 #include "CPU6502.h"
 #include <stdio.h>
 
+enum StatusFlag : uint8_t
+{
+    Flag_Carry      = 1 << 0,
+    Flag_Zero       = 1 << 1,
+    Flag_IRQDisable = 1 << 2,
+    Flag_Decimal    = 1 << 3,
+    Flag_Break      = 1 << 4,
+    Flag_Unused     = 1 << 5,
+    Flag_Overflow   = 1 << 6,
+    Flag_Negative   = 1 << 7, Negative_Test = Flag_Negative
+};
+
 // useful to get 16bit address from two 8 bit values safely
 // could pass uint8_t => uint16_t but I think this is safer for that case too
 uint16_t uint16FromRegisterPair(uint8_t high, uint8_t low)
@@ -40,19 +52,31 @@ CPU6502::CPU6502(IOBus& bus)
 CPU6502::~CPU6502()
 {}
 
-void CPU6502::SetFlag(StatusFlag flag)
+void CPU6502::SetFlag(uint8_t flag)
 {
     m_flags |= flag;
 }
 
-void CPU6502::ClearFlag(StatusFlag flag)
+void CPU6502::ClearFlag(uint8_t flag)
 {
     m_flags &= ~flag;
 }
 
-bool CPU6502::TestFlag(StatusFlag flag)
+bool CPU6502::TestFlag(uint8_t flag)
 {
     return (m_flags & flag) != 0;
+}
+
+void CPU6502::ConditionalSetFlag(uint8_t flag, bool bCondition)
+{
+    if(bCondition)
+    {
+        SetFlag(flag);
+    }
+    else
+    {
+        ClearFlag(flag);
+    }
 }
 
 void CPU6502::Reset()
@@ -83,7 +107,9 @@ void CPU6502::Tick()
         m_instructionCounter = m_instructionCycles = m_Instructions[m_opCode].m_cycles;
     }
 
-    (this->*(m_Instructions[m_opCode].m_function))();
+    uint8_t Tn = m_instructionCycles - m_instructionCounter;
+    (this->*(m_Instructions[m_opCode].m_function))(Tn);
+    
     --m_instructionCounter;
 }
 
@@ -95,17 +121,16 @@ void CPU6502::InitInstructions()
     m_Instructions[0xE6].m_cycles = 5;
 }
 
-void CPU6502::ERROR()
+void CPU6502::ERROR(uint8_t Tn)
 {
-    printf("Halted on instruction opCode=%d %s %s\n", m_opCode, m_Instructions[m_opCode].m_instruction, m_Instructions[m_opCode].m_addressMode);
+    CPUInstruction& instruction = m_Instructions[m_opCode];
+    printf("Halted on instruction opCode=0x%02X %s %s\n", m_opCode, instruction.m_instruction, instruction.m_addressMode);
     *(volatile char*)(0) = 5;
 }
 
 // Inc memory location in zero page
-void CPU6502::INC_zpg()
+void CPU6502::INC_zpg(uint8_t Tn)
 {
-    uint8_t Tn = m_instructionCycles - m_instructionCounter;
-    
     if(Tn == 1)
     {
         m_operandH = 0; // zero page
@@ -119,6 +144,9 @@ void CPU6502::INC_zpg()
     else if(Tn == 3)
     {
         ++m_opData;
+        
+        SetFlag(m_opData & Negative_Test);
+        ConditionalSetFlag(Flag_Zero, m_opData == 0);
     }
     else if(Tn == 4)
     {

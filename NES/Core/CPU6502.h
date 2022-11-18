@@ -12,30 +12,21 @@
 #include <cstdint>
 #include "IOBus.h"
 
-enum StatusFlag
-{
-    Flag_Carry       = 1 << 0,
-    Flag_Zero        = 1 << 1,
-    Flag_IRQDisable  = 1 << 2,
-    Flag_Decimal     = 1 << 3,
-    Flag_Break       = 1 << 4,
-    Flag_Unused      = 1 << 5,
-    Flag_Overflow    = 1 << 6,
-    Flag_Negative    = 1 << 7
-};
-
 class CPU6502
 {
 public:
     CPU6502(IOBus& bus);
     ~CPU6502();
     
-    void SetFlag(StatusFlag flag);
-    void ClearFlag(StatusFlag flag);
-    bool TestFlag(StatusFlag flag);
-    
     void Reset();
     void Tick();
+    
+private:
+
+    void SetFlag(uint8_t flag);
+    void ClearFlag(uint8_t flag);
+    bool TestFlag(uint8_t flag);
+    void ConditionalSetFlag(uint8_t flag, bool bCondition);
             
 private:
 
@@ -60,10 +51,9 @@ private:
 
     // Instructions
 private:
-    friend struct CPUInstruction;
     struct CPUInstruction
     {
-        void(CPU6502::*m_function)() = &CPU6502::ERROR;
+        void(CPU6502::*m_function)(uint8_t Tn) = &CPU6502::ERROR;
         char const* m_instruction = "UNIMPLEMENTED";
         char const* m_addressMode = "";
         uint8_t m_cycles = 0;
@@ -71,9 +61,11 @@ private:
     CPUInstruction m_Instructions[256];
     
 private:
+
     void InitInstructions();
-    void ERROR();
-    void INC_zpg();
+    void ERROR(uint8_t Tn);
+    
+    void INC_zpg(uint8_t Tn);
 };
 
 #endif /* CPU6502_h */

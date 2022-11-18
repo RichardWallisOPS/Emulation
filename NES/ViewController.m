@@ -33,6 +33,8 @@
         [self.view addSubview:self.metalView];
         self.metalView.frame = self.view.frame;
         
+        // TMP use passed in file for cart
+        // TODO better file selection
         NSProcessInfo* process = [NSProcessInfo processInfo];
         NSArray* arguments = [process arguments];
         
