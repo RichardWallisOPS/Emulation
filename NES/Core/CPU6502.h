@@ -12,6 +12,11 @@
 #include <cstdint>
 #include "IOBus.h"
 
+// Implementation notes:
+
+// Instruction cycle Tn states taken from 6502 data sheet
+// Address bus and data bus values try to follow the rules for these states
+
 class CPU6502
 {
 public:
@@ -45,19 +50,20 @@ private:
     // emulation
     uint8_t m_instructionCounter;
     uint8_t m_instructionCycles;
-    uint8_t m_opData;
     uint8_t m_opCode;
-    uint8_t m_operandH;
-    uint8_t m_operandL;
+    uint8_t m_dataBus;
+    uint8_t m_addressBusH;
+    uint8_t m_addressBusL;
 
     // Instructions
 private:
     struct CPUInstruction
     {
-        void(CPU6502::*m_function)(uint8_t Tn) = &CPU6502::ERROR;
-        char const* m_instruction = "UNIMPLEMENTED";
-        char const* m_addressMode = "";
-        uint8_t m_cycles = 0;
+        void(CPU6502::*m_opAddressMode)(uint8_t Tn) = &CPU6502::ERROR;
+        void(CPU6502::*m_operation)(uint8_t Tn)     = &CPU6502::ERROR;
+        char const* m_opStr                         = "UNIMPLEMENTED";
+        char const* m_opAddressModeStr              = "";
+        uint8_t m_cycles                            = 0;
     };
     CPUInstruction m_Instructions[256];
     
@@ -66,8 +72,12 @@ private:
     void InitInstructions();
     void ERROR(uint8_t Tn);
     
+    //
     void SEI(uint8_t Tn); void CLD(uint8_t Tn);
-    void INC_zpg(uint8_t Tn);
+    
+    // Read Modify Write
+    void INC(uint8_t Tn);
+    void ReadModifyWrite_zpg(uint8_t Tn); void ReadModifyWrite_abs(uint8_t Tn); void ReadModifyWrite_zpgX(uint8_t Tn); void ReadModifyWrite_absX(uint8_t Tn);
 };
 
 #endif /* CPU6502_h */

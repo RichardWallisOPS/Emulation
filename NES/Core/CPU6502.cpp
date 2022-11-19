@@ -23,7 +23,7 @@ enum StatusFlag : uint8_t
 
 // useful to get 16bit address from two 8 bit values safely
 // could pass uint8_t => uint16_t but I think this is safer for that case too
-uint16_t uint16FromRegisterPair(uint8_t high, uint8_t low)
+inline uint16_t uint16FromRegisterPair(uint8_t high, uint8_t low)
 {
     uint16_t result = high;
     result <<= 8;
@@ -41,10 +41,10 @@ CPU6502::CPU6502(IOBus& bus)
 , m_pc(0)
 , m_instructionCounter(0)
 , m_instructionCycles(0)
-, m_opData(0)
+, m_dataBus(0)
 , m_opCode(0)
-, m_operandH(0)
-, m_operandL(0)
+, m_addressBusH(0)
+, m_addressBusL(0)
 {
     InitInstructions();
 }
@@ -88,16 +88,16 @@ void CPU6502::PowerOn()
     m_flags = 0x34;
     
     // set pc to contents of reset vector
-    uint8_t lowResetVector = m_bus.cpuRead(0xFFFC);
-    uint8_t highResetVector = m_bus.cpuRead(0xFFFD);
-    m_pc = uint16FromRegisterPair(highResetVector, lowResetVector);
+    uint8_t resetVectorLow = m_bus.cpuRead(0xFFFC);
+    uint8_t resetVectorHigh = m_bus.cpuRead(0xFFFD);
+    m_pc = uint16FromRegisterPair(resetVectorHigh, resetVectorLow);
     
     m_instructionCounter = 0;
     m_instructionCycles = 0;
-    m_opData = 0;
+    m_dataBus = 0;
     m_opCode = 0;
-    m_operandH = 0;
-    m_operandL = 0;
+    m_addressBusH = 0;
+    m_addressBusL = 0;
 }
 
 void CPU6502::Reset()
@@ -106,59 +106,88 @@ void CPU6502::Reset()
     SetFlag(Flag_IRQDisable);
     
     // set pc to contents of reset vector
-    uint8_t lowResetVector = m_bus.cpuRead(0xFFFC);
-    uint8_t highResetVector = m_bus.cpuRead(0xFFFD);
-    m_pc = uint16FromRegisterPair(highResetVector, lowResetVector);
+    uint8_t resetVectorLow = m_bus.cpuRead(0xFFFC);
+    uint8_t resetVectorHigh = m_bus.cpuRead(0xFFFD);
+    m_pc = uint16FromRegisterPair(resetVectorHigh, resetVectorLow);
     
     m_instructionCounter = 0;
     m_instructionCycles = 0;
-    m_opData = 0;
+    m_dataBus = 0;
     m_opCode = 0;
-    m_operandH = 0;
-    m_operandL = 0;
+    m_addressBusH = 0;
+    m_addressBusL = 0;
 }
     
 void CPU6502::Tick()
 {
     if(m_instructionCounter == 0)
     {
-        m_opData = 0;
-        m_operandH = 0;
-        m_operandL = 0;
-        m_opCode = m_bus.cpuRead(m_pc++);
+        m_dataBus = 0;
+        m_addressBusH = 0;
+        m_addressBusL = 0;
+        
+        m_dataBus = m_opCode = m_bus.cpuRead(m_pc++);
         m_instructionCounter = m_instructionCycles = m_Instructions[m_opCode].m_cycles;
     }
-
-    uint8_t Tn = m_instructionCycles - m_instructionCounter;
-    (this->*(m_Instructions[m_opCode].m_function))(Tn);
+    else
+    {
+        // Tn == 0 (opCode fetch) should have no processing for any function
+        uint8_t Tn = m_instructionCycles - m_instructionCounter;
+        (this->*(m_Instructions[m_opCode].m_opAddressMode))(Tn);
+    }
     
     --m_instructionCounter;
 }
 
 void CPU6502::InitInstructions()
 {
-    m_Instructions[0x78].m_function = &CPU6502::CLD;
-    m_Instructions[0x78].m_instruction = "CLD";
-    m_Instructions[0x78].m_addressMode = "";
+    m_Instructions[0x78].m_opAddressMode = &CPU6502::SEI;
+    m_Instructions[0x78].m_operation = nullptr;
+    m_Instructions[0x78].m_opStr = "SEI";
+    m_Instructions[0x78].m_opAddressModeStr = "";
     m_Instructions[0x78].m_cycles = 2;
-
-    m_Instructions[0xD8].m_function = &CPU6502::SEI;
-    m_Instructions[0xD8].m_instruction = "SEI";
-    m_Instructions[0xD8].m_addressMode = "";
+    
+    m_Instructions[0xD8].m_opAddressMode = &CPU6502::CLD;
+    m_Instructions[0xD8].m_operation = nullptr;
+    m_Instructions[0xD8].m_opStr = "CLD";
+    m_Instructions[0xD8].m_opAddressModeStr = "";
     m_Instructions[0xD8].m_cycles = 2;
     
-    m_Instructions[0xE6].m_function = &CPU6502::INC_zpg;
-    m_Instructions[0xE6].m_instruction = "INC";
-    m_Instructions[0xE6].m_addressMode = "zpg";
+    m_Instructions[0xE6].m_opAddressMode = &CPU6502::ReadModifyWrite_zpg;
+    m_Instructions[0xE6].m_operation = &CPU6502::INC;
+    m_Instructions[0xE6].m_opStr = "INC";
+    m_Instructions[0xE6].m_opAddressModeStr = "zpg";
     m_Instructions[0xE6].m_cycles = 5;
+    
+    m_Instructions[0xEE].m_opAddressMode = &CPU6502::ReadModifyWrite_abs;
+    m_Instructions[0xEE].m_operation = &CPU6502::INC;
+    m_Instructions[0xEE].m_opStr = "INC";
+    m_Instructions[0xEE].m_opAddressModeStr = "abs";
+    m_Instructions[0xEE].m_cycles = 6;
+    
+    m_Instructions[0xF6].m_opAddressMode = &CPU6502::ReadModifyWrite_zpgX;
+    m_Instructions[0xF6].m_operation = &CPU6502::INC;
+    m_Instructions[0xF6].m_opStr = "INC";
+    m_Instructions[0xF6].m_opAddressModeStr = "zpg,X";
+    m_Instructions[0xF6].m_cycles = 6;
+    
+    m_Instructions[0xFE].m_opAddressMode = &CPU6502::ReadModifyWrite_absX;
+    m_Instructions[0xFE].m_operation = &CPU6502::INC;
+    m_Instructions[0xFE].m_opStr = "INC";
+    m_Instructions[0xFE].m_opAddressModeStr = "abs,X";
+    m_Instructions[0xFE].m_cycles = 7;
 }
 
 void CPU6502::ERROR(uint8_t Tn)
 {
     CPUInstruction& instruction = m_Instructions[m_opCode];
-    printf("Halted on instruction opCode=0x%02X %s %s\n", m_opCode, instruction.m_instruction, instruction.m_addressMode);
+    printf("Halted on instruction [missing address mode] opCode=0x%02X %s %s\n", m_opCode, instruction.m_opStr, instruction.m_opAddressModeStr);
     *(volatile char*)(0) = 5;
 }
+
+//
+// single byte 2 cycle instructions
+//
 
 void CPU6502::SEI(uint8_t Tn)
 {
@@ -176,29 +205,131 @@ void CPU6502::CLD(uint8_t Tn)
     }
 }
 
-// Inc memory location in zero page
-void CPU6502::INC_zpg(uint8_t Tn)
+//
+// ReadModifyWrite operations
+//
+
+// Data bus INC
+void CPU6502::INC(uint8_t Tn)
+{
+    ++m_dataBus;
+    SetFlag(m_dataBus & Negative_Test);
+    ConditionalSetFlag(Flag_Zero, m_dataBus == 0);
+}
+
+// memory location in zero page
+void CPU6502::ReadModifyWrite_zpg(uint8_t Tn)
 {
     if(Tn == 1)
     {
-        m_operandH = 0; // zero page
-        m_operandL = m_bus.cpuRead(m_pc++);
+        m_dataBus = m_bus.cpuRead(m_pc++);
     }
     else if(Tn == 2)
     {
-        uint16_t address = uint16FromRegisterPair(m_operandH, m_operandL);
-        m_opData = m_bus.cpuRead(address);
+        m_addressBusH = 0;
+        m_addressBusL = m_dataBus;
+        
+        uint16_t address = uint16FromRegisterPair(m_addressBusH, m_addressBusL);
+        m_dataBus = m_bus.cpuRead(address);
     }
     else if(Tn == 3)
     {
-        ++m_opData;
-        
-        SetFlag(m_opData & Negative_Test);
-        ConditionalSetFlag(Flag_Zero, m_opData == 0);
+        // bus read to write
     }
     else if(Tn == 4)
     {
-        uint16_t address = uint16FromRegisterPair(m_operandH, m_operandL);
-        m_bus.cpuWrite(address, m_opData);
+        (this->*(m_Instructions[m_opCode].m_operation))(Tn);
+        
+        uint16_t address = uint16FromRegisterPair(m_addressBusH, m_addressBusL);
+        m_bus.cpuWrite(address, m_dataBus);
+    }
+}
+
+// memory location at absolute address
+void CPU6502::ReadModifyWrite_abs(uint8_t Tn)
+{
+    if(Tn == 1)
+    {
+        m_dataBus = m_bus.cpuRead(m_pc++);
+    }
+    else if(Tn == 2)
+    {
+        m_addressBusL = m_dataBus;
+        m_dataBus = m_bus.cpuRead(m_pc++);
+    }
+    else if(Tn == 3)
+    {
+        m_addressBusH = m_dataBus;
+        uint16_t address = uint16FromRegisterPair(m_addressBusH, m_addressBusL);
+        m_dataBus = m_bus.cpuRead(address);
+    }
+    else if(Tn == 4)
+    {
+        // bus read to write
+    }
+    else if(Tn == 5)
+    {
+        (this->*(m_Instructions[m_opCode].m_operation))(Tn);
+        
+        uint16_t address = uint16FromRegisterPair(m_addressBusH, m_addressBusL);
+        m_bus.cpuWrite(address, m_dataBus);
+    }
+}
+
+// memory location at zero page plus x-index offset
+void CPU6502::ReadModifyWrite_zpgX(uint8_t Tn)
+{
+    if(Tn == 1)
+    {
+        m_dataBus = m_bus.cpuRead(m_pc++);
+    }
+    else if(Tn == 2)
+    {
+        m_addressBusL = m_dataBus;
+    }
+    else if(Tn == 3)
+    {
+        m_addressBusL += m_x;
+        uint16_t address = uint16FromRegisterPair(m_addressBusH, m_addressBusL);
+        m_dataBus = m_bus.cpuRead(address);
+    }
+    else if(Tn == 4)
+    {
+       // bus read to write
+    }
+    else if(Tn == 5)
+    {
+        (this->*(m_Instructions[m_opCode].m_operation))(Tn);
+        
+        uint16_t address = uint16FromRegisterPair(m_addressBusH, m_addressBusL);
+        m_bus.cpuWrite(address, m_dataBus);
+    }
+}
+
+void CPU6502::ReadModifyWrite_absX(uint8_t Tn)
+{
+    if(Tn == 1)
+    {
+        
+    }
+    else if(Tn == 2)
+    {
+
+    }
+    else if(Tn == 3)
+    {
+
+    }
+    else if(Tn == 4)
+    {
+
+    }
+    else if(Tn == 5)
+    {
+    
+    }
+    else if(Tn == 6)
+    {
+    
     }
 }
