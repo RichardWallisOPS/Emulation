@@ -209,12 +209,37 @@ void CPU6502::CLD(uint8_t Tn)
 // ReadModifyWrite operations
 //
 
-// Data bus INC
+void CPU6502::ASL(uint8_t Tn)
+{
+
+}
+
+void CPU6502::DEC(uint8_t Tn)
+{
+
+}
+
+// Data bus increment - no carry
 void CPU6502::INC(uint8_t Tn)
 {
     ++m_dataBus;
     SetFlag(m_dataBus & Negative_Test);
     ConditionalSetFlag(Flag_Zero, m_dataBus == 0);
+}
+
+void CPU6502::LSR(uint8_t Tn)
+{
+
+}
+
+void CPU6502::ROL(uint8_t Tn)
+{
+
+}
+
+void CPU6502::ROR(uint8_t Tn)
+{
+
 }
 
 // memory location in zero page
@@ -310,26 +335,36 @@ void CPU6502::ReadModifyWrite_absX(uint8_t Tn)
 {
     if(Tn == 1)
     {
-        
+        m_dataBus = m_bus.cpuRead(m_pc++);
     }
     else if(Tn == 2)
     {
-
+        m_addressBusL = m_dataBus;
+        m_dataBus = m_bus.cpuRead(m_pc++);
     }
     else if(Tn == 3)
     {
-
+        if(((uint16_t)m_addressBusL + (uint16_t)m_x) > 255)
+        {
+            m_addressBusH = 1;
+        }
+        m_addressBusL += m_x;
+        m_addressBusH += m_dataBus;
     }
     else if(Tn == 4)
     {
-
+        uint16_t address = uint16FromRegisterPair(m_addressBusH, m_addressBusL);
+        m_dataBus = m_bus.cpuRead(address);
     }
     else if(Tn == 5)
     {
-    
+        // bus read to write
     }
     else if(Tn == 6)
     {
-    
+        (this->*(m_Instructions[m_opCode].m_operation))(Tn);
+        
+        uint16_t address = uint16FromRegisterPair(m_addressBusH, m_addressBusL);
+        m_bus.cpuWrite(address, m_dataBus);
     }
 }

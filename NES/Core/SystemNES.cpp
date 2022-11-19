@@ -30,7 +30,6 @@ SystemNES::SystemNES()
 , m_ppu(*this)
 , m_pCart(nullptr)
 {
-    // Note: Cold and Reset states maybe different for the system, cpu and ppu
     memset(m_ram, 0x00, nRamSize);
     memset(m_apuRegisters, 0x00, nAPURegisterCount);
 }
@@ -40,6 +39,18 @@ SystemNES::~SystemNES()
     EjectCartridge();
 }
 
+void SystemNES::PowerOn()
+{
+    m_ppu.PowerOn();
+    m_cpu.PowerOn();
+    m_bPowerOn = true;
+    
+    memset(m_ram, 0x00, nRamSize);
+    
+    // TODO apu registers on power on
+    memset(m_apuRegisters, 0x00, nAPURegisterCount);
+}
+
 void SystemNES::Reset()
 {
     m_cycleCount = 0;
@@ -47,7 +58,10 @@ void SystemNES::Reset()
     m_ppu.Reset();
     m_cpu.Reset();
     
-    // TODO apu registers
+    // ram does not change on reset
+    
+    // TODO apu registers on reset
+    memset(m_apuRegisters, 0x00, nAPURegisterCount);
 }
 
 void SystemNES::EjectCartridge()
@@ -96,13 +110,6 @@ bool SystemNES::InsertCartridge(void const* pData, uint32_t dataSize)
     m_pCart = new Cartridge(pCartData, pHeader->m_prg16KChunks, pHeader->m_chr8KChunks);
     
     return true;
-}
-
-void SystemNES::PowerOn()
-{
-    m_ppu.PowerOn();
-    m_cpu.PowerOn();
-    m_bPowerOn = true;
 }
 
 void SystemNES::Tick()

@@ -76,7 +76,7 @@ private:
     void SEI(uint8_t Tn); void CLD(uint8_t Tn);
     
     // Read Modify Write
-    void INC(uint8_t Tn);
+    void ASL(uint8_t Tn); void DEC(uint8_t Tn); void INC(uint8_t Tn); void LSR(uint8_t Tn); void ROL(uint8_t Tn); void ROR(uint8_t Tn);
     void ReadModifyWrite_zpg(uint8_t Tn); void ReadModifyWrite_abs(uint8_t Tn); void ReadModifyWrite_zpgX(uint8_t Tn); void ReadModifyWrite_absX(uint8_t Tn);
 };
 
