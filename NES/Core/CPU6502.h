@@ -59,7 +59,7 @@ private:
 private:
     struct CPUInstruction
     {
-        void(CPU6502::*m_opAddressMode)(uint8_t Tn) = &CPU6502::ERROR;
+        void(CPU6502::*m_opOrAddrMode)(uint8_t Tn)  = &CPU6502::ERROR;
         void(CPU6502::*m_operation)(uint8_t Tn)     = &CPU6502::ERROR;
         char const* m_opStr                         = "UNIMPLEMENTED";
         char const* m_opAddressModeStr              = "";
@@ -72,11 +72,11 @@ private:
     void InitInstructions();
     void ERROR(uint8_t Tn);
     
-    // Generics - same functionality but different registers
-    void ASL(uint8_t& cpuReg);
+    // Generics - same functionality but different registers or current memory bus
+    void ASL(uint8_t& cpuReg); void LSR(uint8_t& cpuReg);
     
-    // 1) NSingle byte instructions
-    void Accum_ASL(uint8_t Tn); void SEI(uint8_t Tn); void CLD(uint8_t Tn);
+    // 1) Single byte instructions
+    void NOP(uint8_t Tn); void Accum_ASL(uint8_t Tn); void Accum_LSR(uint8_t Tn); void SEI(uint8_t Tn); void CLD(uint8_t Tn);
     
     // 4) Read Modify Write
     // Instructions
