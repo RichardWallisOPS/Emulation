@@ -141,6 +141,36 @@ void CPU6502::Tick()
 
 void CPU6502::InitInstructions()
 {
+    m_Instructions[0x06].m_opAddressMode = &CPU6502::ReadModifyWrite_zpg;
+    m_Instructions[0x06].m_operation = &CPU6502::RMW_ASL;
+    m_Instructions[0x06].m_opStr = "ASL";
+    m_Instructions[0x06].m_opAddressModeStr = "zpg";
+    m_Instructions[0x06].m_cycles = 5;
+    
+    m_Instructions[0x0A].m_opAddressMode = &CPU6502::Accum_ASL;
+    m_Instructions[0x0A].m_operation = nullptr;
+    m_Instructions[0x0A].m_opStr = "ASL";
+    m_Instructions[0x0A].m_opAddressModeStr = "a";
+    m_Instructions[0x0A].m_cycles = 2;
+    
+    m_Instructions[0x0E].m_opAddressMode = &CPU6502::ReadModifyWrite_abs;
+    m_Instructions[0x0E].m_operation = &CPU6502::RMW_ASL;
+    m_Instructions[0x0E].m_opStr = "ASL";
+    m_Instructions[0x0E].m_opAddressModeStr = "abs";
+    m_Instructions[0x0E].m_cycles = 6;
+    
+    m_Instructions[0x16].m_opAddressMode = &CPU6502::ReadModifyWrite_zpgX;
+    m_Instructions[0x16].m_operation = &CPU6502::RMW_ASL;
+    m_Instructions[0x16].m_opStr = "ASL";
+    m_Instructions[0x16].m_opAddressModeStr = "zpg,X";
+    m_Instructions[0x16].m_cycles = 6;
+
+    m_Instructions[0x1E].m_opAddressMode = &CPU6502::ReadModifyWrite_absX;
+    m_Instructions[0x1E].m_operation = &CPU6502::RMW_ASL;
+    m_Instructions[0x1E].m_opStr = "ASL";
+    m_Instructions[0x1E].m_opAddressModeStr = "abs,X";
+    m_Instructions[0x1E].m_cycles = 7;
+    
     m_Instructions[0x78].m_opAddressMode = &CPU6502::SEI;
     m_Instructions[0x78].m_operation = nullptr;
     m_Instructions[0x78].m_opStr = "SEI";
@@ -154,25 +184,25 @@ void CPU6502::InitInstructions()
     m_Instructions[0xD8].m_cycles = 2;
     
     m_Instructions[0xE6].m_opAddressMode = &CPU6502::ReadModifyWrite_zpg;
-    m_Instructions[0xE6].m_operation = &CPU6502::INC;
+    m_Instructions[0xE6].m_operation = &CPU6502::RMW_INC;
     m_Instructions[0xE6].m_opStr = "INC";
     m_Instructions[0xE6].m_opAddressModeStr = "zpg";
     m_Instructions[0xE6].m_cycles = 5;
     
     m_Instructions[0xEE].m_opAddressMode = &CPU6502::ReadModifyWrite_abs;
-    m_Instructions[0xEE].m_operation = &CPU6502::INC;
+    m_Instructions[0xEE].m_operation = &CPU6502::RMW_INC;
     m_Instructions[0xEE].m_opStr = "INC";
     m_Instructions[0xEE].m_opAddressModeStr = "abs";
     m_Instructions[0xEE].m_cycles = 6;
     
     m_Instructions[0xF6].m_opAddressMode = &CPU6502::ReadModifyWrite_zpgX;
-    m_Instructions[0xF6].m_operation = &CPU6502::INC;
+    m_Instructions[0xF6].m_operation = &CPU6502::RMW_INC;
     m_Instructions[0xF6].m_opStr = "INC";
     m_Instructions[0xF6].m_opAddressModeStr = "zpg,X";
     m_Instructions[0xF6].m_cycles = 6;
     
     m_Instructions[0xFE].m_opAddressMode = &CPU6502::ReadModifyWrite_absX;
-    m_Instructions[0xFE].m_operation = &CPU6502::INC;
+    m_Instructions[0xFE].m_operation = &CPU6502::RMW_INC;
     m_Instructions[0xFE].m_opStr = "INC";
     m_Instructions[0xFE].m_opAddressModeStr = "abs,X";
     m_Instructions[0xFE].m_cycles = 7;
@@ -186,8 +216,30 @@ void CPU6502::ERROR(uint8_t Tn)
 }
 
 //
+// Generics
+// Operations that can be performed on multiple internal CPU registers
+// Caller assumer responsibility for correct cycle to call this on
+//
+void CPU6502::ASL(uint8_t& cpuReg)
+{
+    ConditionalSetFlag(Flag_Carry, (cpuReg & (1 << 7)) != 0);
+    cpuReg <<= 1;
+    ConditionalSetFlag(Flag_Negative, (cpuReg & (1 << 7)) != 0);
+    ConditionalSetFlag(Flag_Zero, cpuReg == 0);
+}
+
+
+//
 // single byte 2 cycle instructions
 //
+
+void CPU6502::Accum_ASL(uint8_t Tn)
+{
+    if(Tn == 1)
+    {
+        ASL(m_a);
+    }
+}
 
 void CPU6502::SEI(uint8_t Tn)
 {
@@ -209,35 +261,35 @@ void CPU6502::CLD(uint8_t Tn)
 // ReadModifyWrite operations
 //
 
-void CPU6502::ASL(uint8_t Tn)
+void CPU6502::RMW_ASL(uint8_t Tn)
 {
-
+    ASL(m_dataBus);
 }
 
-void CPU6502::DEC(uint8_t Tn)
+void CPU6502::RMW_DEC(uint8_t Tn)
 {
 
 }
 
 // Data bus increment - no carry
-void CPU6502::INC(uint8_t Tn)
+void CPU6502::RMW_INC(uint8_t Tn)
 {
     ++m_dataBus;
     SetFlag(m_dataBus & Negative_Test);
     ConditionalSetFlag(Flag_Zero, m_dataBus == 0);
 }
 
-void CPU6502::LSR(uint8_t Tn)
+void CPU6502::RMW_LSR(uint8_t Tn)
 {
 
 }
 
-void CPU6502::ROL(uint8_t Tn)
+void CPU6502::RMW_ROL(uint8_t Tn)
 {
 
 }
 
-void CPU6502::ROR(uint8_t Tn)
+void CPU6502::RMW_ROR(uint8_t Tn)
 {
 
 }
@@ -310,6 +362,7 @@ void CPU6502::ReadModifyWrite_zpgX(uint8_t Tn)
     }
     else if(Tn == 2)
     {
+        m_addressBusH = 0;
         m_addressBusL = m_dataBus;
     }
     else if(Tn == 3)
@@ -339,6 +392,7 @@ void CPU6502::ReadModifyWrite_absX(uint8_t Tn)
     }
     else if(Tn == 2)
     {
+        m_addressBusH = 0;
         m_addressBusL = m_dataBus;
         m_dataBus = m_bus.cpuRead(m_pc++);
     }

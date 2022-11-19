@@ -72,11 +72,16 @@ private:
     void InitInstructions();
     void ERROR(uint8_t Tn);
     
-    //
-    void SEI(uint8_t Tn); void CLD(uint8_t Tn);
+    // Generics - same functionality but different registers
+    void ASL(uint8_t& cpuReg);
     
-    // Read Modify Write
-    void ASL(uint8_t Tn); void DEC(uint8_t Tn); void INC(uint8_t Tn); void LSR(uint8_t Tn); void ROL(uint8_t Tn); void ROR(uint8_t Tn);
+    // 1) NSingle byte instructions
+    void Accum_ASL(uint8_t Tn); void SEI(uint8_t Tn); void CLD(uint8_t Tn);
+    
+    // 4) Read Modify Write
+    // Instructions
+    void RMW_ASL(uint8_t Tn); void RMW_DEC(uint8_t Tn); void RMW_INC(uint8_t Tn); void RMW_LSR(uint8_t Tn); void RMW_ROL(uint8_t Tn); void RMW_ROR(uint8_t Tn);
+    // Address Modes
     void ReadModifyWrite_zpg(uint8_t Tn); void ReadModifyWrite_abs(uint8_t Tn); void ReadModifyWrite_zpgX(uint8_t Tn); void ReadModifyWrite_absX(uint8_t Tn);
 };
 
