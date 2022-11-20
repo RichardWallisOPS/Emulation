@@ -52,8 +52,8 @@ private:
     uint16_t m_pc;
     
     // emulation
-    uint8_t m_instructionCounter;
-    uint8_t m_instructionCycles;
+    uint64_t m_tickCount;
+    uint8_t m_instructionCycle;
     uint8_t m_opCode;
     uint8_t m_dataBus;
     uint8_t m_addressBusH;
@@ -63,32 +63,34 @@ private:
 private:
     struct CPUInstruction
     {
-        void(CPU6502::*m_opOrAddrMode)(uint8_t Tn)  = &CPU6502::ERROR;
-        void(CPU6502::*m_operation)(uint8_t Tn)     = &CPU6502::ERROR;
+        bool(CPU6502::*m_opOrAddrMode)(uint8_t Tn)  = &CPU6502::ERROR;
+        void(CPU6502::*m_operation)(uint8_t Tn)     = nullptr;
         char const* m_opStr                         = "UNIMPLEMENTED";
         char const* m_opAddressModeStr              = "";
-        uint8_t m_cycles                            = 0;
+        uint8_t m_cycles                            = 0;                // TODO remove this once we are happy...
     };
     CPUInstruction m_Instructions[256];
     
 private:
 
     void InitInstructions();
-    void ERROR(uint8_t Tn);
+    bool ERROR(uint8_t Tn);
     
     uint8_t programCounterByteFetch();
+    
+    // Note:  Anything to be directly executed must return true/false to indicate finished
     
     // Generics - same functionality but different registers or current memory bus
     void ASL(uint8_t& cpuReg); void LSR(uint8_t& cpuReg); void ROL(uint8_t& cpuReg); void ROR(uint8_t& cpuReg);
     
     // 1) Single byte instructions
-    void NOP(uint8_t Tn); void Accum_ASL(uint8_t Tn); void Accum_LSR(uint8_t Tn); void Accum_ROL(uint8_t Tn); void Accum_ROR(uint8_t Tn); void SEI(uint8_t Tn); void CLD(uint8_t Tn);
+    bool NOP(uint8_t Tn); bool Accum_ASL(uint8_t Tn); bool Accum_LSR(uint8_t Tn); bool Accum_ROL(uint8_t Tn); bool Accum_ROR(uint8_t Tn); bool SEI(uint8_t Tn); bool CLD(uint8_t Tn);
     
     // 4) Read Modify Write
     // Instructions
     void RMW_ASL(uint8_t Tn); void RMW_DEC(uint8_t Tn); void RMW_INC(uint8_t Tn); void RMW_LSR(uint8_t Tn); void RMW_ROL(uint8_t Tn); void RMW_ROR(uint8_t Tn);
     // Address Modes
-    void ReadModifyWrite_zpg(uint8_t Tn); void ReadModifyWrite_abs(uint8_t Tn); void ReadModifyWrite_zpgX(uint8_t Tn); void ReadModifyWrite_absX(uint8_t Tn);
+    bool ReadModifyWrite_zpg(uint8_t Tn); bool ReadModifyWrite_abs(uint8_t Tn); bool ReadModifyWrite_zpgX(uint8_t Tn); bool ReadModifyWrite_absX(uint8_t Tn);
 };
 
 #endif /* CPU6502_h */

@@ -44,8 +44,8 @@ CPU6502::CPU6502(IOBus& bus)
 , m_stack(0)
 , m_flags(0)
 , m_pc(0)
-, m_instructionCounter(0)
-, m_instructionCycles(0)
+, m_tickCount(0)
+, m_instructionCycle(0)
 , m_dataBus(0)
 , m_opCode(0)
 , m_addressBusH(0)
@@ -96,8 +96,8 @@ void CPU6502::PowerOn()
     uint8_t resetAddressH = m_bus.cpuRead(0xFFFD);
     m_pc = uint16FromRegisterPair(resetAddressH, resetAddressL);
     
-    m_instructionCounter = 0;
-    m_instructionCycles = 0;
+    m_tickCount = 0;
+    m_instructionCycle = 0;
     m_dataBus = 0;
     m_opCode = 0;
     m_addressBusH = 0;
@@ -113,8 +113,8 @@ void CPU6502::Reset()
     uint8_t resetAddressH = m_bus.cpuRead(0xFFFD);
     m_pc = uint16FromRegisterPair(resetAddressH, resetAddressL);
     
-    m_instructionCounter = 0;
-    m_instructionCycles = 0;
+    m_tickCount = 0;
+    m_instructionCycle = 0;
     m_dataBus = 0;
     m_opCode = 0;
     m_addressBusH = 0;
@@ -144,10 +144,12 @@ uint8_t CPU6502::programCounterByteFetch()
     
 void CPU6502::Tick()
 {
-    if(m_instructionCounter == 0)
+    bool bInstructionComplete = false;
+    
+    if(m_instructionCycle == 0)
     {
 #ifdef EMULATION_LOG
-        if(m_instructionCycles > 0)
+        if(m_tickCount > 0)
         {
             // Finalize old logging
             while(LinePosition < 16)
@@ -175,16 +177,30 @@ void CPU6502::Tick()
         m_addressBusL = 0;
         
         m_dataBus = m_opCode = programCounterByteFetch();
-        m_instructionCounter = m_instructionCycles = m_Instructions[m_opCode].m_cycles;
     }
     else
     {
         // Tn == 0 (opCode fetch) should have no processing for any function
-        uint8_t Tn = m_instructionCycles - m_instructionCounter;
-        (this->*(m_Instructions[m_opCode].m_opOrAddrMode))(Tn);
+        bInstructionComplete = (this->*(m_Instructions[m_opCode].m_opOrAddrMode))(m_instructionCycle);
     }
     
-    --m_instructionCounter;
+    if(bInstructionComplete)
+    {
+#if DEBUG
+        // check we have executed the correct number of cycles for an instruction
+        if(m_instructionCycle + 1 != m_Instructions[m_opCode].m_cycles)
+        {
+            printf("Executation cycle vs instruction cycle mismatch");
+            ERROR(m_instructionCycle);
+        }
+#endif
+        m_instructionCycle = 0;
+    }
+    else
+    {
+        ++m_instructionCycle;
+    }
+    ++m_tickCount;
 }
 
 void CPU6502::InitInstructions()
@@ -218,6 +234,36 @@ void CPU6502::InitInstructions()
     m_Instructions[0x1E].m_opStr = "ASL";
     m_Instructions[0x1E].m_opAddressModeStr = "abs,X";
     m_Instructions[0x1E].m_cycles = 7;
+    
+    m_Instructions[0x26].m_opOrAddrMode = &CPU6502::ReadModifyWrite_zpg;
+    m_Instructions[0x26].m_operation = &CPU6502::RMW_ROL;
+    m_Instructions[0x26].m_opStr = "ROL";
+    m_Instructions[0x26].m_opAddressModeStr = "zpg";
+    m_Instructions[0x26].m_cycles = 5;
+
+    m_Instructions[0x2A].m_opOrAddrMode = &CPU6502::Accum_ROL;
+    m_Instructions[0x2A].m_operation = nullptr;
+    m_Instructions[0x2A].m_opStr = "ROL";
+    m_Instructions[0x2A].m_opAddressModeStr = "a";
+    m_Instructions[0x2A].m_cycles = 2;
+    
+    m_Instructions[0x2E].m_opOrAddrMode = &CPU6502::ReadModifyWrite_abs;
+    m_Instructions[0x2E].m_operation = &CPU6502::RMW_ROL;
+    m_Instructions[0x2E].m_opStr = "ROL";
+    m_Instructions[0x2E].m_opAddressModeStr = "abs";
+    m_Instructions[0x2E].m_cycles = 6;
+    
+    m_Instructions[0x36].m_opOrAddrMode = &CPU6502::ReadModifyWrite_zpgX;
+    m_Instructions[0x36].m_operation = &CPU6502::RMW_ROL;
+    m_Instructions[0x36].m_opStr = "ROL";
+    m_Instructions[0x36].m_opAddressModeStr = "zpg,X";
+    m_Instructions[0x36].m_cycles = 6;
+    
+    m_Instructions[0x3E].m_opOrAddrMode = &CPU6502::ReadModifyWrite_absX;
+    m_Instructions[0x3E].m_operation = &CPU6502::RMW_ROL;
+    m_Instructions[0x3E].m_opStr = "ROL";
+    m_Instructions[0x3E].m_opAddressModeStr = "abs,X";
+    m_Instructions[0x3E].m_cycles = 7;
     
     m_Instructions[0x46].m_opOrAddrMode = &CPU6502::ReadModifyWrite_zpg;
     m_Instructions[0x46].m_operation = &CPU6502::RMW_LSR;
@@ -342,7 +388,7 @@ void CPU6502::InitInstructions()
 #endif
 }
 
-void CPU6502::ERROR(uint8_t Tn)
+bool CPU6502::ERROR(uint8_t Tn)
 {
 #if DEBUG
     #ifdef EMULATION_LOG
@@ -356,6 +402,8 @@ void CPU6502::ERROR(uint8_t Tn)
 #else
     NOP(Tn);
 #endif
+
+    return false;
 }
 
 //
@@ -417,60 +465,63 @@ void CPU6502::ROR(uint8_t& cpuReg)
 // single byte 2 cycle instructions
 //
 
-void CPU6502::NOP(uint8_t Tn)
+bool CPU6502::NOP(uint8_t Tn)
 {
-    if(Tn == 1)
-    {
-        // NOP!
-    }
+    return Tn == 1;
 }
 
-void CPU6502::Accum_LSR(uint8_t Tn)
+bool CPU6502::Accum_LSR(uint8_t Tn)
 {
     if(Tn == 1)
     {
         LSR(m_a);
     }
+    return Tn == 1;
 }
 
-void CPU6502::Accum_ASL(uint8_t Tn)
+bool CPU6502::Accum_ASL(uint8_t Tn)
 {
     if(Tn == 1)
     {
         ASL(m_a);
     }
+    return Tn == 1;
 }
 
-void CPU6502::Accum_ROL(uint8_t Tn)
+bool CPU6502::Accum_ROL(uint8_t Tn)
 {
     if(Tn == 1)
     {
         ROL(m_a);
     }
+    return Tn == 1;
 }
 
-void CPU6502::Accum_ROR(uint8_t Tn)
+bool CPU6502::Accum_ROR(uint8_t Tn)
 {
     if(Tn == 1)
     {
         ROR(m_a);
     }
+    return Tn == 1;
 }
 
-void CPU6502::SEI(uint8_t Tn)
+bool CPU6502::SEI(uint8_t Tn)
 {
     if(Tn == 1)
     {
         SetFlag(Flag_IRQDisable);
     }
+    return Tn == 1;
 }
 
-void CPU6502::CLD(uint8_t Tn)
+bool CPU6502::CLD(uint8_t Tn)
 {
     if(Tn == 1)
     {
         ClearFlag(Flag_Decimal);
     }
+    return Tn == 1;
 }
 
 //
@@ -514,7 +565,7 @@ void CPU6502::RMW_ROR(uint8_t Tn)
 }
 
 // memory location in zero page
-void CPU6502::ReadModifyWrite_zpg(uint8_t Tn)
+bool CPU6502::ReadModifyWrite_zpg(uint8_t Tn)
 {
     if(Tn == 1)
     {
@@ -538,11 +589,13 @@ void CPU6502::ReadModifyWrite_zpg(uint8_t Tn)
         
         uint16_t address = uint16FromRegisterPair(m_addressBusH, m_addressBusL);
         m_bus.cpuWrite(address, m_dataBus);
+        return true;
     }
+    return false;
 }
 
 // memory location at absolute address
-void CPU6502::ReadModifyWrite_abs(uint8_t Tn)
+bool CPU6502::ReadModifyWrite_abs(uint8_t Tn)
 {
     if(Tn == 1)
     {
@@ -569,11 +622,13 @@ void CPU6502::ReadModifyWrite_abs(uint8_t Tn)
         
         uint16_t address = uint16FromRegisterPair(m_addressBusH, m_addressBusL);
         m_bus.cpuWrite(address, m_dataBus);
+        return true;
     }
+    return false;
 }
 
 // memory location at zero page plus x-index offset
-void CPU6502::ReadModifyWrite_zpgX(uint8_t Tn)
+bool CPU6502::ReadModifyWrite_zpgX(uint8_t Tn)
 {
     if(Tn == 1)
     {
@@ -600,10 +655,12 @@ void CPU6502::ReadModifyWrite_zpgX(uint8_t Tn)
         
         uint16_t address = uint16FromRegisterPair(m_addressBusH, m_addressBusL);
         m_bus.cpuWrite(address, m_dataBus);
+        return true;
     }
+    return false;
 }
 
-void CPU6502::ReadModifyWrite_absX(uint8_t Tn)
+bool CPU6502::ReadModifyWrite_absX(uint8_t Tn)
 {
     if(Tn == 1)
     {
@@ -639,5 +696,7 @@ void CPU6502::ReadModifyWrite_absX(uint8_t Tn)
         
         uint16_t address = uint16FromRegisterPair(m_addressBusH, m_addressBusL);
         m_bus.cpuWrite(address, m_dataBus);
+        return true;
     }
+    return false;
 }
