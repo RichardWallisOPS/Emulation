@@ -439,6 +439,50 @@ bool CPU6502::TXS(uint8_t Tn)
     return Tn == 1;
 }
 
+bool CPU6502::INX(uint8_t Tn)
+{
+    if(Tn == 1)
+    {
+        ++m_x;
+        ConditionalSetFlag(Flag_Negative, (m_x & (1 << 7)) != 0);
+        ConditionalSetFlag(Flag_Zero, m_x == 0);
+    }
+    return Tn == 1;
+}
+
+bool CPU6502::INY(uint8_t Tn)
+{
+    if(Tn == 1)
+    {
+        ++m_y;
+        ConditionalSetFlag(Flag_Negative, (m_y & (1 << 7)) != 0);
+        ConditionalSetFlag(Flag_Zero, m_y == 0);
+    }
+    return Tn == 1;
+}
+
+bool CPU6502::DEX(uint8_t Tn)
+{
+    if(Tn == 1)
+    {
+        --m_x;
+        ConditionalSetFlag(Flag_Negative, (m_x & (1 << 7)) != 0);
+        ConditionalSetFlag(Flag_Zero, m_x == 0);
+    }
+    return Tn == 1;
+}
+
+bool CPU6502::DEY(uint8_t Tn)
+{
+    if(Tn == 1)
+    {
+        --m_y;
+        ConditionalSetFlag(Flag_Negative, (m_y & (1 << 7)) != 0);
+        ConditionalSetFlag(Flag_Zero, m_y == 0);
+    }
+    return Tn == 1;
+}
+
 
 //
 // ReadModifyWrite operations

@@ -156,6 +156,12 @@ void CPU6502::InitInstructions()
     m_Instructions[0x7E].m_opAddressModeStr = "abs,X";
     m_Instructions[0x7E].m_cycles = 7;
     
+    m_Instructions[0x88].m_opOrAddrMode = &CPU6502::DEY;
+    m_Instructions[0x88].m_operation = nullptr;
+    m_Instructions[0x88].m_opStr = "DEY";
+    m_Instructions[0x88].m_opAddressModeStr = "";
+    m_Instructions[0x88].m_cycles = 2;
+    
     m_Instructions[0x8A].m_opOrAddrMode = &CPU6502::TXA;
     m_Instructions[0x8A].m_operation = nullptr;
     m_Instructions[0x8A].m_opStr = "TXA";
@@ -204,6 +210,18 @@ void CPU6502::InitInstructions()
     m_Instructions[0xC6].m_opAddressModeStr = "zpg";
     m_Instructions[0xC6].m_cycles = 5;
     
+    m_Instructions[0xC8].m_opOrAddrMode = &CPU6502::INY;
+    m_Instructions[0xC8].m_operation = nullptr;
+    m_Instructions[0xC8].m_opStr = "INY";
+    m_Instructions[0xC8].m_opAddressModeStr = "";
+    m_Instructions[0xC8].m_cycles = 2;
+    
+    m_Instructions[0xCA].m_opOrAddrMode = &CPU6502::DEX;
+    m_Instructions[0xCA].m_operation = nullptr;
+    m_Instructions[0xCA].m_opStr = "DEX";
+    m_Instructions[0xCA].m_opAddressModeStr = "";
+    m_Instructions[0xCA].m_cycles = 2;
+    
     m_Instructions[0xCE].m_opOrAddrMode = &CPU6502::ReadModifyWrite_abs;
     m_Instructions[0xCE].m_operation = &CPU6502::RMW_DEC;
     m_Instructions[0xCE].m_opStr = "DEC";
@@ -239,6 +257,12 @@ void CPU6502::InitInstructions()
     m_Instructions[0xE6].m_opStr = "INC";
     m_Instructions[0xE6].m_opAddressModeStr = "zpg";
     m_Instructions[0xE6].m_cycles = 5;
+    
+    m_Instructions[0xE8].m_opOrAddrMode = &CPU6502::INX;
+    m_Instructions[0xE8].m_operation = nullptr;
+    m_Instructions[0xE8].m_opStr = "INX";
+    m_Instructions[0xE8].m_opAddressModeStr = "";
+    m_Instructions[0xE8].m_cycles = 2;
     
     m_Instructions[0xEE].m_opOrAddrMode = &CPU6502::ReadModifyWrite_abs;
     m_Instructions[0xEE].m_operation = &CPU6502::RMW_INC;

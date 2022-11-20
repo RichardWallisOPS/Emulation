@@ -86,8 +86,8 @@ private:
     bool NOP(uint8_t Tn);
     bool SEI(uint8_t Tn); bool SEC(uint8_t Tn); //bool SED(uint8_t);
     bool CLD(uint8_t Tn); bool CLC(uint8_t Tn); bool CLI(uint8_t Tn); bool CLV(uint8_t Tn);
-    bool TAX(uint8_t Tn); bool TAY(uint8_t Tn); bool TXA(uint8_t Tn); bool TYA(uint8_t Tn);
-    bool TSX(uint8_t Tn); bool TXS(uint8_t Tn);
+    bool TAX(uint8_t Tn); bool TAY(uint8_t Tn); bool TXA(uint8_t Tn); bool TYA(uint8_t Tn); bool TSX(uint8_t Tn); bool TXS(uint8_t Tn);
+    bool INX(uint8_t Tn); bool INY(uint8_t Tn); bool DEX(uint8_t Tn); bool DEY(uint8_t Tn);
     
     // 4) Read Modify Write
     // Instructions
