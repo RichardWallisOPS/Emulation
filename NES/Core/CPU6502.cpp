@@ -8,6 +8,11 @@
 
 #include "CPU6502.h"
 #include <stdio.h>
+#include <string.h>
+
+#if DEBUG && 1
+    #define EMULATION_LOG
+#endif
 
 enum StatusFlag : uint8_t
 {
@@ -87,10 +92,9 @@ void CPU6502::PowerOn()
     m_stack = 0xFD;
     m_flags = 0x34;
     
-    // set pc to contents of reset vector
-    uint8_t resetVectorLow = m_bus.cpuRead(0xFFFC);
-    uint8_t resetVectorHigh = m_bus.cpuRead(0xFFFD);
-    m_pc = uint16FromRegisterPair(resetVectorHigh, resetVectorLow);
+    uint8_t resetAddressL = m_bus.cpuRead(0xFFFC);
+    uint8_t resetAddressH = m_bus.cpuRead(0xFFFD);
+    m_pc = uint16FromRegisterPair(resetAddressH, resetAddressL);
     
     m_instructionCounter = 0;
     m_instructionCycles = 0;
@@ -105,10 +109,9 @@ void CPU6502::Reset()
     m_stack -= 3;
     SetFlag(Flag_IRQDisable);
     
-    // set pc to contents of reset vector
-    uint8_t resetVectorLow = m_bus.cpuRead(0xFFFC);
-    uint8_t resetVectorHigh = m_bus.cpuRead(0xFFFD);
-    m_pc = uint16FromRegisterPair(resetVectorHigh, resetVectorLow);
+    uint8_t resetAddressL = m_bus.cpuRead(0xFFFC);
+    uint8_t resetAddressH = m_bus.cpuRead(0xFFFD);
+    m_pc = uint16FromRegisterPair(resetAddressH, resetAddressL);
     
     m_instructionCounter = 0;
     m_instructionCycles = 0;
@@ -117,16 +120,61 @@ void CPU6502::Reset()
     m_addressBusH = 0;
     m_addressBusL = 0;
 }
+
+void CPU6502::SetPC(uint16_t pc)
+{
+    m_pc = pc;
+}
+
+#ifdef EMULATION_LOG
+int LinePosition = 0;
+char LineBuffer[512];
+#endif
+
+uint8_t CPU6502::programCounterByteFetch()
+{
+    uint8_t byte = m_bus.cpuRead(m_pc++);
+    
+#ifdef EMULATION_LOG
+    LinePosition += sprintf(&LineBuffer[LinePosition], " %2X", byte);
+#endif
+    
+    return byte;
+}
     
 void CPU6502::Tick()
 {
     if(m_instructionCounter == 0)
     {
+#ifdef EMULATION_LOG
+        if(m_instructionCycles > 0)
+        {
+            // Finalize old logging
+            while(LinePosition < 16)
+            {
+                LinePosition += sprintf(&LineBuffer[LinePosition], " ");
+            }
+            CPUInstruction& instruction = m_Instructions[m_opCode];
+            LinePosition += sprintf(&LineBuffer[LinePosition], "  %s %s", instruction.m_opStr ? instruction.m_opStr : "", instruction.m_opAddressModeStr ? instruction.m_opAddressModeStr : "");
+            while(LinePosition < 40)
+            {
+                LinePosition += sprintf(&LineBuffer[LinePosition], " ");
+            }
+            LinePosition += sprintf(&LineBuffer[LinePosition], "A:%02X X:%02X Y:%02X P:%02X SP:%02X", m_a, m_x, m_y, m_flags, m_stack);
+        
+            LineBuffer[LinePosition] = 0;
+            printf("%s", LineBuffer);
+        }
+
+        // begin log of new instruction
+        LinePosition = 0;
+        LinePosition += sprintf(&LineBuffer[LinePosition], "\n%4X ", m_pc);
+#endif
         m_dataBus = 0;
         m_addressBusH = 0;
         m_addressBusL = 0;
         
-        m_dataBus = m_opCode = m_bus.cpuRead(m_pc++);
+        m_dataBus = m_opCode = programCounterByteFetch();
         m_instructionCounter = m_instructionCycles = m_Instructions[m_opCode].m_cycles;
     }
     else
@@ -268,7 +316,7 @@ void CPU6502::InitInstructions()
     m_Instructions[0xFE].m_cycles = 7;
     
 #if DEBUG
-    // implemented and duplicate instruction set
+    // implemented and duplicate instruction set checks
     int implementedInstructions = 0;
     for(uint32_t i = 0;i < 256;++i)
     {
@@ -297,8 +345,13 @@ void CPU6502::InitInstructions()
 void CPU6502::ERROR(uint8_t Tn)
 {
 #if DEBUG
+    #ifdef EMULATION_LOG
+        LineBuffer[LinePosition] = 0;
+        printf("%s", LineBuffer);
+    #endif
+    
     CPUInstruction& instruction = m_Instructions[m_opCode];
-    printf("Halted on instruction Tn=%d opCode=0x%02X %s %s\n", Tn, m_opCode, instruction.m_opStr, instruction.m_opAddressModeStr);
+    printf("  Halted on instruction Tn=%d opCode=0x%02X %s %s\n", Tn, m_opCode, instruction.m_opStr, instruction.m_opAddressModeStr);
     *(volatile char*)(0) = 65 | 02;
 #else
     NOP(Tn);
@@ -329,6 +382,15 @@ void CPU6502::LSR(uint8_t& cpuReg)
     ConditionalSetFlag(Flag_Zero, cpuReg == 0);
 }
 
+void CPU6502::ROL(uint8_t& cpuReg)
+{
+
+}
+
+void CPU6502::ROR(uint8_t& cpuReg)
+{
+
+}
 
 //
 // single byte 2 cycle instructions
@@ -419,7 +481,7 @@ void CPU6502::ReadModifyWrite_zpg(uint8_t Tn)
 {
     if(Tn == 1)
     {
-        m_dataBus = m_bus.cpuRead(m_pc++);
+        m_dataBus = programCounterByteFetch();
     }
     else if(Tn == 2)
     {
@@ -447,12 +509,12 @@ void CPU6502::ReadModifyWrite_abs(uint8_t Tn)
 {
     if(Tn == 1)
     {
-        m_dataBus = m_bus.cpuRead(m_pc++);
+        m_dataBus = programCounterByteFetch();
     }
     else if(Tn == 2)
     {
         m_addressBusL = m_dataBus;
-        m_dataBus = m_bus.cpuRead(m_pc++);
+        m_dataBus = programCounterByteFetch();
     }
     else if(Tn == 3)
     {
@@ -478,7 +540,7 @@ void CPU6502::ReadModifyWrite_zpgX(uint8_t Tn)
 {
     if(Tn == 1)
     {
-        m_dataBus = m_bus.cpuRead(m_pc++);
+        m_dataBus = programCounterByteFetch();
     }
     else if(Tn == 2)
     {
@@ -508,13 +570,13 @@ void CPU6502::ReadModifyWrite_absX(uint8_t Tn)
 {
     if(Tn == 1)
     {
-        m_dataBus = m_bus.cpuRead(m_pc++);
+        m_dataBus = programCounterByteFetch();
     }
     else if(Tn == 2)
     {
         m_addressBusH = 0;
         m_addressBusL = m_dataBus;
-        m_dataBus = m_bus.cpuRead(m_pc++);
+        m_dataBus = programCounterByteFetch();
     }
     else if(Tn == 3)
     {

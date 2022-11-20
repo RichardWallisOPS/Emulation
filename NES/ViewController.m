@@ -33,19 +33,7 @@
         [self.view addSubview:self.metalView];
         self.metalView.frame = self.view.frame;
         
-        // TMP use passed in file for cart
-        // TODO better file selection
-        NSProcessInfo* process = [NSProcessInfo processInfo];
-        NSArray* arguments = [process arguments];
-        
-        NSString* path = arguments[1];
-        
-        NSURL* gamePakURL = [[NSURL alloc] initFileURLWithPath:path isDirectory:NO];
-        
-        NSError* pError = nil;
-        NSData* pakData = [NSData dataWithContentsOfURL:gamePakURL options:0 error:&pError];
-
-        self.renderer = [[MetalRenderer alloc] initWithView:self.metalView gamePakData:pakData];
+        self.renderer = [[MetalRenderer alloc] initWithView:self.metalView];
         self.metalView.delegate = self.renderer;
         
 #if DEBUG

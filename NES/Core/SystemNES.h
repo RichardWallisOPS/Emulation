@@ -35,6 +35,9 @@ public:
     virtual uint8_t ppuRead(uint16_t address) override;
     virtual void ppuWrite(uint16_t address, uint8_t byte) override;
 
+    // Debug
+    void SetCPUProgramCounter(uint16_t pc);
+
 private:
     bool        m_bPowerOn;
     uint64_t    m_cycleCount;

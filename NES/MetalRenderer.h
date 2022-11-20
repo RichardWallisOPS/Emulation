@@ -15,7 +15,7 @@
 @property (nonatomic,readonly) id<MTLDevice> CurrentDevice;
 
 // Initialisation
-- (instancetype) initWithView:(MTKView*)metalView gamePakData:(NSData*)pakData;
+- (instancetype) initWithView:(MTKView*)metalView;
 
 // Global Access
 + (MetalRenderer*) GetRenderer;

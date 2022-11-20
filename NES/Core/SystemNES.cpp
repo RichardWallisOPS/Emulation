@@ -15,9 +15,10 @@
 // TODO Confirm cold / reset values across System / CPU / APU
 
 // NEXT TASKs:
-// 1) Implement instructions: finish inc's, then simple 2 byte ones. 3 byte, 4 byte etc
-// 2) Load a cartridge and see the errors fly in the instruction error trap
-// 3) Implement any missing ones that trap
+// 1) Implement instructions
+// 2) TODO handle interrupts... IRQ NMI
+// 3) Load a cartridge and see the errors fly in the instruction error trap
+// 4) Implement any missing ones that trap
 
 
 #include "SystemNES.h"
@@ -41,15 +42,26 @@ SystemNES::~SystemNES()
 
 void SystemNES::PowerOn()
 {
+    m_cycleCount = 0;
+    
     m_ppu.PowerOn();
     m_cpu.PowerOn();
-    m_bPowerOn = true;
     
     memset(m_ram, 0x00, nRamSize);
     
     // TODO apu registers on power on
     memset(m_apuRegisters, 0x00, nAPURegisterCount);
+    
+    m_bPowerOn = true;
 }
+
+#if DEBUG
+void SystemNES::SetCPUProgramCounter(uint16_t pc)
+{
+    m_cpu.SetPC(pc);
+}
+#endif
+
 
 void SystemNES::Reset()
 {
@@ -67,6 +79,7 @@ void SystemNES::Reset()
 void SystemNES::EjectCartridge()
 {
     m_bPowerOn = false;
+    
      if(m_pCart != nullptr)
     {
         delete m_pCart;
@@ -97,7 +110,6 @@ bool SystemNES::InsertCartridge(void const* pData, uint32_t dataSize)
     }
         
     uint8_t const* pPakBytes = (uint8_t const*)pData;
-    
     iNesheader const* pHeader = (iNesheader const*)pPakBytes;
     uint8_t const* pCartData = pPakBytes + sizeof(iNesheader);
     

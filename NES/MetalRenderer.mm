@@ -20,20 +20,19 @@
 @property (nonatomic,readwrite) id<MTLTexture> emulationOutput;
 
 @end
-
-Vertex g_quadVerts[] = {    {{-1.f,-1.f,0.f,1.f},   {0.f,1.f}},
-                            {{1.f,1.f,0.f,1.f},     {1.f,0.f}},
-                            {{-1.f,1.f,0.f,1.f},    {0.f,0.f}},
-
-                            {{-1.f,-1.f,0.f,1.f},   {0.f,1.f}},
-                            {{1.f,-1.f,0.f,1.f},    {1.f,1.f}},
-                            {{1.f,1.f,0.f,1.f},     {1.f,0.f}} };
                             
 static __weak MetalRenderer* theRenderer;
 
-SystemNES NESConsole;
-
 @implementation MetalRenderer
+
+Vertex const g_quadVerts[] = {  {{-1.f,-1.f,0.f,1.f},   {0.f,1.f}},
+                                {{1.f,1.f,0.f,1.f},     {1.f,0.f}},
+                                {{-1.f,1.f,0.f,1.f},    {0.f,0.f}},
+                                {{-1.f,-1.f,0.f,1.f},   {0.f,1.f}},
+                                {{1.f,-1.f,0.f,1.f},    {1.f,1.f}},
+                                {{1.f,1.f,0.f,1.f},     {1.f,0.f}} };
+
+SystemNES g_NESConsole;
 
 + (MetalRenderer*) GetRenderer
 {
@@ -45,7 +44,7 @@ SystemNES NESConsole;
     return self.device;
 }
 
-- (instancetype) initWithView:(MTKView*)metalView gamePakData:(NSData*)pakData
+- (instancetype) initWithView:(MTKView*)metalView
 {
     self = [super init];
     
@@ -90,13 +89,35 @@ SystemNES NESConsole;
     
         self.pipelineEmulationOutputToFrameBufferTexture = [self.device newRenderPipelineStateWithDescriptor:pipelineEmulationOutputToFrameBufferTextureDesc error:nil];
         
-        if(NESConsole.InsertCartridge(pakData.bytes, (uint32_t)pakData.length))
         {
-            NESConsole.PowerOn();
-        }
-        else
-        {
-            NSLog(@"Insert Cartridge failed!!!");
+            // TMP use passed in file for cart
+            // TODO better file selection
+            NSProcessInfo* process = [NSProcessInfo processInfo];
+            NSArray* arguments = [process arguments];
+            
+            NSString* path = arguments[1];
+            
+            NSLog(@"Trying to load cart : %@", path);
+            
+            NSURL* gamePakURL = [[NSURL alloc] initFileURLWithPath:path isDirectory:NO];
+            
+            NSError* pError = nil;
+            NSData* pakData = [NSData dataWithContentsOfURL:gamePakURL options:0 error:&pError];
+            
+            if(g_NESConsole.InsertCartridge(pakData.bytes, (uint32_t)pakData.length))
+            {
+                g_NESConsole.PowerOn();
+                
+                // Set some values for debug test cart
+                if([path containsString:@"nestest"])
+                {
+                    g_NESConsole.SetCPUProgramCounter(0xC000);
+                }
+            }
+            else
+            {
+                NSLog(@"Insert Cartridge failed!!!");
+            }
         }
     }
     
@@ -110,14 +131,26 @@ SystemNES NESConsole;
 
 - (void) drawInMTKView:(MTKView*)view
 {
-    // TODO Better timing
-    const size_t nNumTicksPerFrame = 89341;
-    for(size_t i = 0;i < nNumTicksPerFrame;++i)
+    // 1) Not a good way of doing this - move this tick logic into a different thread
+    //  1.1) Maybe timed or maybe do the ticks as fast as possible?
+    // 2) After the set number of ticks, waits on a conditional variables until the frame has been consumed
+    //  2.1) This function signals the conditional variable for that thread to kick off again
+    //  2.2) This function just then copies the frame data into this texture separately
+    
+    // 0) on drawInMTKView: called
+    // 1) Make sure PPU frame generated from other thread
+    // 2) Copy PPU frame data into this texture/buffer
+    // 3) Signal SystemNES.Tick() thread to continue executation
+    // 4) SystemNES.Tick() will generate next frame then wait for this consumer
+    // 5) SystemNES.Tick() - maybe call all the ticks as fast as possible or time them
+    //  5.1) Make this an option
+    const size_t nNumPPUTicksPerFrame = 89342;
+    for(size_t i = 0;i < nNumPPUTicksPerFrame;++i)
     {
-        NESConsole.Tick();
+        g_NESConsole.Tick();
     }
     
-    // TODO Test data only
+    // TODO This is test data only - read from NES PPU
     {
         // Write some test data
         uint32_t width = (uint32_t)self.emulationOutput.width;

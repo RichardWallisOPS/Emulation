@@ -17,6 +17,7 @@
 // Instruction cycle Tn states taken from 6502 data sheet
 // Address bus and data bus values try to follow the rules for these states
 
+
 class CPU6502
 {
 public:
@@ -26,6 +27,9 @@ public:
     void PowerOn();
     void Reset();
     void Tick();
+    
+    // Debug
+    void SetPC(uint16_t pc);
     
 private:
 
@@ -72,8 +76,10 @@ private:
     void InitInstructions();
     void ERROR(uint8_t Tn);
     
+    uint8_t programCounterByteFetch();
+    
     // Generics - same functionality but different registers or current memory bus
-    void ASL(uint8_t& cpuReg); void LSR(uint8_t& cpuReg);
+    void ASL(uint8_t& cpuReg); void LSR(uint8_t& cpuReg); void ROL(uint8_t& cpuReg); void ROR(uint8_t& cpuReg);
     
     // 1) Single byte instructions
     void NOP(uint8_t Tn); void Accum_ASL(uint8_t Tn); void Accum_LSR(uint8_t Tn); void SEI(uint8_t Tn); void CLD(uint8_t Tn);
