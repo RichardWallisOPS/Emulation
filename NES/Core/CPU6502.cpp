@@ -215,12 +215,9 @@ bool CPU6502::ERROR(uint8_t Tn)
     CPUInstruction& instruction = m_Instructions[m_opCode];
     printf("  Halted on instruction Tn=%d opCode=0x%02X %s %s\n", Tn, m_opCode, instruction.m_opStr, instruction.m_opAddressModeStr);
     *(volatile char*)(0) = 65 | 02;
-    
-    return false;
-    
-#else
-    return NOP(Tn);
 #endif
+    
+    return NOP(Tn);
 }
 
 //
@@ -332,6 +329,15 @@ bool CPU6502::SEI(uint8_t Tn)
     return Tn == 1;
 }
 
+bool CPU6502::SEC(uint8_t Tn)
+{
+    if(Tn == 1)
+    {
+        SetFlag(Flag_Carry);
+    }
+    return Tn == 1;
+}
+
 bool CPU6502::CLD(uint8_t Tn)
 {
     if(Tn == 1)
@@ -340,6 +346,99 @@ bool CPU6502::CLD(uint8_t Tn)
     }
     return Tn == 1;
 }
+
+bool CPU6502::CLC(uint8_t Tn)
+{
+    if(Tn == 1)
+    {
+        ClearFlag(Flag_Carry);
+    }
+    return Tn == 1;
+}
+
+bool CPU6502::CLI(uint8_t Tn)
+{
+    if(Tn == 1)
+    {
+        ClearFlag(Flag_IRQDisable);
+    }
+    return Tn == 1;
+}
+
+bool CPU6502::CLV(uint8_t Tn)
+{
+    if(Tn == 1)
+    {
+        ClearFlag(Flag_Overflow);
+    }
+    return Tn == 1;
+}
+
+bool CPU6502::TAX(uint8_t Tn)
+{
+    if(Tn == 1)
+    {
+        m_x = m_a;
+        ConditionalSetFlag(Flag_Negative, (m_x & (1 << 7)) != 0);
+        ConditionalSetFlag(Flag_Zero, m_x == 0);
+    }
+    return Tn == 1;
+}
+
+bool CPU6502::TAY(uint8_t Tn)
+{
+    if(Tn == 1)
+    {
+        m_y = m_a;
+        ConditionalSetFlag(Flag_Negative, (m_y & (1 << 7)) != 0);
+        ConditionalSetFlag(Flag_Zero, m_y == 0);
+    }
+    return Tn == 1;
+}
+
+bool CPU6502::TXA(uint8_t Tn)
+{
+    if(Tn == 1)
+    {
+        m_a = m_x;
+        ConditionalSetFlag(Flag_Negative, (m_a & (1 << 7)) != 0);
+        ConditionalSetFlag(Flag_Zero, m_a == 0);
+    }
+    return Tn == 1;
+}
+
+bool CPU6502::TYA(uint8_t Tn)
+{
+    if(Tn == 1)
+    {
+        m_a = m_y;
+        ConditionalSetFlag(Flag_Negative, (m_a & (1 << 7)) != 0);
+        ConditionalSetFlag(Flag_Zero, m_a == 0);
+    }
+    return Tn == 1;
+}
+
+bool CPU6502::TSX(uint8_t Tn)
+{
+    if(Tn == 1)
+    {
+        m_x = m_stack;
+        ConditionalSetFlag(Flag_Negative, (m_x & (1 << 7)) != 0);
+        ConditionalSetFlag(Flag_Zero, m_x == 0);
+    }
+    return Tn == 1;
+}
+
+bool CPU6502::TXS(uint8_t Tn)
+{
+    if(Tn == 1)
+    {
+        m_stack = m_x;
+        // no flag changes
+    }
+    return Tn == 1;
+}
+
 
 //
 // ReadModifyWrite operations

@@ -8,6 +8,7 @@
 
 #include "CPU6502.h"
 #include <stdio.h>
+#include <string.h>
 
 void CPU6502::InitInstructions()
 {
@@ -34,6 +35,12 @@ void CPU6502::InitInstructions()
     m_Instructions[0x16].m_opStr = "ASL";
     m_Instructions[0x16].m_opAddressModeStr = "zpg,X";
     m_Instructions[0x16].m_cycles = 6;
+    
+    m_Instructions[0x18].m_opOrAddrMode = &CPU6502::CLC;
+    m_Instructions[0x18].m_operation = nullptr;
+    m_Instructions[0x18].m_opStr = "CLC";
+    m_Instructions[0x18].m_opAddressModeStr = "";
+    m_Instructions[0x18].m_cycles = 2;
 
     m_Instructions[0x1E].m_opOrAddrMode = &CPU6502::ReadModifyWrite_absX;
     m_Instructions[0x1E].m_operation = &CPU6502::RMW_ASL;
@@ -65,6 +72,12 @@ void CPU6502::InitInstructions()
     m_Instructions[0x36].m_opAddressModeStr = "zpg,X";
     m_Instructions[0x36].m_cycles = 6;
     
+    m_Instructions[0x38].m_opOrAddrMode = &CPU6502::SEC;
+    m_Instructions[0x38].m_operation = nullptr;
+    m_Instructions[0x38].m_opStr = "SEC";
+    m_Instructions[0x38].m_opAddressModeStr = "";
+    m_Instructions[0x38].m_cycles = 2;
+    
     m_Instructions[0x3E].m_opOrAddrMode = &CPU6502::ReadModifyWrite_absX;
     m_Instructions[0x3E].m_operation = &CPU6502::RMW_ROL;
     m_Instructions[0x3E].m_opStr = "ROL";
@@ -94,6 +107,12 @@ void CPU6502::InitInstructions()
     m_Instructions[0x56].m_opStr = "LSR";
     m_Instructions[0x56].m_opAddressModeStr = "zpg,X";
     m_Instructions[0x56].m_cycles = 6;
+    
+    m_Instructions[0x58].m_opOrAddrMode = &CPU6502::CLI;
+    m_Instructions[0x58].m_operation = nullptr;
+    m_Instructions[0x58].m_opStr = "CLI";
+    m_Instructions[0x58].m_opAddressModeStr = "";
+    m_Instructions[0x58].m_cycles = 2;
     
     m_Instructions[0x5E].m_opOrAddrMode = &CPU6502::ReadModifyWrite_absX;
     m_Instructions[0x5E].m_operation = &CPU6502::RMW_LSR;
@@ -136,6 +155,48 @@ void CPU6502::InitInstructions()
     m_Instructions[0x7E].m_opStr = "ROR";
     m_Instructions[0x7E].m_opAddressModeStr = "abs,X";
     m_Instructions[0x7E].m_cycles = 7;
+    
+    m_Instructions[0x8A].m_opOrAddrMode = &CPU6502::TXA;
+    m_Instructions[0x8A].m_operation = nullptr;
+    m_Instructions[0x8A].m_opStr = "TXA";
+    m_Instructions[0x8A].m_opAddressModeStr = "";
+    m_Instructions[0x8A].m_cycles = 2;
+    
+    m_Instructions[0x98].m_opOrAddrMode = &CPU6502::TYA;
+    m_Instructions[0x98].m_operation = nullptr;
+    m_Instructions[0x98].m_opStr = "TYA";
+    m_Instructions[0x98].m_opAddressModeStr = "";
+    m_Instructions[0x98].m_cycles = 2;
+    
+    m_Instructions[0x9A].m_opOrAddrMode = &CPU6502::TXS;
+    m_Instructions[0x9A].m_operation = nullptr;
+    m_Instructions[0x9A].m_opStr = "TXS";
+    m_Instructions[0x9A].m_opAddressModeStr = "";
+    m_Instructions[0x9A].m_cycles = 2;
+    
+    m_Instructions[0xAA].m_opOrAddrMode = &CPU6502::TAX;
+    m_Instructions[0xAA].m_operation = nullptr;
+    m_Instructions[0xAA].m_opStr = "TAX";
+    m_Instructions[0xAA].m_opAddressModeStr = "";
+    m_Instructions[0xAA].m_cycles = 2;
+    
+    m_Instructions[0xA8].m_opOrAddrMode = &CPU6502::TAY;
+    m_Instructions[0xA8].m_operation = nullptr;
+    m_Instructions[0xA8].m_opStr = "TAY";
+    m_Instructions[0xA8].m_opAddressModeStr = "";
+    m_Instructions[0xA8].m_cycles = 2;
+    
+    m_Instructions[0xBA].m_opOrAddrMode = &CPU6502::TSX;
+    m_Instructions[0xBA].m_operation = nullptr;
+    m_Instructions[0xBA].m_opStr = "TSX";
+    m_Instructions[0xBA].m_opAddressModeStr = "";
+    m_Instructions[0xBA].m_cycles = 2;
+    
+    m_Instructions[0xB8].m_opOrAddrMode = &CPU6502::CLV;
+    m_Instructions[0xB8].m_operation = nullptr;
+    m_Instructions[0xB8].m_opStr = "CLV";
+    m_Instructions[0xB8].m_opAddressModeStr = "";
+    m_Instructions[0xB8].m_cycles = 2;
     
     m_Instructions[0xC6].m_opOrAddrMode = &CPU6502::ReadModifyWrite_zpg;
     m_Instructions[0xC6].m_operation = &CPU6502::RMW_DEC;
@@ -191,6 +252,12 @@ void CPU6502::InitInstructions()
     m_Instructions[0xF6].m_opAddressModeStr = "zpg,X";
     m_Instructions[0xF6].m_cycles = 6;
     
+    m_Instructions[0xF8].m_opOrAddrMode = &CPU6502::ERROR;
+    m_Instructions[0xF8].m_operation = nullptr;
+    m_Instructions[0xF8].m_opStr = "SED";
+    m_Instructions[0xF8].m_opAddressModeStr = "";
+    m_Instructions[0xF8].m_cycles = 2;
+    
     m_Instructions[0xFE].m_opOrAddrMode = &CPU6502::ReadModifyWrite_absX;
     m_Instructions[0xFE].m_operation = &CPU6502::RMW_INC;
     m_Instructions[0xFE].m_opStr = "INC";
@@ -200,6 +267,7 @@ void CPU6502::InitInstructions()
 #if DEBUG
     // implemented and duplicate instruction set checks
     int implementedInstructions = 0;
+    int InstructinsMappedToError = 0;
     for(uint32_t i = 0;i < 256;++i)
     {
         if(m_Instructions[i].m_opOrAddrMode != &CPU6502::ERROR)
@@ -219,7 +287,11 @@ void CPU6502::InitInstructions()
                 }
             }
         }
+        else if(strcmp(m_Instructions[i].m_opStr, "UNIMPLEMENTED") != 0)
+        {
+            ++InstructinsMappedToError;
+        }
     }
-    printf("6502 CPU Startup check: %d/130 [256] instructions implemented\n", implementedInstructions);
+    printf("6502 CPU Startup check: %d/130/256 instructions implemented, %d/130/256 Mapped to error, total %d/130/256\n", implementedInstructions, InstructinsMappedToError, implementedInstructions + InstructinsMappedToError);
 #endif
 }
