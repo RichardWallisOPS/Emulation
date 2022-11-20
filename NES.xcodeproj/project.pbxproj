@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		84907F3D20D902CD005E174C /* shaders.metal in Sources */ = {isa = PBXBuildFile; fileRef = 84907F3C20D902CD005E174C /* shaders.metal */; };
+		A1526480292A9DD60015068B /* CPU6502_InstructionDefTable.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A152647F292A9DD60015068B /* CPU6502_InstructionDefTable.cpp */; };
 		A17210F329241C400055A57A /* SystemNES.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A17210F129241C400055A57A /* SystemNES.cpp */; };
 		A17210F829241DB60055A57A /* CPU6502.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A17210F629241DB60055A57A /* CPU6502.cpp */; };
 		A172110D292424E50055A57A /* PPUNES.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A172110B292424E50055A57A /* PPUNES.cpp */; };
@@ -22,6 +23,7 @@
 
 /* Begin PBXFileReference section */
 		84907F3C20D902CD005E174C /* shaders.metal */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.metal; path = shaders.metal; sourceTree = "<group>"; };
+		A152647F292A9DD60015068B /* CPU6502_InstructionDefTable.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = CPU6502_InstructionDefTable.cpp; sourceTree = "<group>"; };
 		A1718B462922D7B8007BA5CD /* RenderDefs.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = RenderDefs.h; sourceTree = "<group>"; };
 		A17210F129241C400055A57A /* SystemNES.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = SystemNES.cpp; sourceTree = "<group>"; };
 		A17210F229241C400055A57A /* SystemNES.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = SystemNES.h; sourceTree = "<group>"; };
@@ -75,6 +77,7 @@
 				A17210F129241C400055A57A /* SystemNES.cpp */,
 				A17210F729241DB60055A57A /* CPU6502.h */,
 				A17210F629241DB60055A57A /* CPU6502.cpp */,
+				A152647F292A9DD60015068B /* CPU6502_InstructionDefTable.cpp */,
 				A172110C292424E50055A57A /* PPUNES.h */,
 				A172110B292424E50055A57A /* PPUNES.cpp */,
 				A1721113292427240055A57A /* Cartridge.h */,
@@ -196,6 +199,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				A1ED07801DDBA72C00697B8C /* MetalRenderer.mm in Sources */,
+				A1526480292A9DD60015068B /* CPU6502_InstructionDefTable.cpp in Sources */,
 				A17210F329241C400055A57A /* SystemNES.cpp in Sources */,
 				A1D57EF31DDB715200CA09B7 /* ViewController.m in Sources */,
 				A1D57EF01DDB715200CA09B7 /* main.m in Sources */,
