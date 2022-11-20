@@ -144,10 +144,17 @@ uint8_t CPU6502::programCounterByteFetch()
     
 void CPU6502::Tick()
 {
-    bool bInstructionComplete = false;
+    bool bInstructionTStatesCompleted = false;
     
     if(m_instructionCycle == 0)
     {
+        // Some instructions perform final executation during next op code fetch
+        // Allow executation to occur during this tick but use max Tn value so they know
+        if(m_tickCount > 0)
+        {
+            (this->*(m_Instructions[m_opCode].m_opOrAddrMode))(0xFF);
+        }
+    
 #ifdef EMULATION_LOG
         if(m_tickCount > 0)
         {
@@ -182,10 +189,10 @@ void CPU6502::Tick()
     else
     {
         // Tn == 0 (opCode fetch) should have no processing for any function
-        bInstructionComplete = (this->*(m_Instructions[m_opCode].m_opOrAddrMode))(m_instructionCycle);
+        bInstructionTStatesCompleted = (this->*(m_Instructions[m_opCode].m_opOrAddrMode))(m_instructionCycle);
     }
     
-    if(bInstructionComplete)
+    if(bInstructionTStatesCompleted)
     {
 #if DEBUG
         // check we have executed the correct number of cycles for an instruction

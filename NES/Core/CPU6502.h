@@ -89,11 +89,26 @@ private:
     bool TAX(uint8_t Tn); bool TAY(uint8_t Tn); bool TXA(uint8_t Tn); bool TYA(uint8_t Tn); bool TSX(uint8_t Tn); bool TXS(uint8_t Tn);
     bool INX(uint8_t Tn); bool INY(uint8_t Tn); bool DEX(uint8_t Tn); bool DEY(uint8_t Tn);
     
+    // 2) Internal executation on Memory Data
+    // Note: these execute their instruction on next op code fetch
+    // We could cheat and do it on their final Tn clock but will try not to
+    
+    // 3) Store
+    // Instructions
+//    void STA(uint8_t Tn); void STX(uint8_t Tn); void STY(uint8_t Tn);
+//    // Address Modes
+//    bool Store_zpg(uint8_t Tn); bool Store_abs(uint8_t Tn);
+//    bool Store_IndirectX(uint8_t Tn); bool Store_IndirectY(uint8_t Tn);
+//    bool Store_AbsoluteX(uint8_t Tn); bool Store_AbsoluteY(uint8_t Tn);
+//    bool Store_zpgX(uint8_t Tn); bool Store_zpgY(uint8_t Tn);
+    
     // 4) Read Modify Write
     // Instructions
     void RMW_ASL(uint8_t Tn); void RMW_DEC(uint8_t Tn); void RMW_INC(uint8_t Tn); void RMW_LSR(uint8_t Tn); void RMW_ROL(uint8_t Tn); void RMW_ROR(uint8_t Tn);
     // Address Modes
     bool ReadModifyWrite_zpg(uint8_t Tn); bool ReadModifyWrite_abs(uint8_t Tn); bool ReadModifyWrite_zpgX(uint8_t Tn); bool ReadModifyWrite_absX(uint8_t Tn);
+    
+    // 5) Others
 };
 
 #endif /* CPU6502_h */
