@@ -382,14 +382,35 @@ void CPU6502::LSR(uint8_t& cpuReg)
     ConditionalSetFlag(Flag_Zero, cpuReg == 0);
 }
 
+// Rotate one bit left
 void CPU6502::ROL(uint8_t& cpuReg)
 {
-
+    bool carryWasSet = TestFlag(Flag_Carry);
+    ConditionalSetFlag(Flag_Carry, (cpuReg & (1 << 7)) != 0);
+    cpuReg <<= 1;
+    if(carryWasSet)
+    {
+        cpuReg |= 1 << 0;
+    }
+    ConditionalSetFlag(Flag_Negative, (cpuReg & (1 << 7)) != 0);
+    ConditionalSetFlag(Flag_Zero, cpuReg == 0);
 }
 
+// Rotate one bit right
 void CPU6502::ROR(uint8_t& cpuReg)
 {
-
+    // carry into bit 7
+    // bit one into carry
+    bool bit0WasSet = (cpuReg & (1 << 0)) != 0;
+    bool carryWasSet = TestFlag(Flag_Carry);
+    cpuReg >>= 1;
+    if(carryWasSet)
+    {
+        cpuReg |= 1 << 7;
+    }
+    ConditionalSetFlag(Flag_Carry, bit0WasSet);
+    ConditionalSetFlag(Flag_Negative, (cpuReg & (1 << 7)) != 0);
+    ConditionalSetFlag(Flag_Zero, cpuReg == 0);
 }
 
 //
@@ -417,6 +438,22 @@ void CPU6502::Accum_ASL(uint8_t Tn)
     if(Tn == 1)
     {
         ASL(m_a);
+    }
+}
+
+void CPU6502::Accum_ROL(uint8_t Tn)
+{
+    if(Tn == 1)
+    {
+        ROL(m_a);
+    }
+}
+
+void CPU6502::Accum_ROR(uint8_t Tn)
+{
+    if(Tn == 1)
+    {
+        ROR(m_a);
     }
 }
 
@@ -468,12 +505,12 @@ void CPU6502::RMW_LSR(uint8_t Tn)
 
 void CPU6502::RMW_ROL(uint8_t Tn)
 {
-
+    ROL(m_dataBus);
 }
 
 void CPU6502::RMW_ROR(uint8_t Tn)
 {
-
+    ROR(m_dataBus);
 }
 
 // memory location in zero page

@@ -82,7 +82,7 @@ private:
     void ASL(uint8_t& cpuReg); void LSR(uint8_t& cpuReg); void ROL(uint8_t& cpuReg); void ROR(uint8_t& cpuReg);
     
     // 1) Single byte instructions
-    void NOP(uint8_t Tn); void Accum_ASL(uint8_t Tn); void Accum_LSR(uint8_t Tn); void SEI(uint8_t Tn); void CLD(uint8_t Tn);
+    void NOP(uint8_t Tn); void Accum_ASL(uint8_t Tn); void Accum_LSR(uint8_t Tn); void Accum_ROL(uint8_t Tn); void Accum_ROR(uint8_t Tn); void SEI(uint8_t Tn); void CLD(uint8_t Tn);
     
     // 4) Read Modify Write
     // Instructions
