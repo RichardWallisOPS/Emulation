@@ -16,13 +16,13 @@
 
 enum StatusFlag : uint8_t
 {
-    Flag_Carry      = 1 << 0,
+    Flag_Carry      = 1 << 0,       // unsigned overflow / underflow
     Flag_Zero       = 1 << 1,
     Flag_IRQDisable = 1 << 2,
     Flag_Decimal    = 1 << 3,
     Flag_Break      = 1 << 4,
     Flag_Unused     = 1 << 5,
-    Flag_Overflow   = 1 << 6,
+    Flag_Overflow   = 1 << 6,       // signed overflow / underflow
     Flag_Negative   = 1 << 7
 };
 
@@ -131,7 +131,7 @@ int LinePosition = 0;
 char LineBuffer[512];
 #endif
 
-uint8_t CPU6502::programCounterByteFetch()
+uint8_t CPU6502::programCounterFetchByte()
 {
     uint8_t byte = m_bus.cpuRead(m_pc++);
     
@@ -184,7 +184,7 @@ void CPU6502::Tick()
         m_addressBusH = 0;
         m_addressBusL = 0;
         
-        m_dataBus = m_opCode = programCounterByteFetch();
+        m_dataBus = m_opCode = programCounterFetchByte();
     }
     else
     {
@@ -227,13 +227,6 @@ bool CPU6502::ERROR(uint8_t Tn)
     return NOP(Tn);
 }
 
-//
-// Generics
-// Operations that can be performed on multiple internal CPU registers
-// Caller assumer responsibility for correct cycle to call this on
-//
-
-// Athmetric Shift one bit left - high bit to carry
 void CPU6502::ASL(uint8_t& cpuReg)
 {
     ConditionalSetFlag(Flag_Carry, (cpuReg & (1 << 7)) != 0);
@@ -242,7 +235,6 @@ void CPU6502::ASL(uint8_t& cpuReg)
     ConditionalSetFlag(Flag_Zero, cpuReg == 0);
 }
 
-// Logical shift right - right bit to carry
 void CPU6502::LSR(uint8_t& cpuReg)
 {
     ClearFlag(Flag_Negative);
@@ -251,7 +243,6 @@ void CPU6502::LSR(uint8_t& cpuReg)
     ConditionalSetFlag(Flag_Zero, cpuReg == 0);
 }
 
-// Rotate one bit left
 void CPU6502::ROL(uint8_t& cpuReg)
 {
     bool carryWasSet = TestFlag(Flag_Carry);
@@ -265,7 +256,6 @@ void CPU6502::ROL(uint8_t& cpuReg)
     ConditionalSetFlag(Flag_Zero, cpuReg == 0);
 }
 
-// Rotate one bit right
 void CPU6502::ROR(uint8_t& cpuReg)
 {
     // carry into bit 7
@@ -281,10 +271,6 @@ void CPU6502::ROR(uint8_t& cpuReg)
     ConditionalSetFlag(Flag_Negative, (cpuReg & (1 << 7)) != 0);
     ConditionalSetFlag(Flag_Zero, cpuReg == 0);
 }
-
-//
-// single byte 2 cycle instructions
-//
 
 bool CPU6502::NOP(uint8_t Tn)
 {
@@ -343,6 +329,12 @@ bool CPU6502::SEC(uint8_t Tn)
         SetFlag(Flag_Carry);
     }
     return Tn == 1;
+}
+
+bool CPU6502::SED(uint8_t Tn)
+{
+    // Not implemented in NES CPU
+    return ERROR(Tn);
 }
 
 bool CPU6502::CLD(uint8_t Tn)
@@ -490,17 +482,11 @@ bool CPU6502::DEY(uint8_t Tn)
     return Tn == 1;
 }
 
-
-//
-// ReadModifyWrite operations
-//
-
 void CPU6502::RMW_ASL(uint8_t Tn)
 {
     ASL(m_dataBus);
 }
 
-// Data bus decrement - no carry
 void CPU6502::RMW_DEC(uint8_t Tn)
 {
     --m_dataBus;
@@ -531,12 +517,11 @@ void CPU6502::RMW_ROR(uint8_t Tn)
     ROR(m_dataBus);
 }
 
-// memory location in zero page
 bool CPU6502::ReadModifyWrite_zpg(uint8_t Tn)
 {
     if(Tn == 1)
     {
-        m_dataBus = programCounterByteFetch();
+        m_dataBus = programCounterFetchByte();
     }
     else if(Tn == 2)
     {
@@ -561,17 +546,16 @@ bool CPU6502::ReadModifyWrite_zpg(uint8_t Tn)
     return false;
 }
 
-// memory location at absolute address
 bool CPU6502::ReadModifyWrite_abs(uint8_t Tn)
 {
     if(Tn == 1)
     {
-        m_dataBus = programCounterByteFetch();
+        m_dataBus = programCounterFetchByte();
     }
     else if(Tn == 2)
     {
         m_addressBusL = m_dataBus;
-        m_dataBus = programCounterByteFetch();
+        m_dataBus = programCounterFetchByte();
     }
     else if(Tn == 3)
     {
@@ -594,12 +578,11 @@ bool CPU6502::ReadModifyWrite_abs(uint8_t Tn)
     return false;
 }
 
-// memory location at zero page plus x-index offset
 bool CPU6502::ReadModifyWrite_zpgX(uint8_t Tn)
 {
     if(Tn == 1)
     {
-        m_dataBus = programCounterByteFetch();
+        m_dataBus = programCounterFetchByte();
     }
     else if(Tn == 2)
     {
@@ -631,13 +614,13 @@ bool CPU6502::ReadModifyWrite_absX(uint8_t Tn)
 {
     if(Tn == 1)
     {
-        m_dataBus = programCounterByteFetch();
+        m_dataBus = programCounterFetchByte();
     }
     else if(Tn == 2)
     {
         m_addressBusH = 0;
         m_addressBusL = m_dataBus;
-        m_dataBus = programCounterByteFetch();
+        m_dataBus = programCounterFetchByte();
     }
     else if(Tn == 3)
     {
@@ -665,5 +648,79 @@ bool CPU6502::ReadModifyWrite_absX(uint8_t Tn)
         m_bus.cpuWrite(address, m_dataBus);
         return true;
     }
+    return false;
+}
+
+//void AND(uint8_t Tn); void BIT(uint8_t Tn); void CMP(uint8_t Tn); void CPX(uint8_t Tn); void CPY(uint8_t Tn);
+//void EOR(uint8_t Tn); void LDA(uint8_t Tn); void LDX(uint8_t Tn); void LDY(uint8_t Tn); void ORA(uint8_t Tn); void SBC(uint8_t Tn);
+
+void CPU6502::ADC(uint8_t Tn)
+{
+    uint8_t carry = (m_flags & Flag_Carry) != 0 ? 1 : 0;
+    uint8_t acc = m_a;
+    uint16_t result16 = (uint16_t)carry + (uint16_t)acc + (uint16_t)m_dataBus;
+    
+    m_a = m_a + carry + m_dataBus;
+    
+    ConditionalSetFlag(Flag_Zero, m_a == 0);
+    ConditionalSetFlag(Flag_Carry, result16 > 255);
+    ConditionalSetFlag(Flag_Negative, (m_a & (1 << 7)) != 0);
+    
+    bool bOverflow = (acc ^ m_a) & (m_dataBus ^ m_a) & (1 << 7);
+    ConditionalSetFlag(Flag_Overflow, bOverflow);
+}
+
+bool CPU6502::InternalExecutionMemory_imm(uint8_t Tn)
+{
+    if(Tn == 1)
+    {
+        m_dataBus = programCounterFetchByte();
+        return true;
+    }
+    else if(Tn == 0xFF)
+    {
+        (this->*(m_Instructions[m_opCode].m_operation))(Tn);
+        return true;
+    }
+    return false;
+}
+
+bool CPU6502::InternalExecutionMemory_zpg(uint8_t Tn)
+{
+    return false;
+}
+
+bool CPU6502::InternalExecutionMemory_abs(uint8_t Tn)
+{
+    return false;
+}
+
+bool CPU6502::InternalExecutionMemory_indX(uint8_t Tn)
+{
+    return false;
+}
+
+bool CPU6502::InternalExecutionMemory_indY(uint8_t)
+{
+    return false;
+}
+
+bool CPU6502::InternalExecutionMemory_absX(uint8_t)
+{
+    return false;
+}
+
+bool CPU6502::InternalExecutionMemory_absY(uint8_t)
+{
+    return false;
+}
+
+bool CPU6502::InternalExecutionMemory_zpgX(uint8_t)
+{
+    return false;
+}
+
+bool CPU6502::InternalExecutionMemory_zpgY(uint8_t)
+{
     return false;
 }

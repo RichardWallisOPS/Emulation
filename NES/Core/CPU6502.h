@@ -16,7 +16,7 @@
 
 // Instruction cycle Tn states taken from 6502 data sheet
 // Address bus and data bus values try to follow the rules for these states
-
+// No instruction implements T0 as that is the generic opCode fetch
 
 class CPU6502
 {
@@ -76,31 +76,38 @@ private:
     void InitInstructions();
     bool ERROR(uint8_t Tn);
     
-    uint8_t programCounterByteFetch();
+    uint8_t programCounterFetchByte();
+    
+    // Key:
+    // zpg = zero page
+    // abs = absolute
+    // zpgX = zero page + x
+    // absX = absolute + x (or y)
+    // indX = indirect + x
+    // return "bool" is for functions directly called for the opCode executation
+    // return "void" is for functions called from the OpCode executation i.e. an address mode
         
-    // Generics - same functionality but different registers or current memory bus
+    // Generic - same functionality but different registers or current memory bus
     void ASL(uint8_t& cpuReg); void LSR(uint8_t& cpuReg); void ROL(uint8_t& cpuReg); void ROR(uint8_t& cpuReg);
     
     // 1) Single byte instructions
     bool Accum_ASL(uint8_t Tn); bool Accum_LSR(uint8_t Tn); bool Accum_ROL(uint8_t Tn); bool Accum_ROR(uint8_t Tn);
-    bool NOP(uint8_t Tn);
-    bool SEI(uint8_t Tn); bool SEC(uint8_t Tn); //bool SED(uint8_t);
+    bool NOP(uint8_t Tn); bool SEI(uint8_t Tn); bool SEC(uint8_t Tn); bool SED(uint8_t);
     bool CLD(uint8_t Tn); bool CLC(uint8_t Tn); bool CLI(uint8_t Tn); bool CLV(uint8_t Tn);
     bool TAX(uint8_t Tn); bool TAY(uint8_t Tn); bool TXA(uint8_t Tn); bool TYA(uint8_t Tn); bool TSX(uint8_t Tn); bool TXS(uint8_t Tn);
     bool INX(uint8_t Tn); bool INY(uint8_t Tn); bool DEX(uint8_t Tn); bool DEY(uint8_t Tn);
     
-    // 2) Internal executation on Memory Data
-    // Note: these execute their instruction on next op code fetch
-    // We could cheat and do it on their final Tn clock but will try not to
+    // 2) Internal executation on Memory Data (Note: these execute their instruction on next op code fetch)
+    // Instructions
+    void ADC(uint8_t Tn); void AND(uint8_t Tn); void BIT(uint8_t Tn); void CMP(uint8_t Tn); void CPX(uint8_t Tn); void CPY(uint8_t Tn);
+    void EOR(uint8_t Tn); void LDA(uint8_t Tn); void LDX(uint8_t Tn); void LDY(uint8_t Tn); void ORA(uint8_t Tn); void SBC(uint8_t Tn);
+    // Address Modes
+    bool InternalExecutionMemory_imm(uint8_t Tn); bool InternalExecutionMemory_zpg(uint8_t Tn); bool InternalExecutionMemory_abs(uint8_t Tn);
+    bool InternalExecutionMemory_indX(uint8_t Tn); bool InternalExecutionMemory_indY(uint8_t Tn); bool InternalExecutionMemory_absX(uint8_t Tn);
+    bool InternalExecutionMemory_absY(uint8_t Tn); bool InternalExecutionMemory_zpgX(uint8_t Tn); bool InternalExecutionMemory_zpgY(uint8_t Tn);
     
     // 3) Store
-    // Instructions
-//    void STA(uint8_t Tn); void STX(uint8_t Tn); void STY(uint8_t Tn);
-//    // Address Modes
-//    bool Store_zpg(uint8_t Tn); bool Store_abs(uint8_t Tn);
-//    bool Store_IndirectX(uint8_t Tn); bool Store_IndirectY(uint8_t Tn);
-//    bool Store_AbsoluteX(uint8_t Tn); bool Store_AbsoluteY(uint8_t Tn);
-//    bool Store_zpgX(uint8_t Tn); bool Store_zpgY(uint8_t Tn);
+    // TODO
     
     // 4) Read Modify Write
     // Instructions
@@ -109,6 +116,7 @@ private:
     bool ReadModifyWrite_zpg(uint8_t Tn); bool ReadModifyWrite_abs(uint8_t Tn); bool ReadModifyWrite_zpgX(uint8_t Tn); bool ReadModifyWrite_absX(uint8_t Tn);
     
     // 5) Others
+    // TODO
 };
 
 #endif /* CPU6502_h */

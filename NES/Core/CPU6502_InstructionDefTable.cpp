@@ -276,9 +276,9 @@ void CPU6502::InitInstructions()
     m_Instructions[0xF6].m_opAddressModeStr = "zpg,X";
     m_Instructions[0xF6].m_cycles = 6;
     
-    m_Instructions[0xF8].m_opOrAddrMode = &CPU6502::ERROR;
+    m_Instructions[0xF8].m_opOrAddrMode = &CPU6502::SED;
     m_Instructions[0xF8].m_operation = nullptr;
-    m_Instructions[0xF8].m_opStr = "SED";
+    m_Instructions[0xF8].m_opStr = "SED (Not implemented in NES CPU)";
     m_Instructions[0xF8].m_opAddressModeStr = "";
     m_Instructions[0xF8].m_cycles = 2;
     
@@ -291,7 +291,6 @@ void CPU6502::InitInstructions()
 #if DEBUG
     // implemented and duplicate instruction set checks
     int implementedInstructions = 0;
-    int InstructinsMappedToError = 0;
     for(uint32_t i = 0;i < 256;++i)
     {
         if(m_Instructions[i].m_opOrAddrMode != &CPU6502::ERROR)
@@ -305,17 +304,13 @@ void CPU6502::InitInstructions()
                     if( m_Instructions[i].m_opOrAddrMode == m_Instructions[j].m_opOrAddrMode &&
                         m_Instructions[i].m_operation == m_Instructions[j].m_operation )
                     {
-                        printf("Duplicate instruction found %d vs %d!!!", i, j);
+                        printf("Duplicate instruction found %2X vs %2X!!!", i, j);
                         ERROR(0);
                     }
                 }
             }
         }
-        else if(strcmp(m_Instructions[i].m_opStr, "UNIMPLEMENTED") != 0)
-        {
-            ++InstructinsMappedToError;
-        }
     }
-    printf("6502 CPU Startup check: %d/130/256 instructions implemented, %d/130/256 Mapped to error, total %d/130/256\n", implementedInstructions, InstructinsMappedToError, implementedInstructions + InstructinsMappedToError);
+    printf("6502 CPU Startup check: %d/130/256 instructions implemented\n", implementedInstructions);
 #endif
 }
