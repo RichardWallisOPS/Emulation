@@ -652,11 +652,6 @@ bool CPU6502::ReadModifyWrite_absX(uint8_t Tn)
     return false;
 }
 
-
-// WIP
-//void CMP(uint8_t Tn); void CPX(uint8_t Tn); void CPY(uint8_t Tn);
-//void EOR(uint8_t Tn); void LDA(uint8_t Tn); void LDX(uint8_t Tn); void LDY(uint8_t Tn); void ORA(uint8_t Tn);
-
 void CPU6502::ADC(uint8_t Tn)
 {
     uint8_t u8Carry = (m_flags & Flag_Carry) != 0 ? 1 : 0;
@@ -698,6 +693,65 @@ void CPU6502::BIT(uint8_t Tn)
     ConditionalSetFlag(Flag_Zero, result == 0);
     ConditionalSetFlag(Flag_Negative, (m_dataBus & (1 << 7)) != 0);
     ConditionalSetFlag(Flag_Overflow, (m_dataBus & (1 << 6)) != 0);
+}
+
+void CPU6502::EOR(uint8_t Tn)
+{
+    m_a = m_a ^ m_dataBus;
+    ConditionalSetFlag(Flag_Zero, m_a == 0);
+    ConditionalSetFlag(Flag_Negative, (m_a & (1 << 7)) != 0);
+}
+
+void CPU6502::ORA(uint8_t Tn)
+{
+    m_a = m_a | m_dataBus;
+    ConditionalSetFlag(Flag_Zero, m_a == 0);
+    ConditionalSetFlag(Flag_Negative, (m_a & (1 << 7)) != 0);
+}
+
+void CPU6502::REG_CMP(uint8_t& cpuReg)
+{
+    int16_t result = int16_t(cpuReg) - int16_t(m_dataBus);
+    ConditionalSetFlag(Flag_Zero, result == 0);
+    ConditionalSetFlag(Flag_Negative, (result & (1 << 7)) != 0);
+    ConditionalSetFlag(Flag_Carry, result = 0 || result > 0);
+}
+
+void CPU6502::CMP(uint8_t Tn)
+{
+    REG_CMP(m_a);
+}
+
+void CPU6502::CPX(uint8_t Tn)
+{
+    REG_CMP(m_x);
+}
+
+void CPU6502::CPY(uint8_t Tn)
+{
+    REG_CMP(m_y);
+}
+
+void CPU6502::REG_LOAD(uint8_t& cpuReg)
+{
+    cpuReg = m_dataBus;
+    ConditionalSetFlag(Flag_Zero, cpuReg == 0);
+    ConditionalSetFlag(Flag_Negative, (cpuReg & (1 << 7)) != 0);
+}
+
+void CPU6502::LDA(uint8_t Tn)
+{
+    REG_LOAD(m_a);
+}
+
+void CPU6502::LDX(uint8_t Tn)
+{
+    REG_LOAD(m_x);
+}
+
+void CPU6502::LDY(uint8_t Tn)
+{
+    REG_LOAD(m_y);
 }
 
 bool CPU6502::InternalExecutionMemory_imm(uint8_t Tn)

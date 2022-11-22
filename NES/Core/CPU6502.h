@@ -17,6 +17,9 @@
 // Instruction cycle Tn states taken from 6502 data sheet
 // Address bus and data bus values try to follow the rules for these states
 // No instruction implements T0 as that is the generic opCode fetch
+// NOTE: Decimal mode is not implemented
+// https://www.masswerk.at/6502/6502_instruction_set.html
+// https://www.nesdev.org/
 
 class CPU6502
 {
@@ -88,7 +91,7 @@ private:
     // return "void" is for functions called from the OpCode executation i.e. an address mode
         
     // Generic - same functionality but different registers or current memory bus
-    void ASL(uint8_t& cpuReg); void LSR(uint8_t& cpuReg); void ROL(uint8_t& cpuReg); void ROR(uint8_t& cpuReg);
+    void ASL(uint8_t& cpuReg); void LSR(uint8_t& cpuReg); void ROL(uint8_t& cpuReg); void ROR(uint8_t& cpuReg); void REG_CMP(uint8_t& cpuReg); void REG_LOAD(uint8_t& cpuReg);
     
     // 1) Single byte instructions
     bool Accum_ASL(uint8_t Tn); bool Accum_LSR(uint8_t Tn); bool Accum_ROL(uint8_t Tn); bool Accum_ROR(uint8_t Tn);
