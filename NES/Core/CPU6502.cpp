@@ -26,7 +26,7 @@ enum StatusFlag : uint8_t
     Flag_Negative   = 1 << 7
 };
 
-// useful to get 16bit address from two 8 bit values safely
+// Useful to get 16bit address from two 8 bit values safely
 // could pass uint8_t => uint16_t but I think this is safer for that case too
 inline uint16_t uint16FromRegisterPair(uint8_t high, uint8_t low)
 {
@@ -50,6 +50,12 @@ CPU6502::CPU6502(IOBus& bus)
 , m_opCode(0)
 , m_addressBusH(0)
 , m_addressBusL(0)
+, m_baseAddressH(0)
+, m_baseAddressL(0)
+, m_indirectAddressH(0)
+, m_indirectAddressL(0)
+, m_effectiveAddressH(0)
+, m_effectiveAddressL(0)
 {
     InitInstructions();
 }
@@ -102,6 +108,12 @@ void CPU6502::PowerOn()
     m_opCode = 0;
     m_addressBusH = 0;
     m_addressBusL = 0;
+    m_baseAddressH = 0;
+    m_baseAddressL = 0;
+    m_indirectAddressH = 0;
+    m_indirectAddressL = 0;
+    m_effectiveAddressH = 0;
+    m_effectiveAddressL = 0;
 }
 
 void CPU6502::Reset()
@@ -119,6 +131,12 @@ void CPU6502::Reset()
     m_opCode = 0;
     m_addressBusH = 0;
     m_addressBusL = 0;
+    m_baseAddressH = 0;
+    m_baseAddressL = 0;
+    m_indirectAddressH = 0;
+    m_indirectAddressL = 0;
+    m_effectiveAddressH = 0;
+    m_effectiveAddressL = 0;
 }
 
 void CPU6502::SetPC(uint16_t pc)
@@ -126,13 +144,13 @@ void CPU6502::SetPC(uint16_t pc)
     m_pc = pc;
 }
 
-uint8_t CPU6502::readDataFromAddressBus()
+uint8_t CPU6502::addressBusReadByte()
 {
     uint16_t address = uint16FromRegisterPair(m_addressBusH, m_addressBusL);
     return m_bus.cpuRead(address);
 }
 
-void CPU6502::writeDataToAddressBus(uint8_t data)
+void CPU6502::addressBusWriteByte(uint8_t data)
 {
     uint16_t address = uint16FromRegisterPair(m_addressBusH, m_addressBusL);
     m_bus.cpuWrite(address, data);
@@ -144,7 +162,7 @@ const int LineBufferSize = 512;
 char LineBuffer[LineBufferSize];
 #endif
 
-uint8_t CPU6502::programCounterFetchByte()
+uint8_t CPU6502::programCounterReadByte()
 {
     uint8_t byte = m_bus.cpuRead(m_pc++);
     
@@ -196,8 +214,14 @@ void CPU6502::Tick()
         m_dataBus = 0;
         m_addressBusH = 0;
         m_addressBusL = 0;
+        m_baseAddressH = 0;
+        m_baseAddressL = 0;
+        m_indirectAddressH = 0;
+        m_indirectAddressL = 0;
+        m_effectiveAddressH = 0;
+        m_effectiveAddressL = 0;
         
-        m_dataBus = m_opCode = programCounterFetchByte();
+        m_dataBus = m_opCode = programCounterReadByte();
     }
     else
     {
@@ -534,13 +558,13 @@ bool CPU6502::ReadModifyWrite_zpg(uint8_t Tn)
 {
     if(Tn == 1)
     {
-        m_dataBus = programCounterFetchByte();
+        m_dataBus = programCounterReadByte();
     }
     else if(Tn == 2)
     {
         m_addressBusH = 0;
         m_addressBusL = m_dataBus;
-        m_dataBus = readDataFromAddressBus();
+        m_dataBus = addressBusReadByte();
     }
     else if(Tn == 3)
     {
@@ -549,7 +573,7 @@ bool CPU6502::ReadModifyWrite_zpg(uint8_t Tn)
     else if(Tn == 4)
     {
         (this->*(m_Instructions[m_opCode].m_operation))(Tn);
-        writeDataToAddressBus(m_dataBus);
+        addressBusWriteByte(m_dataBus);
         return true;
     }
     return false;
@@ -559,17 +583,17 @@ bool CPU6502::ReadModifyWrite_abs(uint8_t Tn)
 {
     if(Tn == 1)
     {
-        m_dataBus = programCounterFetchByte();
+        m_dataBus = programCounterReadByte();
     }
     else if(Tn == 2)
     {
         m_addressBusL = m_dataBus;
-        m_dataBus = programCounterFetchByte();
+        m_dataBus = programCounterReadByte();
     }
     else if(Tn == 3)
     {
         m_addressBusH = m_dataBus;
-        m_dataBus = readDataFromAddressBus();
+        m_dataBus = addressBusReadByte();
     }
     else if(Tn == 4)
     {
@@ -578,7 +602,7 @@ bool CPU6502::ReadModifyWrite_abs(uint8_t Tn)
     else if(Tn == 5)
     {
         (this->*(m_Instructions[m_opCode].m_operation))(Tn);
-        writeDataToAddressBus(m_dataBus);
+        addressBusWriteByte(m_dataBus);
         return true;
     }
     return false;
@@ -588,7 +612,7 @@ bool CPU6502::ReadModifyWrite_zpgX(uint8_t Tn)
 {
     if(Tn == 1)
     {
-        m_dataBus = programCounterFetchByte();
+        m_dataBus = programCounterReadByte();
     }
     else if(Tn == 2)
     {
@@ -598,7 +622,7 @@ bool CPU6502::ReadModifyWrite_zpgX(uint8_t Tn)
     else if(Tn == 3)
     {
         m_addressBusL += m_x;
-        m_dataBus = readDataFromAddressBus();
+        m_dataBus = addressBusReadByte();
     }
     else if(Tn == 4)
     {
@@ -607,7 +631,7 @@ bool CPU6502::ReadModifyWrite_zpgX(uint8_t Tn)
     else if(Tn == 5)
     {
         (this->*(m_Instructions[m_opCode].m_operation))(Tn);
-        writeDataToAddressBus(m_dataBus);
+        addressBusWriteByte(m_dataBus);
         return true;
     }
     return false;
@@ -617,13 +641,13 @@ bool CPU6502::ReadModifyWrite_absX(uint8_t Tn)
 {
     if(Tn == 1)
     {
-        m_dataBus = programCounterFetchByte();
+        m_dataBus = programCounterReadByte();
     }
     else if(Tn == 2)
     {
         m_addressBusH = 0;
         m_addressBusL = m_dataBus;
-        m_dataBus = programCounterFetchByte();
+        m_dataBus = programCounterReadByte();
     }
     else if(Tn == 3)
     {
@@ -636,7 +660,7 @@ bool CPU6502::ReadModifyWrite_absX(uint8_t Tn)
     }
     else if(Tn == 4)
     {
-        m_dataBus = readDataFromAddressBus();
+        m_dataBus = addressBusReadByte();
     }
     else if(Tn == 5)
     {
@@ -645,7 +669,7 @@ bool CPU6502::ReadModifyWrite_absX(uint8_t Tn)
     else if(Tn == 6)
     {
         (this->*(m_Instructions[m_opCode].m_operation))(Tn);
-        writeDataToAddressBus(m_dataBus);
+        addressBusWriteByte(m_dataBus);
         return true;
     }
     return false;
@@ -757,7 +781,7 @@ bool CPU6502::InternalExecutionMemory_imm(uint8_t Tn)
 {
     if(Tn == 1)
     {
-        m_dataBus = programCounterFetchByte();
+        m_dataBus = programCounterReadByte();
         return true;
     }
     else if(Tn == 0xFF)
@@ -772,13 +796,13 @@ bool CPU6502::InternalExecutionMemory_zpg(uint8_t Tn)
 {
     if(Tn == 1)
     {
-        m_dataBus = programCounterFetchByte();
+        m_dataBus = programCounterReadByte();
     }
     else if(Tn == 2)
     {
         m_addressBusH = 0;
         m_addressBusL = m_dataBus;
-        m_dataBus = readDataFromAddressBus();
+        m_dataBus = addressBusReadByte();
         return true;
     }
     else if(Tn == 0xFF)
@@ -791,11 +815,65 @@ bool CPU6502::InternalExecutionMemory_zpg(uint8_t Tn)
 
 bool CPU6502::InternalExecutionMemory_abs(uint8_t Tn)
 {
+    if(Tn == 1)
+    {
+        m_dataBus = programCounterReadByte();
+    }
+    else if(Tn == 2)
+    {
+        m_addressBusL = m_dataBus;
+        m_dataBus = programCounterReadByte();
+    }
+    else if(Tn == 3)
+    {
+        m_addressBusH = m_dataBus;
+        m_dataBus = addressBusReadByte();
+        return true;
+    }
+    else if(Tn == 0xFF)
+    {
+        (this->*(m_Instructions[m_opCode].m_operation))(Tn);
+        return true;
+    }
     return false;
 }
 
 bool CPU6502::InternalExecutionMemory_indX(uint8_t Tn)
 {
+    if(Tn == 1)
+    {
+        m_dataBus = programCounterReadByte();
+        m_baseAddressL = m_dataBus;
+    }
+    else if(Tn == 2)
+    {
+        m_addressBusH = 0;
+        m_addressBusL = m_baseAddressL;
+    }
+    else if(Tn == 3)
+    {
+        m_addressBusL = m_baseAddressL + m_x;
+        m_dataBus = addressBusReadByte();
+        m_effectiveAddressL = m_dataBus;
+    }
+    else if(Tn == 4)
+    {
+        m_addressBusL = m_baseAddressL + m_x + 1;
+        m_dataBus = addressBusReadByte();
+        m_effectiveAddressH = m_dataBus;
+    }
+    else if(Tn == 5)
+    {
+        m_addressBusH = m_effectiveAddressH;
+        m_addressBusL = m_effectiveAddressL;
+        m_dataBus = addressBusReadByte();
+        return true;
+    }
+    else if(Tn == 0xFF)
+    {
+        (this->*(m_Instructions[m_opCode].m_operation))(Tn);
+        return true;
+    }
     return false;
 }
 

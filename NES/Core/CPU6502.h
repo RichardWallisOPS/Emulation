@@ -15,7 +15,7 @@
 // Implementation notes:
 
 // Instruction cycle Tn states taken from 6502 data sheet
-// Address bus and data bus values try to follow the rules for these states
+// Registers, memory, address and data buses values try to follow the rules for these states
 // No instruction implements T0 as that is the generic opCode fetch
 // NOTE: Decimal mode is not implemented
 // https://www.masswerk.at/6502/6502_instruction_set.html
@@ -61,6 +61,14 @@ private:
     uint8_t m_dataBus;
     uint8_t m_addressBusH;
     uint8_t m_addressBusL;
+    
+    // Aditional address for indirect accesses - not always used even if mentioned in data sheet
+    uint8_t m_baseAddressH;
+    uint8_t m_baseAddressL;
+    uint8_t m_indirectAddressH;
+    uint8_t m_indirectAddressL;
+    uint8_t m_effectiveAddressH;
+    uint8_t m_effectiveAddressL;
 
     // Instructions
 private:
@@ -79,9 +87,9 @@ private:
     void InitInstructions();
     bool ERROR(uint8_t Tn);
     
-    uint8_t programCounterFetchByte();
-    uint8_t readDataFromAddressBus();
-    void writeDataToAddressBus(uint8_t data);
+    uint8_t programCounterReadByte();
+    uint8_t addressBusReadByte();
+    void addressBusWriteByte(uint8_t data);
     
     // Key:
     // zpg = zero page
