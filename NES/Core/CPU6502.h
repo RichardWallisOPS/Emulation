@@ -80,6 +80,8 @@ private:
     bool ERROR(uint8_t Tn);
     
     uint8_t programCounterFetchByte();
+    uint8_t readDataFromAddressBus();
+    void writeDataToAddressBus(uint8_t data);
     
     // Key:
     // zpg = zero page
