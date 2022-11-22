@@ -126,6 +126,12 @@ void CPU6502::InitInstructions()
     m_Instructions[0x66].m_opAddressModeStr = "zpg";
     m_Instructions[0x66].m_cycles = 5;
     
+    m_Instructions[0x69].m_opOrAddrMode = &CPU6502::InternalExecutionMemory_imm;
+    m_Instructions[0x69].m_operation = &CPU6502::ADC;
+    m_Instructions[0x69].m_opStr = "ADC";
+    m_Instructions[0x69].m_opAddressModeStr = "imm";
+    m_Instructions[0x69].m_cycles = 2;
+    
     m_Instructions[0x6A].m_opOrAddrMode = &CPU6502::Accum_ROR;
     m_Instructions[0x6A].m_operation = nullptr;
     m_Instructions[0x6A].m_opStr = "ROR";

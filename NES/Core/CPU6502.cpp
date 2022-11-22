@@ -128,7 +128,8 @@ void CPU6502::SetPC(uint16_t pc)
 
 #ifdef EMULATION_LOG
 int LinePosition = 0;
-char LineBuffer[512];
+const int LineBufferSize = 512;
+char LineBuffer[LineBufferSize];
 #endif
 
 uint8_t CPU6502::programCounterFetchByte()
@@ -136,7 +137,7 @@ uint8_t CPU6502::programCounterFetchByte()
     uint8_t byte = m_bus.cpuRead(m_pc++);
     
 #ifdef EMULATION_LOG
-    LinePosition += sprintf(&LineBuffer[LinePosition], " %2X", byte);
+    LinePosition += snprintf(&LineBuffer[LinePosition], LineBufferSize - LinePosition, " %2X", byte);
 #endif
     
     return byte;
@@ -161,15 +162,15 @@ void CPU6502::Tick()
             // Finalize old logging
             while(LinePosition < 16)
             {
-                LinePosition += sprintf(&LineBuffer[LinePosition], " ");
+                LinePosition += snprintf(&LineBuffer[LinePosition], LineBufferSize - LinePosition, " ");
             }
             CPUInstruction& instruction = m_Instructions[m_opCode];
-            LinePosition += sprintf(&LineBuffer[LinePosition], "  %s %s", instruction.m_opStr ? instruction.m_opStr : "", instruction.m_opAddressModeStr ? instruction.m_opAddressModeStr : "");
+            LinePosition += snprintf(&LineBuffer[LinePosition], LineBufferSize - LinePosition, "  %s %s", instruction.m_opStr ? instruction.m_opStr : "", instruction.m_opAddressModeStr ? instruction.m_opAddressModeStr : "");
             while(LinePosition < 40)
             {
-                LinePosition += sprintf(&LineBuffer[LinePosition], " ");
+                LinePosition += snprintf(&LineBuffer[LinePosition], LineBufferSize - LinePosition, " ");
             }
-            LinePosition += sprintf(&LineBuffer[LinePosition], "A:%02X X:%02X Y:%02X P:%02X SP:%02X", m_a, m_x, m_y, m_flags, m_stack);
+            LinePosition += snprintf(&LineBuffer[LinePosition], LineBufferSize - LinePosition, "A:%02X X:%02X Y:%02X P:%02X SP:%02X", m_a, m_x, m_y, m_flags, m_stack);
         
             LineBuffer[LinePosition] = 0;
             printf("%s", LineBuffer);
@@ -177,7 +178,7 @@ void CPU6502::Tick()
 
         // begin log of new instruction
         LinePosition = 0;
-        LinePosition += sprintf(&LineBuffer[LinePosition], "\n%4X ", m_pc);
+        LinePosition += snprintf(&LineBuffer[LinePosition], LineBufferSize - LinePosition, "\n%4X ", m_pc);
 #endif
 
         m_dataBus = 0;
@@ -651,23 +652,52 @@ bool CPU6502::ReadModifyWrite_absX(uint8_t Tn)
     return false;
 }
 
-//void AND(uint8_t Tn); void BIT(uint8_t Tn); void CMP(uint8_t Tn); void CPX(uint8_t Tn); void CPY(uint8_t Tn);
-//void EOR(uint8_t Tn); void LDA(uint8_t Tn); void LDX(uint8_t Tn); void LDY(uint8_t Tn); void ORA(uint8_t Tn); void SBC(uint8_t Tn);
+
+// WIP
+//void CMP(uint8_t Tn); void CPX(uint8_t Tn); void CPY(uint8_t Tn);
+//void EOR(uint8_t Tn); void LDA(uint8_t Tn); void LDX(uint8_t Tn); void LDY(uint8_t Tn); void ORA(uint8_t Tn);
 
 void CPU6502::ADC(uint8_t Tn)
 {
-    uint8_t carry = (m_flags & Flag_Carry) != 0 ? 1 : 0;
-    uint8_t acc = m_a;
-    uint16_t result16 = (uint16_t)carry + (uint16_t)acc + (uint16_t)m_dataBus;
+    uint8_t u8Carry = (m_flags & Flag_Carry) != 0 ? 1 : 0;
+    int16_t s16Result = int16_t(uint8_t(m_a)) + int16_t(uint8_t(m_dataBus)) + int16_t(uint8_t(u8Carry));
+    int16_t s8_16Result = int16_t(int8_t(m_a)) + int16_t(int8_t(m_dataBus)) + int16_t(int8_t(u8Carry));
     
-    m_a = m_a + carry + m_dataBus;
+    m_a = m_a + m_dataBus + u8Carry;
     
     ConditionalSetFlag(Flag_Zero, m_a == 0);
-    ConditionalSetFlag(Flag_Carry, result16 > 255);
+    ConditionalSetFlag(Flag_Carry, s16Result > 255);
     ConditionalSetFlag(Flag_Negative, (m_a & (1 << 7)) != 0);
+    ConditionalSetFlag(Flag_Overflow, s8_16Result > 127 || s8_16Result < -128);
+}
+
+void CPU6502::SBC(uint8_t Tn)
+{
+    uint8_t u8Carry = (m_flags & Flag_Carry) != 0 ? 1 : 0;
+    int16_t s16Result =  int16_t(m_a) - int16_t(m_dataBus) - int16_t(u8Carry);
+    int16_t s8_16Result = int16_t(int8_t(m_a)) - int16_t(int8_t(m_dataBus)) - int16_t(int8_t(u8Carry));
     
-    bool bOverflow = (acc ^ m_a) & (m_dataBus ^ m_a) & (1 << 7);
-    ConditionalSetFlag(Flag_Overflow, bOverflow);
+    m_a = m_a - m_dataBus - u8Carry;
+    
+    ConditionalSetFlag(Flag_Zero, m_a == 0);
+    ConditionalSetFlag(Flag_Carry, s16Result < 0);
+    ConditionalSetFlag(Flag_Negative, (m_a & (1 << 7)) != 0);
+    ConditionalSetFlag(Flag_Overflow, s8_16Result > 127 || s8_16Result < -128);
+}
+
+void CPU6502::AND(uint8_t Tn)
+{
+    m_a = m_a & m_dataBus;
+    ConditionalSetFlag(Flag_Zero, m_a == 0);
+    ConditionalSetFlag(Flag_Negative, (m_a & (1 << 7)) != 0);
+}
+
+void CPU6502::BIT(uint8_t Tn)
+{
+    uint8_t result = m_a & m_dataBus;
+    ConditionalSetFlag(Flag_Zero, result == 0);
+    ConditionalSetFlag(Flag_Negative, (m_dataBus & (1 << 7)) != 0);
+    ConditionalSetFlag(Flag_Overflow, (m_dataBus & (1 << 6)) != 0);
 }
 
 bool CPU6502::InternalExecutionMemory_imm(uint8_t Tn)

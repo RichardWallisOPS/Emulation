@@ -55,13 +55,10 @@ void SystemNES::PowerOn()
     m_bPowerOn = true;
 }
 
-#if DEBUG
 void SystemNES::SetCPUProgramCounter(uint16_t pc)
 {
     m_cpu.SetPC(pc);
 }
-#endif
-
 
 void SystemNES::Reset()
 {

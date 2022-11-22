@@ -97,7 +97,7 @@ SystemNES g_NESConsole;
             
             NSString* path = arguments[1];
             
-            NSLog(@"Trying to load cart : %@", path);
+            NSLog(@"Trying to load cart: %@", path);
             
             NSURL* gamePakURL = [[NSURL alloc] initFileURLWithPath:path isDirectory:NO];
             
