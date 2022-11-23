@@ -17,7 +17,7 @@
 // Instruction cycle Tn states taken from 6502 data sheet
 // Registers, memory, address and data buses values try to follow the rules for these states
 // This means some Tn operations look superfluous but this is trying to be cpu register state cycle "accurate"
-// No instruction implements T0 as that is the generic opCode fetch
+// No instruction implements T0 as that is the generic opCode fetch and is handled by the core update
 // NOTE:    Decimal mode is not implemented - it and any illegal op-codes will error in Debug and NOP in Release
 // https://www.masswerk.at/6502/6502_instruction_set.html
 // https://www.nesdev.org/
