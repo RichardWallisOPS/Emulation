@@ -120,6 +120,18 @@ void CPU6502::InitInstructions()
     m_Instructions[0x5E].m_opAddressModeStr = "abs,X";
     m_Instructions[0x5E].m_cycles = 7;
     
+    m_Instructions[0x61].m_opOrAddrMode = &CPU6502::InternalExecutionMemory_indX;
+    m_Instructions[0x61].m_operation = &CPU6502::ADC;
+    m_Instructions[0x61].m_opStr = "ADC";
+    m_Instructions[0x61].m_opAddressModeStr = "(ind,X)";
+    m_Instructions[0x61].m_cycles = 6;
+    
+    m_Instructions[0x65].m_opOrAddrMode = &CPU6502::InternalExecutionMemory_zpg;
+    m_Instructions[0x65].m_operation = &CPU6502::ADC;
+    m_Instructions[0x65].m_opStr = "ADC";
+    m_Instructions[0x65].m_opAddressModeStr = "zpg";
+    m_Instructions[0x65].m_cycles = 3;
+    
     m_Instructions[0x66].m_opOrAddrMode = &CPU6502::ReadModifyWrite_zpg;
     m_Instructions[0x66].m_operation = &CPU6502::RMW_ROR;
     m_Instructions[0x66].m_opStr = "ROR";
@@ -138,11 +150,30 @@ void CPU6502::InitInstructions()
     m_Instructions[0x6A].m_opAddressModeStr = "a";
     m_Instructions[0x6A].m_cycles = 2;
     
+    m_Instructions[0x6D].m_opOrAddrMode = &CPU6502::InternalExecutionMemory_abs;
+    m_Instructions[0x6D].m_operation = &CPU6502::ADC;
+    m_Instructions[0x6D].m_opStr = "ADC";
+    m_Instructions[0x6D].m_opAddressModeStr = "abs";
+    m_Instructions[0x6D].m_cycles = 4;
+    
     m_Instructions[0x6E].m_opOrAddrMode = &CPU6502::ReadModifyWrite_abs;
     m_Instructions[0x6E].m_operation = &CPU6502::RMW_ROR;
     m_Instructions[0x6E].m_opStr = "ROR";
     m_Instructions[0x6E].m_opAddressModeStr = "abs";
     m_Instructions[0x6E].m_cycles = 6;
+    
+    m_Instructions[0x71].m_opOrAddrMode = &CPU6502::InternalExecutionMemory_indY;
+    m_Instructions[0x71].m_operation = &CPU6502::ADC;
+    m_Instructions[0x71].m_opStr = "ADC";
+    m_Instructions[0x71].m_opAddressModeStr = "(ind),Y";
+    m_Instructions[0x71].m_cycles = 5;
+    m_Instructions[0x71].m_additionalCycle = 1;
+    
+    m_Instructions[0x75].m_opOrAddrMode = &CPU6502::InternalExecutionMemory_zpgX;
+    m_Instructions[0x75].m_operation = &CPU6502::ADC;
+    m_Instructions[0x75].m_opStr = "ADC";
+    m_Instructions[0x75].m_opAddressModeStr = "zpg,X";
+    m_Instructions[0x75].m_cycles = 4;
     
     m_Instructions[0x76].m_opOrAddrMode = &CPU6502::ReadModifyWrite_zpgX;
     m_Instructions[0x76].m_operation = &CPU6502::RMW_ROR;
@@ -155,6 +186,20 @@ void CPU6502::InitInstructions()
     m_Instructions[0x78].m_opStr = "SEI";
     m_Instructions[0x78].m_opAddressModeStr = "";
     m_Instructions[0x78].m_cycles = 2;
+    
+    m_Instructions[0x79].m_opOrAddrMode = &CPU6502::InternalExecutionMemory_absY;
+    m_Instructions[0x79].m_operation = &CPU6502::ADC;
+    m_Instructions[0x79].m_opStr = "ADC";
+    m_Instructions[0x79].m_opAddressModeStr = "abs,Y";
+    m_Instructions[0x79].m_cycles = 4;
+    m_Instructions[0x79].m_additionalCycle = 1;
+    
+    m_Instructions[0x7D].m_opOrAddrMode = &CPU6502::InternalExecutionMemory_absX;
+    m_Instructions[0x7D].m_operation = &CPU6502::ADC;
+    m_Instructions[0x7D].m_opStr = "ADC";
+    m_Instructions[0x7D].m_opAddressModeStr = "abs,X";
+    m_Instructions[0x7D].m_cycles = 4;
+    m_Instructions[0x7D].m_additionalCycle = 1;
     
     m_Instructions[0x7E].m_opOrAddrMode = &CPU6502::ReadModifyWrite_absX;
     m_Instructions[0x7E].m_operation = &CPU6502::RMW_ROR;
@@ -284,7 +329,7 @@ void CPU6502::InitInstructions()
     
     m_Instructions[0xF8].m_opOrAddrMode = &CPU6502::SED;
     m_Instructions[0xF8].m_operation = nullptr;
-    m_Instructions[0xF8].m_opStr = "SED (Not implemented in NES CPU)";
+    m_Instructions[0xF8].m_opStr = "SED";
     m_Instructions[0xF8].m_opAddressModeStr = "";
     m_Instructions[0xF8].m_cycles = 2;
     
@@ -293,7 +338,42 @@ void CPU6502::InitInstructions()
     m_Instructions[0xFE].m_opStr = "INC";
     m_Instructions[0xFE].m_opAddressModeStr = "abs,X";
     m_Instructions[0xFE].m_cycles = 7;
-    
+/*
+// Address modes
+// imm zpg zpg,X abs absX abdY (ind,X) (ind),Y
+
+// m_Instructions[0x].m_additionalCycle = 1;
+
+// InternalExecutionMemory
+
+29 AND imm      2
+25 AND zpg      3
+35 AND zpg,X    4
+2D AND abs      4
+3D AND abs,X    4+1
+39 AND abs,Y    4+1
+21 AND (ind,X)  6
+31 AND (ind),Y  5+1
+
+
+m_Instructions[0x29].m_opOrAddrMode = &CPU6502::InternalExecutionMemory_imm;
+m_Instructions[0x29].m_operation = &CPU6502::AND;
+m_Instructions[0x29].m_opStr = "AND";
+m_Instructions[0x29].m_opAddressModeStr = "imm";
+m_Instructions[0x29].m_cycles = 2;
+
+
+BIT
+CMP
+CPX
+CPY
+EOR
+LDA
+LDX
+LDY
+ORA
+SBC
+*/
 #if DEBUG
     // implemented and duplicate instruction set checks
     int implementedInstructions = 0;
