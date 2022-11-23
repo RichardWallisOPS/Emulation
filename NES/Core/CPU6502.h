@@ -62,7 +62,7 @@ private:
     uint8_t m_addressBusH;
     uint8_t m_addressBusL;
     
-    // Aditional address for indirect accesses - not always used even if mentioned in data sheet
+    // Aditional registers for indirect access
     uint8_t m_baseAddressH;
     uint8_t m_baseAddressL;
     uint8_t m_indirectAddressH;
@@ -84,6 +84,8 @@ private:
     
 private:
 
+    const uint8_t nTnPreNextOpCodeFetch = 0xFF;
+
     void InitInstructions();
     bool ERROR(uint8_t Tn);
     
@@ -95,10 +97,10 @@ private:
     // zpg = zero page
     // abs = absolute
     // zpgX = zero page + x
-    // absX = absolute + x (or y)
+    // absX = absolute + x
     // indX = indirect + x
     // return "bool" is for functions directly called for the opCode executation
-    // return "void" is for functions called from the OpCode executation i.e. an address mode
+    // return "void" is for functions called from within the OpCode executation
         
     // Generic - same functionality but different registers or current memory bus
     void ASL(uint8_t& cpuReg); void LSR(uint8_t& cpuReg); void ROL(uint8_t& cpuReg); void ROR(uint8_t& cpuReg); void REG_CMP(uint8_t& cpuReg); void REG_LOAD(uint8_t& cpuReg);

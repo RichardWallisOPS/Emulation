@@ -183,7 +183,7 @@ void CPU6502::Tick()
         // Allow executation to occur during this tick but use max Tn value so they know
         if(m_tickCount > 0)
         {
-            (this->*(m_Instructions[m_opCode].m_opOrAddrMode))(0xFF);
+            (this->*(m_Instructions[m_opCode].m_opOrAddrMode))(nTnPreNextOpCodeFetch);
         }
     
 #ifdef EMULATION_LOG
@@ -613,15 +613,16 @@ bool CPU6502::ReadModifyWrite_zpgX(uint8_t Tn)
     if(Tn == 1)
     {
         m_dataBus = programCounterReadByte();
+        m_baseAddressL = m_dataBus;
     }
     else if(Tn == 2)
     {
         m_addressBusH = 0;
-        m_addressBusL = m_dataBus;
+        m_addressBusL = m_baseAddressL;
     }
     else if(Tn == 3)
     {
-        m_addressBusL += m_x;
+        m_addressBusL = m_baseAddressL + m_x;
         m_dataBus = addressBusReadByte();
     }
     else if(Tn == 4)
@@ -642,21 +643,21 @@ bool CPU6502::ReadModifyWrite_absX(uint8_t Tn)
     if(Tn == 1)
     {
         m_dataBus = programCounterReadByte();
+        m_baseAddressL = m_dataBus;
     }
     else if(Tn == 2)
     {
-        m_addressBusH = 0;
-        m_addressBusL = m_dataBus;
         m_dataBus = programCounterReadByte();
+        m_baseAddressH = m_dataBus;
     }
     else if(Tn == 3)
     {
-        if(((uint16_t)m_addressBusL + (uint16_t)m_x) > 255)
+        m_addressBusL = m_baseAddressL + m_x;
+        m_addressBusH = m_baseAddressH;
+        if(uint16_t(m_baseAddressL) + uint16_t(m_x) > 255)
         {
-            m_addressBusH = 1;
+            m_addressBusH += 1;
         }
-        m_addressBusL += m_x;
-        m_addressBusH += m_dataBus;
     }
     else if(Tn == 4)
     {
@@ -784,7 +785,7 @@ bool CPU6502::InternalExecutionMemory_imm(uint8_t Tn)
         m_dataBus = programCounterReadByte();
         return true;
     }
-    else if(Tn == 0xFF)
+    else if(Tn == nTnPreNextOpCodeFetch)
     {
         (this->*(m_Instructions[m_opCode].m_operation))(Tn);
         return true;
@@ -805,7 +806,7 @@ bool CPU6502::InternalExecutionMemory_zpg(uint8_t Tn)
         m_dataBus = addressBusReadByte();
         return true;
     }
-    else if(Tn == 0xFF)
+    else if(Tn == nTnPreNextOpCodeFetch)
     {
         (this->*(m_Instructions[m_opCode].m_operation))(Tn);
         return true;
@@ -830,7 +831,7 @@ bool CPU6502::InternalExecutionMemory_abs(uint8_t Tn)
         m_dataBus = addressBusReadByte();
         return true;
     }
-    else if(Tn == 0xFF)
+    else if(Tn == nTnPreNextOpCodeFetch)
     {
         (this->*(m_Instructions[m_opCode].m_operation))(Tn);
         return true;
@@ -869,16 +870,11 @@ bool CPU6502::InternalExecutionMemory_indX(uint8_t Tn)
         m_dataBus = addressBusReadByte();
         return true;
     }
-    else if(Tn == 0xFF)
+    else if(Tn == nTnPreNextOpCodeFetch)
     {
         (this->*(m_Instructions[m_opCode].m_operation))(Tn);
         return true;
     }
-    return false;
-}
-
-bool CPU6502::InternalExecutionMemory_indY(uint8_t)
-{
     return false;
 }
 
@@ -898,6 +894,11 @@ bool CPU6502::InternalExecutionMemory_zpgX(uint8_t)
 }
 
 bool CPU6502::InternalExecutionMemory_zpgY(uint8_t)
+{
+    return false;
+}
+
+bool CPU6502::InternalExecutionMemory_indY(uint8_t)
 {
     return false;
 }
