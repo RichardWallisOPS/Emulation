@@ -16,8 +16,9 @@
 
 // Instruction cycle Tn states taken from 6502 data sheet
 // Registers, memory, address and data buses values try to follow the rules for these states
+// This means some Tn operations look superfluous but this is trying to be cpu register state cycle "accurate"
 // No instruction implements T0 as that is the generic opCode fetch
-// NOTE: Decimal mode is not implemented
+// NOTE:    Decimal mode is not implemented - it and any illegal op-codes will error in Debug and NOP in Release
 // https://www.masswerk.at/6502/6502_instruction_set.html
 // https://www.nesdev.org/
 
@@ -78,7 +79,8 @@ private:
         void(CPU6502::*m_operation)(uint8_t Tn)     = nullptr;
         char const* m_opStr                         = "UNIMPLEMENTED";
         char const* m_opAddressModeStr              = "";
-        uint8_t m_cycles                            = 2;                // TODO remove this once we are happy...
+        uint8_t m_cycles                            = 0;                // TODO remove this once we are happy...
+        uint8_t m_additionalCycle                   = 0;                // TODO remove this once we are happy...
     };
     CPUInstruction m_Instructions[256];
     
@@ -105,7 +107,7 @@ private:
     // Generic - same functionality but different registers or current memory bus
     void ASL(uint8_t& cpuReg); void LSR(uint8_t& cpuReg); void ROL(uint8_t& cpuReg); void ROR(uint8_t& cpuReg); void REG_CMP(uint8_t& cpuReg); void REG_LOAD(uint8_t& cpuReg);
     
-    // 1) Single byte instructions
+    // 1) Single byte instructions - return true instruction is done
     bool Accum_ASL(uint8_t Tn); bool Accum_LSR(uint8_t Tn); bool Accum_ROL(uint8_t Tn); bool Accum_ROR(uint8_t Tn);
     bool NOP(uint8_t Tn); bool SEI(uint8_t Tn); bool SEC(uint8_t Tn); bool SED(uint8_t);
     bool CLD(uint8_t Tn); bool CLC(uint8_t Tn); bool CLI(uint8_t Tn); bool CLV(uint8_t Tn);
@@ -116,7 +118,9 @@ private:
     // Instructions
     void ADC(uint8_t Tn); void AND(uint8_t Tn); void BIT(uint8_t Tn); void CMP(uint8_t Tn); void CPX(uint8_t Tn); void CPY(uint8_t Tn);
     void EOR(uint8_t Tn); void LDA(uint8_t Tn); void LDX(uint8_t Tn); void LDY(uint8_t Tn); void ORA(uint8_t Tn); void SBC(uint8_t Tn);
-    // Address Modes
+    // Address Modes - return true means data is ready for next cycle executation before op-code fetch
+    bool InternalExecutionMemory_absREG(uint8_t Tn, uint8_t& cpuReg);
+    bool InternalExecutionMemory_zpgREG(uint8_t Tn, uint8_t& cpuReg);
     bool InternalExecutionMemory_imm(uint8_t Tn); bool InternalExecutionMemory_zpg(uint8_t Tn); bool InternalExecutionMemory_abs(uint8_t Tn);
     bool InternalExecutionMemory_indX(uint8_t Tn); bool InternalExecutionMemory_indY(uint8_t Tn); bool InternalExecutionMemory_absX(uint8_t Tn);
     bool InternalExecutionMemory_absY(uint8_t Tn); bool InternalExecutionMemory_zpgX(uint8_t Tn); bool InternalExecutionMemory_zpgY(uint8_t Tn);
@@ -127,7 +131,7 @@ private:
     // 4) Read Modify Write
     // Instructions
     void RMW_ASL(uint8_t Tn); void RMW_DEC(uint8_t Tn); void RMW_INC(uint8_t Tn); void RMW_LSR(uint8_t Tn); void RMW_ROL(uint8_t Tn); void RMW_ROR(uint8_t Tn);
-    // Address Modes
+    // Address Modes - return true instruction is done
     bool ReadModifyWrite_zpg(uint8_t Tn); bool ReadModifyWrite_abs(uint8_t Tn); bool ReadModifyWrite_zpgX(uint8_t Tn); bool ReadModifyWrite_absX(uint8_t Tn);
     
     // 5) Others

@@ -221,11 +221,18 @@ void CPU6502::Tick()
         m_effectiveAddressH = 0;
         m_effectiveAddressL = 0;
         
-        m_dataBus = m_opCode = programCounterReadByte();
+        // This is Tn == 0 (opCode fetch) for every instruction
+        m_opCode = m_dataBus = programCounterReadByte();
     }
     else
     {
-        // Tn == 0 (opCode fetch) should have no processing for any function
+#if DEBUG
+        if(m_instructionCycle == 0)
+        {
+            ERROR(m_instructionCycle);
+        }
+#endif
+        // Tn > 0
         bInstructionTStatesCompleted = (this->*(m_Instructions[m_opCode].m_opOrAddrMode))(m_instructionCycle);
     }
     
@@ -233,7 +240,10 @@ void CPU6502::Tick()
     {
 #if DEBUG
         // check we have executed the correct number of cycles for an instruction
-        if(m_instructionCycle + 1 != m_Instructions[m_opCode].m_cycles)
+        // not perfect as address page boundry crossses can be two values but if it matches either then that will do for now
+        CPUInstruction& instruction = m_Instructions[m_opCode];
+        uint8_t cyclesTaken = m_instructionCycle + 1;
+        if(cyclesTaken != instruction.m_cycles && cyclesTaken != instruction.m_cycles + instruction.m_additionalCycle)
         {
             printf("Executation cycle vs instruction cycle mismatch");
             ERROR(m_instructionCycle);
@@ -251,11 +261,10 @@ void CPU6502::Tick()
 bool CPU6502::ERROR(uint8_t Tn)
 {
 #if DEBUG
-    #ifdef EMULATION_LOG
-        LineBuffer[LinePosition] = 0;
-        printf("%s", LineBuffer);
-    #endif
-    
+#ifdef EMULATION_LOG
+    LineBuffer[LinePosition] = 0;
+    printf("%s", LineBuffer);
+#endif
     CPUInstruction& instruction = m_Instructions[m_opCode];
     printf("  Halted on instruction Tn=%d opCode=0x%02X %s %s\n", Tn, m_opCode, instruction.m_opStr, instruction.m_opAddressModeStr);
     *(volatile char*)(0) = 65 | 02;
@@ -878,27 +887,128 @@ bool CPU6502::InternalExecutionMemory_indX(uint8_t Tn)
     return false;
 }
 
-bool CPU6502::InternalExecutionMemory_absX(uint8_t)
+bool CPU6502::InternalExecutionMemory_absREG(uint8_t Tn, uint8_t& cpuReg)
 {
+    if(Tn == 1)
+    {
+        m_dataBus = programCounterReadByte();
+        m_baseAddressL = m_dataBus;
+    }
+    else if(Tn == 2)
+    {
+        m_dataBus = programCounterReadByte();
+        m_baseAddressH = m_dataBus;
+    }
+    else if(Tn == 3)
+    {
+        uint8_t carry = uint16_t(m_baseAddressL) + uint16_t(cpuReg) > 255 ? 1 : 0;
+        m_addressBusL = m_baseAddressL + cpuReg;
+        m_addressBusH = m_baseAddressH; // we could add the carry here but the docs say that occurs on the next cycle
+        
+        m_dataBus = addressBusReadByte();
+        
+        return carry == 0;
+    }
+    else if(Tn == 4)
+    {
+        // This cycle is not always executed if T3 returned true i.e. page boundry not crossed
+        m_addressBusH = m_baseAddressH + 1;
+        m_dataBus = addressBusReadByte();
+        return true;
+    }
+    else if(Tn == nTnPreNextOpCodeFetch)
+    {
+        (this->*(m_Instructions[m_opCode].m_operation))(Tn);
+        return true;
+    }
     return false;
 }
 
-bool CPU6502::InternalExecutionMemory_absY(uint8_t)
+bool CPU6502::InternalExecutionMemory_absX(uint8_t Tn)
 {
+    return InternalExecutionMemory_absREG(Tn, m_x);
+}
+
+bool CPU6502::InternalExecutionMemory_absY(uint8_t Tn)
+{
+    return InternalExecutionMemory_absREG(Tn, m_y);
+}
+
+bool CPU6502::InternalExecutionMemory_zpgREG(uint8_t Tn, uint8_t& cpuReg)
+{
+    if(Tn == 1)
+    {
+        m_dataBus = programCounterReadByte();
+        m_baseAddressL = m_dataBus;
+    }
+    else if(Tn == 2)
+    {
+        m_addressBusH = 0;
+        m_addressBusL = m_baseAddressL;
+    }
+    else if(Tn == 3)
+    {
+        m_addressBusL = m_baseAddressL + cpuReg;
+        m_dataBus = addressBusReadByte();
+        return true;
+    }
+    else if(Tn == nTnPreNextOpCodeFetch)
+    {
+        (this->*(m_Instructions[m_opCode].m_operation))(Tn);
+        return true;
+    }
     return false;
 }
 
-bool CPU6502::InternalExecutionMemory_zpgX(uint8_t)
+bool CPU6502::InternalExecutionMemory_zpgX(uint8_t Tn)
 {
-    return false;
+    return InternalExecutionMemory_zpgREG(Tn, m_x);
 }
 
-bool CPU6502::InternalExecutionMemory_zpgY(uint8_t)
+bool CPU6502::InternalExecutionMemory_zpgY(uint8_t Tn)
 {
-    return false;
+    return InternalExecutionMemory_zpgREG(Tn, m_y);
 }
 
-bool CPU6502::InternalExecutionMemory_indY(uint8_t)
+bool CPU6502::InternalExecutionMemory_indY(uint8_t Tn)
 {
+    if(Tn == 1)
+    {
+        m_dataBus = programCounterReadByte();
+        m_indirectAddressL = m_dataBus;
+    }
+    else if(Tn == 2)
+    {
+        m_addressBusL = m_indirectAddressL;
+        m_dataBus = addressBusReadByte();
+        m_baseAddressL = m_dataBus;
+    }
+    else if(Tn == 3)
+    {
+        m_addressBusL = m_indirectAddressL + 1;
+        m_dataBus = addressBusReadByte();
+        m_baseAddressH = m_dataBus;
+    }
+    else if(Tn == 4)
+    {
+        uint8_t carry = uint16_t(m_baseAddressL) + uint16_t(m_y) > 255 ? 1 : 0;
+        m_addressBusL = m_baseAddressL + m_y;
+        m_addressBusH = m_baseAddressH; // we could add the carry here but the docs say that occurs on the next cycle
+        m_dataBus = addressBusReadByte();
+        return carry == 0;
+    }
+    else if(Tn == 5)
+    {
+        // This cycle is not always executed if T4 returned true i.e. page boundry not crossed
+         m_addressBusL = m_baseAddressL + m_y;
+         m_addressBusH = m_baseAddressH + 1;
+         m_dataBus = addressBusReadByte();
+         return true;
+    }
+    else if(Tn == nTnPreNextOpCodeFetch)
+    {
+        (this->*(m_Instructions[m_opCode].m_operation))(Tn);
+        return true;
+    }
     return false;
 }
