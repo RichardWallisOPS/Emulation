@@ -95,7 +95,7 @@ uint8_t Cartridge::ppuRead(uint16_t address)
 
 void Cartridge::ppuWrite(uint16_t address, uint8_t byte)
 {
-    if(m_pPrg != nullptr)
+    if(m_pChr != nullptr)
     {
         // TODO
     }
