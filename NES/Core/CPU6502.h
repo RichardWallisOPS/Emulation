@@ -32,6 +32,7 @@ public:
     void Reset();
     void Tick();
     
+    void SignalReset();
     void SignalNMI();
     void SignalIRQ();
     
@@ -74,8 +75,10 @@ private:
     uint8_t m_effectiveAddressH;
     uint8_t m_effectiveAddressL;
     
-    bool m_signalIRQ;
-    bool m_signalNMI;
+    // Set signal lines
+    bool m_bSignalReset;
+    bool m_bSignalIRQ;
+    bool m_bSignalNMI;
     
 
     // Instructions
@@ -147,7 +150,10 @@ private:
     bool ReadModifyWrite_zpg(uint8_t Tn); bool ReadModifyWrite_abs(uint8_t Tn); bool ReadModifyWrite_zpgX(uint8_t Tn); bool ReadModifyWrite_absX(uint8_t Tn);
     
     // 5) Others
-    // TODO
+    // Instructions
+    void PHP(uint8_t Tn); void PHA(uint8_t Tn); void PLP(uint8_t Tn); void PLA(uint8_t Tn);
+    // Address Modes
+    bool StackPush(uint8_t Tn); bool StackPull(uint8_t Tn);
 };
 
 #endif /* CPU6502_h */

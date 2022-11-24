@@ -40,6 +40,12 @@ void CPU6502::InitInstructions()
     m_Instructions[0x06].m_opAddressModeStr = zeroPage;
     m_Instructions[0x06].m_cycles = 5;
     
+    m_Instructions[0x08].m_opOrAddrMode = &CPU6502::StackPush;
+    m_Instructions[0x08].m_operation = &CPU6502::PHP;
+    m_Instructions[0x08].m_opStr = "PHP";
+    m_Instructions[0x08].m_opAddressModeStr = "";
+    m_Instructions[0x08].m_cycles = 3;
+    
     m_Instructions[0x09].m_opOrAddrMode = &CPU6502::InternalExecutionMemory_imm;
     m_Instructions[0x09].m_operation = &CPU6502::ORA;
     m_Instructions[0x09].m_opStr = "ORA";
@@ -132,6 +138,12 @@ void CPU6502::InitInstructions()
     m_Instructions[0x26].m_opStr = "ROL";
     m_Instructions[0x26].m_opAddressModeStr = zeroPage;
     m_Instructions[0x26].m_cycles = 5;
+    
+    m_Instructions[0x28].m_opOrAddrMode = &CPU6502::StackPull;
+    m_Instructions[0x28].m_operation = &CPU6502::PLP;
+    m_Instructions[0x28].m_opStr = "PLP";
+    m_Instructions[0x28].m_opAddressModeStr = "";
+    m_Instructions[0x28].m_cycles = 4;
     
     m_Instructions[0x29].m_opOrAddrMode = &CPU6502::InternalExecutionMemory_imm;
     m_Instructions[0x29].m_operation = &CPU6502::AND;
@@ -226,6 +238,12 @@ void CPU6502::InitInstructions()
     m_Instructions[0x46].m_opAddressModeStr = zeroPage;
     m_Instructions[0x46].m_cycles = 5;
     
+    m_Instructions[0x48].m_opOrAddrMode = &CPU6502::StackPush;
+    m_Instructions[0x48].m_operation = &CPU6502::PHA;
+    m_Instructions[0x48].m_opStr = "PHA";
+    m_Instructions[0x48].m_opAddressModeStr = "";
+    m_Instructions[0x48].m_cycles = 3;
+    
     m_Instructions[0x49].m_opOrAddrMode = &CPU6502::InternalExecutionMemory_imm;
     m_Instructions[0x49].m_operation = &CPU6502::EOR;
     m_Instructions[0x49].m_opStr = "EOR";
@@ -312,6 +330,12 @@ void CPU6502::InitInstructions()
     m_Instructions[0x66].m_opStr = "ROR";
     m_Instructions[0x66].m_opAddressModeStr = zeroPage;
     m_Instructions[0x66].m_cycles = 5;
+    
+    m_Instructions[0x68].m_opOrAddrMode = &CPU6502::StackPull;
+    m_Instructions[0x68].m_operation = &CPU6502::PLA;
+    m_Instructions[0x68].m_opStr = "PLA";
+    m_Instructions[0x68].m_opAddressModeStr = "";
+    m_Instructions[0x68].m_cycles = 4;
     
     m_Instructions[0x69].m_opOrAddrMode = &CPU6502::InternalExecutionMemory_imm;
     m_Instructions[0x69].m_operation = &CPU6502::ADC;
@@ -846,11 +870,12 @@ void CPU6502::InitInstructions()
 
 // m_Instructions[0x].m_additionalCycle = 1;
 
-m_Instructions[0x8C].m_opOrAddrMode = &CPU6502::Store_abs;
-m_Instructions[0x8C].m_operation = &CPU6502::STY;
-m_Instructions[0x8C].m_opStr = "STY";
-m_Instructions[0x8C].m_opAddressModeStr = absolute;
-m_Instructions[0x8C].m_cycles = 4;
+
+m_Instructions[0x68].m_opOrAddrMode = &CPU6502::StackPull;
+m_Instructions[0x68].m_operation = &CPU6502::PLA;
+m_Instructions[0x68].m_opStr = "PLA";
+m_Instructions[0x68].m_opAddressModeStr = "";
+m_Instructions[0x68].m_cycles = 4;
 
 */
 #if DEBUG

@@ -56,8 +56,9 @@ CPU6502::CPU6502(IOBus& bus)
 , m_indirectAddressL(0)
 , m_effectiveAddressH(0)
 , m_effectiveAddressL(0)
-, m_signalIRQ(false)
-, m_signalNMI(false)
+, m_bSignalReset(false)
+, m_bSignalIRQ(false)
+, m_bSignalNMI(false)
 {
     InitInstructions();
 }
@@ -97,7 +98,7 @@ void CPU6502::PowerOn()
     m_a = 0;
     m_x = 0;
     m_y = 0;
-    m_stack = 0xFD;
+    m_stack = 0xFF; // ?
     m_flags = 0x34;
     
     uint8_t resetAddressL = m_bus.cpuRead(0xFFFC);
@@ -116,11 +117,13 @@ void CPU6502::PowerOn()
     m_indirectAddressL = 0;
     m_effectiveAddressH = 0;
     m_effectiveAddressL = 0;
+    
+    m_bSignalIRQ = m_bSignalNMI = m_bSignalReset = false;
 }
 
 void CPU6502::Reset()
 {
-    m_stack -= 3;
+    //m_stack -= 3;   //?
     SetFlag(Flag_IRQDisable);
     
     uint8_t resetAddressL = m_bus.cpuRead(0xFFFC);
@@ -139,6 +142,8 @@ void CPU6502::Reset()
     m_indirectAddressL = 0;
     m_effectiveAddressH = 0;
     m_effectiveAddressL = 0;
+    
+    m_bSignalIRQ = m_bSignalNMI = m_bSignalReset = false;
 }
 
 void CPU6502::SetPC(uint16_t pc)
@@ -158,14 +163,19 @@ void CPU6502::addressBusWriteByte(uint8_t data)
     m_bus.cpuWrite(address, data);
 }
 
+void CPU6502::SignalReset()
+{
+    m_bSignalReset = true;
+}
+
 void CPU6502::SignalNMI()
 {
-    m_signalNMI = true;
+    m_bSignalNMI = true;
 }
 
 void CPU6502::SignalIRQ()
 {
-    m_signalIRQ = true;
+    m_bSignalIRQ = true;
 }
 
 #ifdef EMULATION_LOG
@@ -188,48 +198,60 @@ uint8_t CPU6502::programCounterReadByte()
 void CPU6502::Tick()
 {
     // Some instructions perform final executation during next op code fetch, allow executation to occur during this next tick but use max Tn value so they know
-    // TODO if we have come back from an interrupt etc then this is not a valid operation - may need to protect from this case
+    // TODO If we have come back from an interrupt etc then this is not a valid operation - may need to protect from this case
     if(m_instructionCycle == 0 && m_tickCount > 0)
     {
         (this->*(m_Instructions[m_opCode].m_opOrAddrMode))(nTnPreNextOpCodeFetch);
     }
     
 #ifdef EMULATION_LOG
-    if(m_instructionCycle == 0)
+    if(m_instructionCycle == 0 && LinePosition > 0)
     {
-        if(LinePosition > 0)
+        if(m_tickCount > 0)
         {
-            if(m_tickCount > 0)
+            // Finalize old logging
+            while(LinePosition < 16)
             {
-                // Finalize old logging
-                while(LinePosition < 16)
-                {
-                    LinePosition += snprintf(&LineBuffer[LinePosition], LineBufferSize - LinePosition, " ");
-                }
-                CPUInstruction& instruction = m_Instructions[m_opCode];
-                LinePosition += snprintf(&LineBuffer[LinePosition], LineBufferSize - LinePosition, "  %s %s", instruction.m_opStr ? instruction.m_opStr : "", instruction.m_opAddressModeStr ? instruction.m_opAddressModeStr : "");
-                while(LinePosition < 40)
-                {
-                    LinePosition += snprintf(&LineBuffer[LinePosition], LineBufferSize - LinePosition, " ");
-                }
-                LinePosition += snprintf(&LineBuffer[LinePosition], LineBufferSize - LinePosition, "A:%02X X:%02X Y:%02X P:%02X SP:%02X", m_a, m_x, m_y, m_flags, m_stack);
-            
-                LineBuffer[LinePosition] = 0;
-                printf("%s", LineBuffer);
+                LinePosition += snprintf(&LineBuffer[LinePosition], LineBufferSize - LinePosition, " ");
             }
-
-            // begin log of new instruction
-            LinePosition = 0;
-            LinePosition += snprintf(&LineBuffer[LinePosition], LineBufferSize - LinePosition, "\n%04X ", m_pc);
+            CPUInstruction& instruction = m_Instructions[m_opCode];
+            LinePosition += snprintf(&LineBuffer[LinePosition], LineBufferSize - LinePosition, "  %s %s", instruction.m_opStr ? instruction.m_opStr : "", instruction.m_opAddressModeStr ? instruction.m_opAddressModeStr : "");
+            while(LinePosition < 40)
+            {
+                LinePosition += snprintf(&LineBuffer[LinePosition], LineBufferSize - LinePosition, " ");
+            }
+            LinePosition += snprintf(&LineBuffer[LinePosition], LineBufferSize - LinePosition, "A:%02X X:%02X Y:%02X P:%02X SP:%02X", m_a, m_x, m_y, m_flags, m_stack);
+        
+            LineBuffer[LinePosition] = 0;
+            printf("%s", LineBuffer);
         }
+
+        // begin log of new instruction
+        LinePosition = 0;
+        LinePosition += snprintf(&LineBuffer[LinePosition], LineBufferSize - LinePosition, "\n%04X ", m_pc);
     }
 #endif
+
+    // TODO Interrupt(s) / reset may take a certain number of ticks to execute so may need tickable handler functions and executation halt
+    if(m_bSignalReset)
+    {
+        // TODO
+        m_bSignalReset = false;
+    }
+
+    if(m_bSignalNMI)
+    {
+        // TODO
+        m_bSignalNMI = false;
+    }
+    
+    if(m_bSignalIRQ)
+    {
+        // TODO
+        m_bSignalIRQ = false;
+    }
     
     bool bInstructionTStatesCompleted = false;
-    
-    // TODO Handle IRQ / NMI / and possibly slow startup Reset
-    // TODO IRQ / NMI wait for current instruction to complete - so m_instructionCycle == 0, watch for next op-code fectch executation type of instructions they need to complete
-    
     if(m_instructionCycle == 0)
     {
         m_dataBus = 0;
@@ -247,12 +269,6 @@ void CPU6502::Tick()
     }
     else
     {
-#if DEBUG
-        if(m_instructionCycle == 0)
-        {
-            ERROR(m_instructionCycle);
-        }
-#endif
         // Tn > 0
         bInstructionTStatesCompleted = (this->*(m_Instructions[m_opCode].m_opOrAddrMode))(m_instructionCycle);
     }
@@ -1231,6 +1247,58 @@ bool CPU6502::Store_indY(uint8_t Tn)
     {
         (this->*(m_Instructions[m_opCode].m_operation))(Tn);
         addressBusWriteByte(m_dataBus);
+        
+        return true;
+    }
+    return false;
+}
+
+void CPU6502::PHP(uint8_t Tn)
+{
+    m_dataBus = m_flags;
+}
+
+void CPU6502::PHA(uint8_t Tn)
+{
+    m_dataBus = m_a;
+}
+
+void CPU6502::PLP(uint8_t Tn)
+{
+    m_flags = m_dataBus;
+}
+
+void CPU6502::PLA(uint8_t Tn)
+{
+    m_a = m_dataBus;
+    ConditionalSetFlag(Flag_Zero, m_a == 0);
+    ConditionalSetFlag(Flag_Negative, (m_a & (1 << 7)) != 0);
+}
+
+bool CPU6502::StackPush(uint8_t Tn)
+{
+    if(Tn == 2)
+    {
+        m_addressBusH = 0x01;
+        m_addressBusL = m_stack--;
+        
+        (this->*(m_Instructions[m_opCode].m_operation))(Tn);
+        addressBusWriteByte(m_dataBus);
+
+        return true;
+    }
+    return false;
+}
+
+bool CPU6502::StackPull(uint8_t Tn)
+{
+    if(Tn == 3)
+    {
+        m_addressBusH = 0x01;
+        m_addressBusL = m_stack++;
+        m_dataBus = addressBusReadByte();
+        
+        (this->*(m_Instructions[m_opCode].m_operation))(Tn);
         
         return true;
     }
