@@ -56,6 +56,8 @@ CPU6502::CPU6502(IOBus& bus)
 , m_indirectAddressL(0)
 , m_effectiveAddressH(0)
 , m_effectiveAddressL(0)
+, m_signalIRQ(false)
+, m_signalNMI(false)
 {
     InitInstructions();
 }
@@ -156,6 +158,16 @@ void CPU6502::addressBusWriteByte(uint8_t data)
     m_bus.cpuWrite(address, data);
 }
 
+void CPU6502::SignalNMI()
+{
+    m_signalNMI = true;
+}
+
+void CPU6502::SignalIRQ()
+{
+    m_signalIRQ = true;
+}
+
 #ifdef EMULATION_LOG
 int LinePosition = 0;
 const int LineBufferSize = 512;
@@ -175,42 +187,51 @@ uint8_t CPU6502::programCounterReadByte()
     
 void CPU6502::Tick()
 {
+    // Some instructions perform final executation during next op code fetch, allow executation to occur during this next tick but use max Tn value so they know
+    // TODO if we have come back from an interrupt etc then this is not a valid operation - may need to protect from this case
+    if(m_instructionCycle == 0 && m_tickCount > 0)
+    {
+        (this->*(m_Instructions[m_opCode].m_opOrAddrMode))(nTnPreNextOpCodeFetch);
+    }
+    
+#ifdef EMULATION_LOG
+    if(m_instructionCycle == 0)
+    {
+        if(LinePosition > 0)
+        {
+            if(m_tickCount > 0)
+            {
+                // Finalize old logging
+                while(LinePosition < 16)
+                {
+                    LinePosition += snprintf(&LineBuffer[LinePosition], LineBufferSize - LinePosition, " ");
+                }
+                CPUInstruction& instruction = m_Instructions[m_opCode];
+                LinePosition += snprintf(&LineBuffer[LinePosition], LineBufferSize - LinePosition, "  %s %s", instruction.m_opStr ? instruction.m_opStr : "", instruction.m_opAddressModeStr ? instruction.m_opAddressModeStr : "");
+                while(LinePosition < 40)
+                {
+                    LinePosition += snprintf(&LineBuffer[LinePosition], LineBufferSize - LinePosition, " ");
+                }
+                LinePosition += snprintf(&LineBuffer[LinePosition], LineBufferSize - LinePosition, "A:%02X X:%02X Y:%02X P:%02X SP:%02X", m_a, m_x, m_y, m_flags, m_stack);
+            
+                LineBuffer[LinePosition] = 0;
+                printf("%s", LineBuffer);
+            }
+
+            // begin log of new instruction
+            LinePosition = 0;
+            LinePosition += snprintf(&LineBuffer[LinePosition], LineBufferSize - LinePosition, "\n%04X ", m_pc);
+        }
+    }
+#endif
+    
     bool bInstructionTStatesCompleted = false;
+    
+    // TODO Handle IRQ / NMI / and possibly slow startup Reset
+    // TODO IRQ / NMI wait for current instruction to complete - so m_instructionCycle == 0, watch for next op-code fectch executation type of instructions they need to complete
     
     if(m_instructionCycle == 0)
     {
-        // Some instructions perform final executation during next op code fetch
-        // Allow executation to occur during this tick but use max Tn value so they know
-        if(m_tickCount > 0)
-        {
-            (this->*(m_Instructions[m_opCode].m_opOrAddrMode))(nTnPreNextOpCodeFetch);
-        }
-    
-#ifdef EMULATION_LOG
-        if(m_tickCount > 0)
-        {
-            // Finalize old logging
-            while(LinePosition < 16)
-            {
-                LinePosition += snprintf(&LineBuffer[LinePosition], LineBufferSize - LinePosition, " ");
-            }
-            CPUInstruction& instruction = m_Instructions[m_opCode];
-            LinePosition += snprintf(&LineBuffer[LinePosition], LineBufferSize - LinePosition, "  %s %s", instruction.m_opStr ? instruction.m_opStr : "", instruction.m_opAddressModeStr ? instruction.m_opAddressModeStr : "");
-            while(LinePosition < 40)
-            {
-                LinePosition += snprintf(&LineBuffer[LinePosition], LineBufferSize - LinePosition, " ");
-            }
-            LinePosition += snprintf(&LineBuffer[LinePosition], LineBufferSize - LinePosition, "A:%02X X:%02X Y:%02X P:%02X SP:%02X", m_a, m_x, m_y, m_flags, m_stack);
-        
-            LineBuffer[LinePosition] = 0;
-            printf("%s", LineBuffer);
-        }
-
-        // begin log of new instruction
-        LinePosition = 0;
-        LinePosition += snprintf(&LineBuffer[LinePosition], LineBufferSize - LinePosition, "\n%04X ", m_pc);
-#endif
-
         m_dataBus = 0;
         m_addressBusH = 0;
         m_addressBusL = 0;
@@ -255,6 +276,7 @@ void CPU6502::Tick()
     {
         ++m_instructionCycle;
     }
+    
     ++m_tickCount;
 }
 

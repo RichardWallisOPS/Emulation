@@ -32,6 +32,9 @@ public:
     void Reset();
     void Tick();
     
+    void SignalNMI();
+    void SignalIRQ();
+    
     // Debug
     void SetPC(uint16_t pc);
     
@@ -70,6 +73,10 @@ private:
     uint8_t m_indirectAddressL;
     uint8_t m_effectiveAddressH;
     uint8_t m_effectiveAddressL;
+    
+    bool m_signalIRQ;
+    bool m_signalNMI;
+    
 
     // Instructions
 private:
