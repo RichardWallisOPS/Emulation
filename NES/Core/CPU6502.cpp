@@ -1012,3 +1012,55 @@ bool CPU6502::InternalExecutionMemory_indY(uint8_t Tn)
     }
     return false;
 }
+
+void CPU6502::STA(uint8_t Tn)
+{
+    m_dataBus = m_a;
+}
+
+void CPU6502::STX(uint8_t Tn)
+{
+     m_dataBus = m_x;
+}
+
+void CPU6502::STY(uint8_t Tn)
+{
+     m_dataBus = m_y;
+}
+
+bool CPU6502::Store_zpg(uint8_t Tn)
+{
+    return false;
+}
+
+bool CPU6502::Store_abs(uint8_t Tn)
+{
+    return false;
+}
+bool CPU6502::Store_absX(uint8_t Tn)
+{
+    return false;
+}
+
+bool CPU6502::Store_absY(uint8_t Tn)
+{
+    return false;
+}
+
+bool CPU6502::Store_zpgX(uint8_t Tn)
+{
+    return false;
+}
+
+bool CPU6502::Store_zpgY(uint8_t Tn)
+{
+    return false;
+}
+bool CPU6502::Store_indX(uint8_t Tn)
+{
+    return false;
+}
+bool CPU6502::Store_indY(uint8_t Tn)
+{
+    return false;
+}

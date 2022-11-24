@@ -107,7 +107,7 @@ private:
     // Generic - same functionality but different registers or current memory bus
     void ASL(uint8_t& cpuReg); void LSR(uint8_t& cpuReg); void ROL(uint8_t& cpuReg); void ROR(uint8_t& cpuReg); void REG_CMP(uint8_t& cpuReg); void REG_LOAD(uint8_t& cpuReg);
     
-    // 1) Single byte instructions - return true instruction is done
+    // 1) Single byte instructions
     bool Accum_ASL(uint8_t Tn); bool Accum_LSR(uint8_t Tn); bool Accum_ROL(uint8_t Tn); bool Accum_ROR(uint8_t Tn);
     bool NOP(uint8_t Tn); bool SEI(uint8_t Tn); bool SEC(uint8_t Tn); bool SED(uint8_t);
     bool CLD(uint8_t Tn); bool CLC(uint8_t Tn); bool CLI(uint8_t Tn); bool CLV(uint8_t Tn);
@@ -126,12 +126,16 @@ private:
     bool InternalExecutionMemory_absY(uint8_t Tn); bool InternalExecutionMemory_zpgX(uint8_t Tn); bool InternalExecutionMemory_zpgY(uint8_t Tn);
     
     // 3) Store
-    // TODO
+    // Instructions
+    void STA(uint8_t Tn); void STX(uint8_t Tn); void STY(uint8_t Tn);
+    // Address Modes
+    bool Store_zpg(uint8_t Tn); bool Store_abs(uint8_t Tn); bool Store_absX(uint8_t Tn); bool Store_absY(uint8_t Tn);
+    bool Store_zpgX(uint8_t Tn); bool Store_zpgY(uint8_t Tn); bool Store_indX(uint8_t Tn); bool Store_indY(uint8_t Tn);
     
     // 4) Read Modify Write
     // Instructions
     void RMW_ASL(uint8_t Tn); void RMW_DEC(uint8_t Tn); void RMW_INC(uint8_t Tn); void RMW_LSR(uint8_t Tn); void RMW_ROL(uint8_t Tn); void RMW_ROR(uint8_t Tn);
-    // Address Modes - return true instruction is done
+    // Address Modes
     bool ReadModifyWrite_zpg(uint8_t Tn); bool ReadModifyWrite_abs(uint8_t Tn); bool ReadModifyWrite_zpgX(uint8_t Tn); bool ReadModifyWrite_absX(uint8_t Tn);
     
     // 5) Others
