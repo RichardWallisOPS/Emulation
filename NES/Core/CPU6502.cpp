@@ -205,9 +205,9 @@ void CPU6502::Tick()
     }
     
 #ifdef EMULATION_LOG
-    if(m_instructionCycle == 0 && LinePosition > 0)
+    if(m_instructionCycle == 0)
     {
-        if(m_tickCount > 0)
+        if(m_tickCount > 0 && LinePosition > 0)
         {
             // Finalize old logging
             while(LinePosition < 16)
@@ -1302,5 +1302,50 @@ bool CPU6502::StackPull(uint8_t Tn)
         
         return true;
     }
+    return false;
+}
+
+void CPU6502::GenericPushStack(uint8_t data)
+{
+    uint16_t address = uint16FromRegisterPair(0x01, m_stack--);
+    m_bus.cpuWrite(address, data);
+}
+
+uint8_t CPU6502::GenericPullStack()
+{
+    uint16_t address = uint16FromRegisterPair(0x01, m_stack++);
+    return m_bus.cpuRead(address);
+}
+
+
+bool CPU6502::JSR(uint8_t Tn)
+{
+    if(Tn == 1)
+    {
+        m_dataBus = programCounterReadByte();
+    }
+    else if(Tn == 2)
+    {
+        m_addressBusH = 0;
+        m_addressBusL = m_dataBus;
+    }
+    else if(Tn == 3)
+    {
+        uint8_t pcH = uint8_t((m_pc & 0xFF00) >> 8);
+        GenericPushStack(pcH);
+    }
+    else if(Tn == 4)
+    {
+        uint8_t pcL = (int8_t(m_pc & 0xFF));
+        GenericPushStack(pcL);
+    }
+    else if(Tn == 5)
+    {
+        m_dataBus = programCounterReadByte();
+        m_addressBusH = m_dataBus;
+        m_pc = uint16FromRegisterPair(m_addressBusH, m_addressBusL);
+        return true;
+    }
+    
     return false;
 }

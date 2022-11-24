@@ -132,6 +132,11 @@ private:
     
     void PHP(uint8_t Tn); void PHA(uint8_t Tn); void PLP(uint8_t Tn); void PLA(uint8_t Tn);
     bool StackPush(uint8_t Tn); bool StackPull(uint8_t Tn);
+    
+    void GenericPushStack(uint8_t data);
+    uint8_t GenericPullStack();
+    
+    bool JSR(uint8_t Tn);
 };
 
 #endif /* CPU6502_h */

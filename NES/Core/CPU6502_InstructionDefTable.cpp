@@ -115,6 +115,12 @@ void CPU6502::InitInstructions()
     m_Instructions[0x1E].m_opAddressModeStr = absoluteX;
     m_Instructions[0x1E].m_cycles = 7;
     
+    m_Instructions[0x20].m_opOrAddrMode = &CPU6502::JSR;
+    m_Instructions[0x20].m_operation = nullptr;
+    m_Instructions[0x20].m_opStr = "JSR";
+    m_Instructions[0x20].m_opAddressModeStr = "";
+    m_Instructions[0x20].m_cycles = 3;
+    
     m_Instructions[0x21].m_opOrAddrMode = &CPU6502::InternalExecutionMemory_indX;
     m_Instructions[0x21].m_operation = &CPU6502::AND;
     m_Instructions[0x21].m_opStr = "AND";
@@ -871,11 +877,12 @@ void CPU6502::InitInstructions()
 // m_Instructions[0x].m_additionalCycle = 1;
 
 
-m_Instructions[0x68].m_opOrAddrMode = &CPU6502::StackPull;
-m_Instructions[0x68].m_operation = &CPU6502::PLA;
-m_Instructions[0x68].m_opStr = "PLA";
-m_Instructions[0x68].m_opAddressModeStr = "";
-m_Instructions[0x68].m_cycles = 4;
+m_Instructions[0x20].m_opOrAddrMode = &CPU6502::JSR;
+m_Instructions[0x20].m_operation = nullptr
+m_Instructions[0x20].m_opStr = "JSR";
+m_Instructions[0x20].m_opAddressModeStr = "";
+m_Instructions[0x20].m_cycles = 3;
+
 
 */
 #if DEBUG
