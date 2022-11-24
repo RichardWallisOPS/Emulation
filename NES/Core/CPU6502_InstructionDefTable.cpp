@@ -21,11 +21,36 @@ void CPU6502::InitInstructions()
     char const* indirectX = "(ind,X)";
     char const* indirectY = "(ind),Y";
     
+    m_Instructions[0x01].m_opOrAddrMode = &CPU6502::InternalExecutionMemory_indX;
+    m_Instructions[0x01].m_operation = &CPU6502::ORA;
+    m_Instructions[0x01].m_opStr = "ORA";
+    m_Instructions[0x01].m_opAddressModeStr = indirectX;
+    m_Instructions[0x01].m_cycles = 6;
+    
+    m_Instructions[0x05].m_opOrAddrMode = &CPU6502::InternalExecutionMemory_zpg;
+    m_Instructions[0x05].m_operation = &CPU6502::ORA;
+    m_Instructions[0x05].m_opStr = "ORA";
+    m_Instructions[0x05].m_opAddressModeStr = zeroPage;
+    m_Instructions[0x05].m_cycles = 3;
+    
     m_Instructions[0x06].m_opOrAddrMode = &CPU6502::ReadModifyWrite_zpg;
     m_Instructions[0x06].m_operation = &CPU6502::RMW_ASL;
     m_Instructions[0x06].m_opStr = "ASL";
     m_Instructions[0x06].m_opAddressModeStr = zeroPage;
     m_Instructions[0x06].m_cycles = 5;
+    
+    m_Instructions[0x09].m_opOrAddrMode = &CPU6502::InternalExecutionMemory_imm;
+    m_Instructions[0x09].m_operation = &CPU6502::ORA;
+    m_Instructions[0x09].m_opStr = "ORA";
+    m_Instructions[0x09].m_opAddressModeStr = immediate;
+    m_Instructions[0x09].m_cycles = 2;
+    
+    m_Instructions[0x11].m_opOrAddrMode = &CPU6502::InternalExecutionMemory_indY;
+    m_Instructions[0x11].m_operation = &CPU6502::ORA;
+    m_Instructions[0x11].m_opStr = "ORA";
+    m_Instructions[0x11].m_opAddressModeStr = indirectY;
+    m_Instructions[0x11].m_cycles = 5;
+    m_Instructions[0x11].m_additionalCycle = 1;
     
     m_Instructions[0x0A].m_opOrAddrMode = &CPU6502::Accum_ASL;
     m_Instructions[0x0A].m_operation = nullptr;
@@ -33,11 +58,23 @@ void CPU6502::InitInstructions()
     m_Instructions[0x0A].m_opAddressModeStr = "";
     m_Instructions[0x0A].m_cycles = 2;
     
+    m_Instructions[0x0D].m_opOrAddrMode = &CPU6502::InternalExecutionMemory_abs;
+    m_Instructions[0x0D].m_operation = &CPU6502::ORA;
+    m_Instructions[0x0D].m_opStr = "ORA";
+    m_Instructions[0x0D].m_opAddressModeStr = absolute;
+    m_Instructions[0x0D].m_cycles = 4;
+    
     m_Instructions[0x0E].m_opOrAddrMode = &CPU6502::ReadModifyWrite_abs;
     m_Instructions[0x0E].m_operation = &CPU6502::RMW_ASL;
     m_Instructions[0x0E].m_opStr = "ASL";
     m_Instructions[0x0E].m_opAddressModeStr = absolute;
     m_Instructions[0x0E].m_cycles = 6;
+    
+    m_Instructions[0x15].m_opOrAddrMode = &CPU6502::InternalExecutionMemory_zpgX;
+    m_Instructions[0x15].m_operation = &CPU6502::ORA;
+    m_Instructions[0x15].m_opStr = "ORA";
+    m_Instructions[0x15].m_opAddressModeStr = zeroPageX;
+    m_Instructions[0x15].m_cycles = 4;
     
     m_Instructions[0x16].m_opOrAddrMode = &CPU6502::ReadModifyWrite_zpgX;
     m_Instructions[0x16].m_operation = &CPU6502::RMW_ASL;
@@ -50,6 +87,20 @@ void CPU6502::InitInstructions()
     m_Instructions[0x18].m_opStr = "CLC";
     m_Instructions[0x18].m_opAddressModeStr = "";
     m_Instructions[0x18].m_cycles = 2;
+    
+    m_Instructions[0x19].m_opOrAddrMode = &CPU6502::InternalExecutionMemory_absY;
+    m_Instructions[0x19].m_operation = &CPU6502::ORA;
+    m_Instructions[0x19].m_opStr = "ORA";
+    m_Instructions[0x19].m_opAddressModeStr = absoluteY;
+    m_Instructions[0x19].m_cycles = 4;
+    m_Instructions[0x19].m_additionalCycle = 1;
+    
+    m_Instructions[0x1D].m_opOrAddrMode = &CPU6502::InternalExecutionMemory_absX;
+    m_Instructions[0x1D].m_operation = &CPU6502::ORA;
+    m_Instructions[0x1D].m_opStr = "ORA";
+    m_Instructions[0x1D].m_opAddressModeStr = absoluteX;
+    m_Instructions[0x1D].m_cycles = 4;
+    m_Instructions[0x1D].m_additionalCycle = 1;
 
     m_Instructions[0x1E].m_opOrAddrMode = &CPU6502::ReadModifyWrite_absX;
     m_Instructions[0x1E].m_operation = &CPU6502::RMW_ASL;
@@ -156,11 +207,29 @@ void CPU6502::InitInstructions()
     m_Instructions[0x3E].m_opAddressModeStr = absoluteX;
     m_Instructions[0x3E].m_cycles = 7;
     
+    m_Instructions[0x41].m_opOrAddrMode = &CPU6502::InternalExecutionMemory_indX;
+    m_Instructions[0x41].m_operation = &CPU6502::EOR;
+    m_Instructions[0x41].m_opStr = "EOR";
+    m_Instructions[0x41].m_opAddressModeStr = indirectX;
+    m_Instructions[0x41].m_cycles = 6;
+    
+    m_Instructions[0x45].m_opOrAddrMode = &CPU6502::InternalExecutionMemory_zpg;
+    m_Instructions[0x45].m_operation = &CPU6502::EOR;
+    m_Instructions[0x45].m_opStr = "EOR";
+    m_Instructions[0x45].m_opAddressModeStr = zeroPage;
+    m_Instructions[0x45].m_cycles = 3;
+    
     m_Instructions[0x46].m_opOrAddrMode = &CPU6502::ReadModifyWrite_zpg;
     m_Instructions[0x46].m_operation = &CPU6502::RMW_LSR;
     m_Instructions[0x46].m_opStr = "LSR";
     m_Instructions[0x46].m_opAddressModeStr = zeroPage;
     m_Instructions[0x46].m_cycles = 5;
+    
+    m_Instructions[0x49].m_opOrAddrMode = &CPU6502::InternalExecutionMemory_imm;
+    m_Instructions[0x49].m_operation = &CPU6502::EOR;
+    m_Instructions[0x49].m_opStr = "EOR";
+    m_Instructions[0x49].m_opAddressModeStr = immediate;
+    m_Instructions[0x49].m_cycles = 2;
     
     m_Instructions[0x4A].m_opOrAddrMode = &CPU6502::Accum_LSR;
     m_Instructions[0x4A].m_operation = nullptr;
@@ -168,11 +237,30 @@ void CPU6502::InitInstructions()
     m_Instructions[0x4A].m_opAddressModeStr = zeroPage;
     m_Instructions[0x4A].m_cycles = 2;
     
+    m_Instructions[0x4D].m_opOrAddrMode = &CPU6502::InternalExecutionMemory_abs;
+    m_Instructions[0x4D].m_operation = &CPU6502::EOR;
+    m_Instructions[0x4D].m_opStr = "EOR";
+    m_Instructions[0x4D].m_opAddressModeStr = absolute;
+    m_Instructions[0x4D].m_cycles = 4;
+    
     m_Instructions[0x4E].m_opOrAddrMode = &CPU6502::ReadModifyWrite_abs;
     m_Instructions[0x4E].m_operation = &CPU6502::RMW_LSR;
     m_Instructions[0x4E].m_opStr = "LSR";
     m_Instructions[0x4E].m_opAddressModeStr = absolute;
     m_Instructions[0x4E].m_cycles = 6;
+    
+    m_Instructions[0x51].m_opOrAddrMode = &CPU6502::InternalExecutionMemory_indY;
+    m_Instructions[0x51].m_operation = &CPU6502::EOR;
+    m_Instructions[0x51].m_opStr = "EOR";
+    m_Instructions[0x51].m_opAddressModeStr = indirectY;
+    m_Instructions[0x51].m_cycles = 5;
+    m_Instructions[0x51].m_additionalCycle = 1;
+    
+    m_Instructions[0x55].m_opOrAddrMode = &CPU6502::InternalExecutionMemory_zpgX;
+    m_Instructions[0x55].m_operation = &CPU6502::EOR;
+    m_Instructions[0x55].m_opStr = "EOR";
+    m_Instructions[0x55].m_opAddressModeStr = zeroPageX;
+    m_Instructions[0x55].m_cycles = 4;
     
     m_Instructions[0x56].m_opOrAddrMode = &CPU6502::ReadModifyWrite_zpgX;
     m_Instructions[0x56].m_operation = &CPU6502::RMW_LSR;
@@ -185,6 +273,20 @@ void CPU6502::InitInstructions()
     m_Instructions[0x58].m_opStr = "CLI";
     m_Instructions[0x58].m_opAddressModeStr = "";
     m_Instructions[0x58].m_cycles = 2;
+    
+    m_Instructions[0x59].m_opOrAddrMode = &CPU6502::InternalExecutionMemory_absY;
+    m_Instructions[0x59].m_operation = &CPU6502::EOR;
+    m_Instructions[0x59].m_opStr = "EOR";
+    m_Instructions[0x59].m_opAddressModeStr = absoluteY;
+    m_Instructions[0x59].m_cycles = 4;
+    m_Instructions[0x59].m_additionalCycle = 1;
+    
+    m_Instructions[0x5D].m_opOrAddrMode = &CPU6502::InternalExecutionMemory_absX;
+    m_Instructions[0x5D].m_operation = &CPU6502::EOR;
+    m_Instructions[0x5D].m_opStr = "EOR";
+    m_Instructions[0x5D].m_opAddressModeStr = absoluteX;
+    m_Instructions[0x5D].m_cycles = 4;
+    m_Instructions[0x5D].m_additionalCycle = 1;
     
     m_Instructions[0x5E].m_opOrAddrMode = &CPU6502::ReadModifyWrite_absX;
     m_Instructions[0x5E].m_operation = &CPU6502::RMW_LSR;
@@ -505,27 +607,25 @@ void CPU6502::InitInstructions()
 
 // InternalExecutionMemory
 
+immediate	SBC #oper	E9	2
+zeropage	SBC oper	E5	3
+zeropage,X	SBC oper,X	F5	4
+absolute	SBC oper	ED	4
+absolute,X	SBC oper,X	FD	4*
+absolute,Y	SBC oper,Y	F9	4*
+(indirect,X) SBC (oper,X) E1	6
+(indirect),Y SBC (oper),Y F1	5*
 
-immediate	EOR #oper	49	2
-zeropage	EOR oper	45	3
-zeropage,X	EOR oper,X	55	4
-absolute	EOR oper	4D	4
-absolute,X	EOR oper,X	5D	4*
-absolute,Y	EOR oper,Y	59	4*
-(indirect,X) EOR (oper,X) 41	6
-(indirect),Y EOR (oper),Y 51	5*
-
-m_Instructions[0x49].m_opOrAddrMode = &CPU6502::InternalExecutionMemory_imm;
-m_Instructions[0x49].m_operation = &CPU6502::EOR;
-m_Instructions[0x49].m_opStr = "EOR";
-m_Instructions[0x49].m_opAddressModeStr = immediate;
-m_Instructions[0x49].m_cycles = 2;
+m_Instructions[0x11].m_opOrAddrMode = &CPU6502::InternalExecutionMemory_indY;
+m_Instructions[0x11].m_operation = &CPU6502::ORA;
+m_Instructions[0x11].m_opStr = "ORA";
+m_Instructions[0x11].m_opAddressModeStr = indirectY;
+m_Instructions[0x11].m_cycles = 5;
+m_Instructions[0x11].m_additionalCycle = 1;
 
 LDA
 LDX
 LDY
-ORA
-SBC
 */
 #if DEBUG
     // implemented and duplicate instruction set checks

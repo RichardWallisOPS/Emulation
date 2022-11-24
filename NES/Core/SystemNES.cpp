@@ -106,9 +106,15 @@ bool SystemNES::InsertCartridge(void const* pData, uint32_t dataSize)
         return false;
     }
         
-    uint8_t const* pPakBytes = (uint8_t const*)pData;
-    iNesheader const* pHeader = (iNesheader const*)pPakBytes;
-    uint8_t const* pCartData = pPakBytes + sizeof(iNesheader);
+    uint8_t const* pRawBytes = (uint8_t const*)pData;
+    iNesheader const* pHeader = (iNesheader const*)pRawBytes;
+    uint8_t const* pCartData = pRawBytes + sizeof(iNesheader);
+    
+    char const magic[4] = {0x4E, 0x45, 0x53, 0x1A};
+    if(memcmp(magic, pData, 4) != 0)
+    {
+        return false;
+    }
     
     if((pHeader->m_flags6 & (1 << 2)) != 0)
     {
@@ -116,9 +122,10 @@ bool SystemNES::InsertCartridge(void const* pData, uint32_t dataSize)
         return false;
     }
     
-    m_pCart = new Cartridge(pCartData, pHeader->m_prg16KChunks, pHeader->m_chr8KChunks);
+    uint8_t mapperID = (pHeader->m_flags7 & 0xF0) | ((pHeader->m_flags6 & 0xF0) >> 4);
+    m_pCart = new Cartridge(mapperID, pCartData, pHeader->m_prg16KChunks, pHeader->m_chr8KChunks);
     
-    return true;
+    return m_pCart != nullptr && m_pCart->IsValid();
 }
 
 void SystemNES::Tick()
