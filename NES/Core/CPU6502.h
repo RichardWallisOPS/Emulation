@@ -129,6 +129,7 @@ private:
     // Instructions
     void STA(uint8_t Tn); void STX(uint8_t Tn); void STY(uint8_t Tn);
     // Address Modes
+    bool Store_absREG(uint8_t Tn, uint8_t& cpuReg); bool Store_zpgREG(uint8_t Tn, uint8_t& cpuReg);
     bool Store_zpg(uint8_t Tn); bool Store_abs(uint8_t Tn); bool Store_absX(uint8_t Tn); bool Store_absY(uint8_t Tn);
     bool Store_zpgX(uint8_t Tn); bool Store_zpgY(uint8_t Tn); bool Store_indX(uint8_t Tn); bool Store_indY(uint8_t Tn);
     

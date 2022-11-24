@@ -1030,37 +1030,187 @@ void CPU6502::STY(uint8_t Tn)
 
 bool CPU6502::Store_zpg(uint8_t Tn)
 {
+    if(Tn == 1)
+    {
+        m_dataBus = programCounterReadByte();
+    }
+    else if(Tn == 2)
+    {
+        m_addressBusH = 0;
+        m_addressBusL = m_dataBus;
+        
+        (this->*(m_Instructions[m_opCode].m_operation))(Tn);
+        addressBusWriteByte(m_dataBus);
+        
+        return true;
+    }
     return false;
 }
 
 bool CPU6502::Store_abs(uint8_t Tn)
 {
+    if(Tn == 1)
+    {
+        m_dataBus = programCounterReadByte();
+    }
+    else if(Tn == 2)
+    {
+        m_addressBusL = m_dataBus;
+        m_dataBus = programCounterReadByte();
+    }
+    else if(Tn == 3)
+    {
+        m_addressBusH = m_dataBus;
+        
+        (this->*(m_Instructions[m_opCode].m_operation))(Tn);
+        addressBusWriteByte(m_dataBus);
+        
+        return true;
+    }
     return false;
 }
+
+bool CPU6502::Store_indX(uint8_t Tn)
+{
+    if(Tn == 1)
+    {
+        m_dataBus = programCounterReadByte();
+    }
+    else if(Tn == 2)
+    {
+        m_baseAddressL = m_dataBus;
+        m_addressBusL = m_baseAddressL;
+    }
+    else if(Tn == 3)
+    {
+        m_addressBusH = 0;
+        m_addressBusL = m_baseAddressL + m_x;
+        m_dataBus = addressBusReadByte();
+    }
+    else if(Tn == 4)
+    {
+        m_effectiveAddressL = m_dataBus;
+        m_addressBusL = m_baseAddressL + m_x + 1;
+        m_dataBus = addressBusReadByte();
+    }
+    else if(Tn == 5)
+    {
+        m_effectiveAddressH = m_dataBus;
+        m_addressBusH = m_effectiveAddressH;
+        m_addressBusL = m_effectiveAddressL;
+        
+        (this->*(m_Instructions[m_opCode].m_operation))(Tn);
+        addressBusWriteByte(m_dataBus);
+        
+        return true;
+    }
+    return false;
+}
+
+bool CPU6502::Store_absREG(uint8_t Tn, uint8_t& cpuReg)
+{
+    if(Tn == 1)
+    {
+        m_dataBus = programCounterReadByte();
+    }
+    else if(Tn == 2)
+    {
+        m_baseAddressL = m_dataBus;
+        m_dataBus = programCounterReadByte();
+    }
+    else if(Tn == 3)
+    {
+        m_baseAddressH = m_dataBus;
+        uint8_t carry = uint16_t(m_baseAddressL) + uint16_t(cpuReg) > 255 ? 1 : 0;
+        m_addressBusL = m_baseAddressL + cpuReg;
+        m_addressBusH = m_baseAddressH + carry;
+    }
+    else if(Tn == 4)
+    {
+        (this->*(m_Instructions[m_opCode].m_operation))(Tn);
+        addressBusWriteByte(m_dataBus);
+        
+        return true;
+    }
+    return false;
+}
+
 bool CPU6502::Store_absX(uint8_t Tn)
 {
-    return false;
+    return Store_absREG(Tn, m_x);
 }
 
 bool CPU6502::Store_absY(uint8_t Tn)
 {
+    return Store_absREG(Tn, m_y);
+}
+
+bool CPU6502::Store_zpgREG(uint8_t Tn, uint8_t& cpuReg)
+{
+    if(Tn == 1)
+    {
+        m_dataBus = programCounterReadByte();
+    }
+    else if(Tn == 2)
+    {
+        m_baseAddressL = m_dataBus;
+        m_addressBusH = 0;
+        m_addressBusL = m_baseAddressL;
+    }
+    else if(Tn == 3)
+    {
+        m_addressBusL = m_baseAddressL + cpuReg;
+        
+        (this->*(m_Instructions[m_opCode].m_operation))(Tn);
+        addressBusWriteByte(m_dataBus);
+        
+        return true;
+    }
     return false;
 }
 
 bool CPU6502::Store_zpgX(uint8_t Tn)
 {
-    return false;
+    return Store_zpgREG(Tn, m_x);
 }
 
 bool CPU6502::Store_zpgY(uint8_t Tn)
 {
-    return false;
+    return Store_zpgREG(Tn, m_y);
 }
-bool CPU6502::Store_indX(uint8_t Tn)
-{
-    return false;
-}
+
 bool CPU6502::Store_indY(uint8_t Tn)
 {
+    if(Tn == 1)
+    {
+        m_dataBus = programCounterReadByte();
+    }
+    else if(Tn == 2)
+    {
+        m_indirectAddressL = m_dataBus;
+        m_addressBusH = 0;
+        m_addressBusL = m_indirectAddressL;
+        m_dataBus = addressBusReadByte();
+    }
+    else if (Tn == 3)
+    {
+        m_baseAddressL = m_dataBus;
+        m_addressBusH = 0;
+        m_addressBusL = m_indirectAddressL + 1;
+        m_dataBus = addressBusReadByte();
+    }
+    else if(Tn == 4)
+    {
+        m_baseAddressH = m_dataBus;
+        m_addressBusH = m_baseAddressH;
+        m_addressBusL = m_baseAddressL + m_y;
+    }
+    else if(Tn == 5)
+    {
+        (this->*(m_Instructions[m_opCode].m_operation))(Tn);
+        addressBusWriteByte(m_dataBus);
+        
+        return true;
+    }
     return false;
 }
