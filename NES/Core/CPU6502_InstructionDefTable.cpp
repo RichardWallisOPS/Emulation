@@ -15,6 +15,7 @@ void CPU6502::InitInstructions()
     char const* immediate = "imm";
     char const* zeroPage = "zpg";
     char const* zeroPageX = "zpg,X";
+    char const* zeroPageY = "zpg,Y";
     char const* absolute = "abs";
     char const* absoluteX = "abs,X";
     char const* absoluteY = "abs,Y";
@@ -405,11 +406,41 @@ void CPU6502::InitInstructions()
     m_Instructions[0x9A].m_opAddressModeStr = "";
     m_Instructions[0x9A].m_cycles = 2;
     
-    m_Instructions[0xAA].m_opOrAddrMode = &CPU6502::TAX;
-    m_Instructions[0xAA].m_operation = nullptr;
-    m_Instructions[0xAA].m_opStr = "TAX";
-    m_Instructions[0xAA].m_opAddressModeStr = "";
-    m_Instructions[0xAA].m_cycles = 2;
+    m_Instructions[0xA0].m_opOrAddrMode = &CPU6502::InternalExecutionMemory_imm;
+    m_Instructions[0xA0].m_operation = &CPU6502::LDY;
+    m_Instructions[0xA0].m_opStr = "LDY";
+    m_Instructions[0xA0].m_opAddressModeStr = immediate;
+    m_Instructions[0xA0].m_cycles = 2;
+    
+    m_Instructions[0xA1].m_opOrAddrMode = &CPU6502::InternalExecutionMemory_indX;
+    m_Instructions[0xA1].m_operation = &CPU6502::LDA;
+    m_Instructions[0xA1].m_opStr = "LDA";
+    m_Instructions[0xA1].m_opAddressModeStr = indirectX;
+    m_Instructions[0xA1].m_cycles = 6;
+    
+    m_Instructions[0xA2].m_opOrAddrMode = &CPU6502::InternalExecutionMemory_imm;
+    m_Instructions[0xA2].m_operation = &CPU6502::LDX;
+    m_Instructions[0xA2].m_opStr = "LDX";
+    m_Instructions[0xA2].m_opAddressModeStr = immediate;
+    m_Instructions[0xA2].m_cycles = 2;
+    
+    m_Instructions[0xA4].m_opOrAddrMode = &CPU6502::InternalExecutionMemory_zpg;
+    m_Instructions[0xA4].m_operation = &CPU6502::LDY;
+    m_Instructions[0xA4].m_opStr = "LDY";
+    m_Instructions[0xA4].m_opAddressModeStr = zeroPage;
+    m_Instructions[0xA4].m_cycles = 3;
+    
+    m_Instructions[0xA5].m_opOrAddrMode = &CPU6502::InternalExecutionMemory_zpg;
+    m_Instructions[0xA5].m_operation = &CPU6502::LDA;
+    m_Instructions[0xA5].m_opStr = "LDA";
+    m_Instructions[0xA5].m_opAddressModeStr = zeroPage;
+    m_Instructions[0xA5].m_cycles = 3;
+    
+    m_Instructions[0xA6].m_opOrAddrMode = &CPU6502::InternalExecutionMemory_zpg;
+    m_Instructions[0xA6].m_operation = &CPU6502::LDX;
+    m_Instructions[0xA6].m_opStr = "LDX";
+    m_Instructions[0xA6].m_opAddressModeStr = zeroPage;
+    m_Instructions[0xA6].m_cycles = 3;
     
     m_Instructions[0xA8].m_opOrAddrMode = &CPU6502::TAY;
     m_Instructions[0xA8].m_operation = nullptr;
@@ -417,17 +448,100 @@ void CPU6502::InitInstructions()
     m_Instructions[0xA8].m_opAddressModeStr = "";
     m_Instructions[0xA8].m_cycles = 2;
     
-    m_Instructions[0xBA].m_opOrAddrMode = &CPU6502::TSX;
-    m_Instructions[0xBA].m_operation = nullptr;
-    m_Instructions[0xBA].m_opStr = "TSX";
-    m_Instructions[0xBA].m_opAddressModeStr = "";
-    m_Instructions[0xBA].m_cycles = 2;
+    m_Instructions[0xA9].m_opOrAddrMode = &CPU6502::InternalExecutionMemory_imm;
+    m_Instructions[0xA9].m_operation = &CPU6502::LDA;
+    m_Instructions[0xA9].m_opStr = "LDA";
+    m_Instructions[0xA9].m_opAddressModeStr = immediate;
+    m_Instructions[0xA9].m_cycles = 2;
+    
+    m_Instructions[0xAA].m_opOrAddrMode = &CPU6502::TAX;
+    m_Instructions[0xAA].m_operation = nullptr;
+    m_Instructions[0xAA].m_opStr = "TAX";
+    m_Instructions[0xAA].m_opAddressModeStr = "";
+    m_Instructions[0xAA].m_cycles = 2;
+    
+    m_Instructions[0xAC].m_opOrAddrMode = &CPU6502::InternalExecutionMemory_abs;
+    m_Instructions[0xAC].m_operation = &CPU6502::LDY;
+    m_Instructions[0xAC].m_opStr = "LDY";
+    m_Instructions[0xAC].m_opAddressModeStr = absolute;
+    m_Instructions[0xAC].m_cycles = 4;
+
+    m_Instructions[0xAD].m_opOrAddrMode = &CPU6502::InternalExecutionMemory_abs;
+    m_Instructions[0xAD].m_operation = &CPU6502::LDA;
+    m_Instructions[0xAD].m_opStr = "LDA";
+    m_Instructions[0xAD].m_opAddressModeStr = absolute;
+    m_Instructions[0xAD].m_cycles = 4;
+    
+    m_Instructions[0xAE].m_opOrAddrMode = &CPU6502::InternalExecutionMemory_abs;
+    m_Instructions[0xAE].m_operation = &CPU6502::LDX;
+    m_Instructions[0xAE].m_opStr = "LDX";
+    m_Instructions[0xAE].m_opAddressModeStr = absolute;
+    m_Instructions[0xAE].m_cycles = 4;
+    
+    m_Instructions[0xB1].m_opOrAddrMode = &CPU6502::InternalExecutionMemory_indY;
+    m_Instructions[0xB1].m_operation = &CPU6502::LDA;
+    m_Instructions[0xB1].m_opStr = "LDA";
+    m_Instructions[0xB1].m_opAddressModeStr = indirectY;
+    m_Instructions[0xB1].m_cycles = 5;
+    m_Instructions[0xB1].m_additionalCycle = 1;
+    
+    m_Instructions[0xB4].m_opOrAddrMode = &CPU6502::InternalExecutionMemory_zpgX;
+    m_Instructions[0xB4].m_operation = &CPU6502::LDY;
+    m_Instructions[0xB4].m_opStr = "LDY";
+    m_Instructions[0xB4].m_opAddressModeStr = zeroPageX;
+    m_Instructions[0xB4].m_cycles = 4;
+    
+    m_Instructions[0xB5].m_opOrAddrMode = &CPU6502::InternalExecutionMemory_zpgX;
+    m_Instructions[0xB5].m_operation = &CPU6502::LDA;
+    m_Instructions[0xB5].m_opStr = "LDA";
+    m_Instructions[0xB5].m_opAddressModeStr = zeroPageX;
+    m_Instructions[0xB5].m_cycles = 4;
+    
+    m_Instructions[0xB6].m_opOrAddrMode = &CPU6502::InternalExecutionMemory_zpgY;
+    m_Instructions[0xB6].m_operation = &CPU6502::LDX;
+    m_Instructions[0xB6].m_opStr = "LDX";
+    m_Instructions[0xB6].m_opAddressModeStr = zeroPageY;
+    m_Instructions[0xB6].m_cycles = 4;
     
     m_Instructions[0xB8].m_opOrAddrMode = &CPU6502::CLV;
     m_Instructions[0xB8].m_operation = nullptr;
     m_Instructions[0xB8].m_opStr = "CLV";
     m_Instructions[0xB8].m_opAddressModeStr = "";
     m_Instructions[0xB8].m_cycles = 2;
+    
+    m_Instructions[0xB9].m_opOrAddrMode = &CPU6502::InternalExecutionMemory_absY;
+    m_Instructions[0xB9].m_operation = &CPU6502::LDA;
+    m_Instructions[0xB9].m_opStr = "LDA";
+    m_Instructions[0xB9].m_opAddressModeStr = absoluteY;
+    m_Instructions[0xB9].m_cycles = 4;
+    m_Instructions[0xB9].m_additionalCycle = 1;
+    
+    m_Instructions[0xBA].m_opOrAddrMode = &CPU6502::TSX;
+    m_Instructions[0xBA].m_operation = nullptr;
+    m_Instructions[0xBA].m_opStr = "TSX";
+    m_Instructions[0xBA].m_opAddressModeStr = "";
+    m_Instructions[0xBA].m_cycles = 2;
+    
+    m_Instructions[0xBC].m_opOrAddrMode = &CPU6502::InternalExecutionMemory_absX;
+    m_Instructions[0xBC].m_operation = &CPU6502::LDY;
+    m_Instructions[0xBC].m_opStr = "LDY";
+    m_Instructions[0xBC].m_opAddressModeStr = absoluteX;
+    m_Instructions[0xBC].m_cycles = 4;
+    m_Instructions[0xBC].m_additionalCycle = 1;
+    
+    m_Instructions[0xBD].m_opOrAddrMode = &CPU6502::InternalExecutionMemory_absX;
+    m_Instructions[0xBD].m_operation = &CPU6502::LDA;
+    m_Instructions[0xBD].m_opStr = "LDA";
+    m_Instructions[0xBD].m_opAddressModeStr = absoluteX;
+    m_Instructions[0xBD].m_cycles = 4;
+    m_Instructions[0xBD].m_additionalCycle = 1;
+    
+    m_Instructions[0xBE].m_opOrAddrMode = &CPU6502::InternalExecutionMemory_absY;
+    m_Instructions[0xBE].m_operation = &CPU6502::LDX;
+    m_Instructions[0xBE].m_opStr = "LDX";
+    m_Instructions[0xBE].m_opAddressModeStr = absoluteY;
+    m_Instructions[0xBE].m_cycles = 4;
+    m_Instructions[0xBE].m_additionalCycle = 1;
     
     m_Instructions[0xC0].m_opOrAddrMode = &CPU6502::InternalExecutionMemory_imm;
     m_Instructions[0xC0].m_operation = &CPU6502::CPY;
@@ -546,11 +660,29 @@ void CPU6502::InitInstructions()
     m_Instructions[0xE0].m_opAddressModeStr = immediate;
     m_Instructions[0xE0].m_cycles = 2;
     
+    m_Instructions[0xE1].m_opOrAddrMode = &CPU6502::InternalExecutionMemory_indX;
+    m_Instructions[0xE1].m_operation = &CPU6502::SBC;
+    m_Instructions[0xE1].m_opStr = "SBC";
+    m_Instructions[0xE1].m_opAddressModeStr = indirectX;
+    m_Instructions[0xE1].m_cycles = 6;
+    
     m_Instructions[0xE4].m_opOrAddrMode = &CPU6502::InternalExecutionMemory_zpg;
     m_Instructions[0xE4].m_operation = &CPU6502::CPX;
     m_Instructions[0xE4].m_opStr = "CPX";
     m_Instructions[0xE4].m_opAddressModeStr = zeroPage;
     m_Instructions[0xE4].m_cycles = 3;
+    
+    m_Instructions[0xE5].m_opOrAddrMode = &CPU6502::InternalExecutionMemory_zpg;
+    m_Instructions[0xE5].m_operation = &CPU6502::SBC;
+    m_Instructions[0xE5].m_opStr = "SBC";
+    m_Instructions[0xE5].m_opAddressModeStr = zeroPage;
+    m_Instructions[0xE5].m_cycles = 3;
+    
+    m_Instructions[0xE9].m_opOrAddrMode = &CPU6502::InternalExecutionMemory_imm;
+    m_Instructions[0xE9].m_operation = &CPU6502::SBC;
+    m_Instructions[0xE9].m_opStr = "SBC";
+    m_Instructions[0xE9].m_opAddressModeStr = immediate;
+    m_Instructions[0xE9].m_cycles = 2;
     
     m_Instructions[0xEA].m_opOrAddrMode = &CPU6502::NOP;
     m_Instructions[0xEA].m_operation = nullptr;
@@ -563,6 +695,12 @@ void CPU6502::InitInstructions()
     m_Instructions[0xEC].m_opStr = "CPX";
     m_Instructions[0xEC].m_opAddressModeStr = absolute;
     m_Instructions[0xEC].m_cycles = 4;
+    
+    m_Instructions[0xED].m_opOrAddrMode = &CPU6502::InternalExecutionMemory_abs;
+    m_Instructions[0xED].m_operation = &CPU6502::SBC;
+    m_Instructions[0xED].m_opStr = "SBC";
+    m_Instructions[0xED].m_opAddressModeStr = absolute;
+    m_Instructions[0xED].m_cycles = 4;
     
     m_Instructions[0xE6].m_opOrAddrMode = &CPU6502::ReadModifyWrite_zpg;
     m_Instructions[0xE6].m_operation = &CPU6502::RMW_INC;
@@ -582,6 +720,19 @@ void CPU6502::InitInstructions()
     m_Instructions[0xEE].m_opAddressModeStr = absolute;
     m_Instructions[0xEE].m_cycles = 6;
     
+    m_Instructions[0xF1].m_opOrAddrMode = &CPU6502::InternalExecutionMemory_indY;
+    m_Instructions[0xF1].m_operation = &CPU6502::SBC;
+    m_Instructions[0xF1].m_opStr = "SBC";
+    m_Instructions[0xF1].m_opAddressModeStr = indirectY;
+    m_Instructions[0xF1].m_cycles = 5;
+    m_Instructions[0xF1].m_additionalCycle = 1;
+    
+    m_Instructions[0xF5].m_opOrAddrMode = &CPU6502::InternalExecutionMemory_zpgX;
+    m_Instructions[0xF5].m_operation = &CPU6502::SBC;
+    m_Instructions[0xF5].m_opStr = "SBC";
+    m_Instructions[0xF5].m_opAddressModeStr = zeroPageX;
+    m_Instructions[0xF5].m_cycles = 4;
+    
     m_Instructions[0xF6].m_opOrAddrMode = &CPU6502::ReadModifyWrite_zpgX;
     m_Instructions[0xF6].m_operation = &CPU6502::RMW_INC;
     m_Instructions[0xF6].m_opStr = "INC";
@@ -594,38 +745,37 @@ void CPU6502::InitInstructions()
     m_Instructions[0xF8].m_opAddressModeStr = "";
     m_Instructions[0xF8].m_cycles = 2;
     
+    m_Instructions[0xF9].m_opOrAddrMode = &CPU6502::InternalExecutionMemory_absY;
+    m_Instructions[0xF9].m_operation = &CPU6502::SBC;
+    m_Instructions[0xF9].m_opStr = "SBC";
+    m_Instructions[0xF9].m_opAddressModeStr = absoluteY;
+    m_Instructions[0xF9].m_cycles = 4;
+    m_Instructions[0xF9].m_additionalCycle = 1;
+    
+    m_Instructions[0xFD].m_opOrAddrMode = &CPU6502::InternalExecutionMemory_absX;
+    m_Instructions[0xFD].m_operation = &CPU6502::SBC;
+    m_Instructions[0xFD].m_opStr = "SBC";
+    m_Instructions[0xFD].m_opAddressModeStr = absoluteX;
+    m_Instructions[0xFD].m_cycles = 4;
+    m_Instructions[0xFD].m_additionalCycle = 1;
+    
     m_Instructions[0xFE].m_opOrAddrMode = &CPU6502::ReadModifyWrite_absX;
     m_Instructions[0xFE].m_operation = &CPU6502::RMW_INC;
     m_Instructions[0xFE].m_opStr = "INC";
     m_Instructions[0xFE].m_opAddressModeStr = absoluteX;
     m_Instructions[0xFE].m_cycles = 7;
 /*
-// Address modes
-// imm zpg zpg,X abs absX absY (ind,X) (ind),Y
 
 // m_Instructions[0x].m_additionalCycle = 1;
 
 // InternalExecutionMemory
 
-immediate	SBC #oper	E9	2
-zeropage	SBC oper	E5	3
-zeropage,X	SBC oper,X	F5	4
-absolute	SBC oper	ED	4
-absolute,X	SBC oper,X	FD	4*
-absolute,Y	SBC oper,Y	F9	4*
-(indirect,X) SBC (oper,X) E1	6
-(indirect),Y SBC (oper),Y F1	5*
+m_Instructions[0xBC].m_opOrAddrMode = &CPU6502::InternalExecutionMemory_absX;
+m_Instructions[0xBC].m_operation = &CPU6502::LDY;
+m_Instructions[0xBC].m_opStr = "LDY";
+m_Instructions[0xBC].m_opAddressModeStr = absoluteX;
+m_Instructions[0xBC].m_cycles = 4;
 
-m_Instructions[0x11].m_opOrAddrMode = &CPU6502::InternalExecutionMemory_indY;
-m_Instructions[0x11].m_operation = &CPU6502::ORA;
-m_Instructions[0x11].m_opStr = "ORA";
-m_Instructions[0x11].m_opAddressModeStr = indirectY;
-m_Instructions[0x11].m_cycles = 5;
-m_Instructions[0x11].m_additionalCycle = 1;
-
-LDA
-LDX
-LDY
 */
 #if DEBUG
     // implemented and duplicate instruction set checks
