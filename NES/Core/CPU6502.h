@@ -45,6 +45,10 @@ private:
     void ClearFlag(uint8_t flag);
     bool TestFlag(uint8_t flag);
     void ConditionalSetFlag(uint8_t flag, bool bCondition);
+    
+    uint8_t programCounterReadByte();
+    uint8_t addressBusReadByte();
+    void addressBusWriteByte(uint8_t data);
             
 private:
 
@@ -101,58 +105,32 @@ private:
     void InitInstructions();
     bool ERROR(uint8_t Tn);
     
-    uint8_t programCounterReadByte();
-    uint8_t addressBusReadByte();
-    void addressBusWriteByte(uint8_t data);
-    
-    // Key:
-    // zpg = zero page
-    // abs = absolute
-    // zpgX = zero page + x
-    // absX = absolute + x
-    // indX = indirect + x
-    // return "bool" is for functions directly called for the opCode executation
-    // return "void" is for functions called from within the OpCode executation
-        
-    // Generic - same functionality but different registers or current memory bus
+    // Individual instructions and address modes + their instructions
     void ASL(uint8_t& cpuReg); void LSR(uint8_t& cpuReg); void ROL(uint8_t& cpuReg); void ROR(uint8_t& cpuReg); void REG_CMP(uint8_t& cpuReg); void REG_LOAD(uint8_t& cpuReg);
     
-    // 1) Single byte instructions
     bool Accum_ASL(uint8_t Tn); bool Accum_LSR(uint8_t Tn); bool Accum_ROL(uint8_t Tn); bool Accum_ROR(uint8_t Tn);
     bool NOP(uint8_t Tn); bool SEI(uint8_t Tn); bool SEC(uint8_t Tn); bool SED(uint8_t);
     bool CLD(uint8_t Tn); bool CLC(uint8_t Tn); bool CLI(uint8_t Tn); bool CLV(uint8_t Tn);
     bool TAX(uint8_t Tn); bool TAY(uint8_t Tn); bool TXA(uint8_t Tn); bool TYA(uint8_t Tn); bool TSX(uint8_t Tn); bool TXS(uint8_t Tn);
     bool INX(uint8_t Tn); bool INY(uint8_t Tn); bool DEX(uint8_t Tn); bool DEY(uint8_t Tn);
     
-    // 2) Internal executation on Memory Data (Note: these execute their instruction on next op code fetch)
-    // Instructions
     void ADC(uint8_t Tn); void AND(uint8_t Tn); void BIT(uint8_t Tn); void CMP(uint8_t Tn); void CPX(uint8_t Tn); void CPY(uint8_t Tn);
     void EOR(uint8_t Tn); void LDA(uint8_t Tn); void LDX(uint8_t Tn); void LDY(uint8_t Tn); void ORA(uint8_t Tn); void SBC(uint8_t Tn);
-    // Address Modes - return true means data is ready for next cycle executation before op-code fetch
     bool InternalExecutionMemory_absREG(uint8_t Tn, uint8_t& cpuReg);
     bool InternalExecutionMemory_zpgREG(uint8_t Tn, uint8_t& cpuReg);
     bool InternalExecutionMemory_imm(uint8_t Tn); bool InternalExecutionMemory_zpg(uint8_t Tn); bool InternalExecutionMemory_abs(uint8_t Tn);
     bool InternalExecutionMemory_indX(uint8_t Tn); bool InternalExecutionMemory_indY(uint8_t Tn); bool InternalExecutionMemory_absX(uint8_t Tn);
     bool InternalExecutionMemory_absY(uint8_t Tn); bool InternalExecutionMemory_zpgX(uint8_t Tn); bool InternalExecutionMemory_zpgY(uint8_t Tn);
     
-    // 3) Store
-    // Instructions
     void STA(uint8_t Tn); void STX(uint8_t Tn); void STY(uint8_t Tn);
-    // Address Modes
     bool Store_absREG(uint8_t Tn, uint8_t& cpuReg); bool Store_zpgREG(uint8_t Tn, uint8_t& cpuReg);
     bool Store_zpg(uint8_t Tn); bool Store_abs(uint8_t Tn); bool Store_absX(uint8_t Tn); bool Store_absY(uint8_t Tn);
     bool Store_zpgX(uint8_t Tn); bool Store_zpgY(uint8_t Tn); bool Store_indX(uint8_t Tn); bool Store_indY(uint8_t Tn);
     
-    // 4) Read Modify Write
-    // Instructions
     void RMW_ASL(uint8_t Tn); void RMW_DEC(uint8_t Tn); void RMW_INC(uint8_t Tn); void RMW_LSR(uint8_t Tn); void RMW_ROL(uint8_t Tn); void RMW_ROR(uint8_t Tn);
-    // Address Modes
     bool ReadModifyWrite_zpg(uint8_t Tn); bool ReadModifyWrite_abs(uint8_t Tn); bool ReadModifyWrite_zpgX(uint8_t Tn); bool ReadModifyWrite_absX(uint8_t Tn);
     
-    // 5) Others
-    // Instructions
     void PHP(uint8_t Tn); void PHA(uint8_t Tn); void PLP(uint8_t Tn); void PLA(uint8_t Tn);
-    // Address Modes
     bool StackPush(uint8_t Tn); bool StackPull(uint8_t Tn);
 };
 
