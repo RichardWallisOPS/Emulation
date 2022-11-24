@@ -163,7 +163,7 @@ uint8_t SystemNES::cpuRead(uint16_t address)
     }
     else if(address >= 0x4020 && address < 0xFFFF && m_pCart != nullptr)
     {
-        // Cart with interrupt vectors (NMI=0xFFFA-0xFFFB, Reset=0xFFFC-0xFFFD, IRQ/BRK=0xFFFE-0xFFFF
+        // Cart with interrupt vectors (NMI=0xFFFA-0xFFFB, Reset=0xFFFC-0xFFFD, IRQ/BRK=0xFFFE-0xFFFF)
         return m_pCart->cpuRead(address);
     }
             

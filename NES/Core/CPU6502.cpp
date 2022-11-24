@@ -163,19 +163,19 @@ void CPU6502::addressBusWriteByte(uint8_t data)
     m_bus.cpuWrite(address, data);
 }
 
-void CPU6502::SignalReset()
+void CPU6502::SignalReset(bool bSignal)
 {
-    m_bSignalReset = true;
+    m_bSignalReset = bSignal;
 }
 
-void CPU6502::SignalNMI()
+void CPU6502::SignalNMI(bool bSignal)
 {
-    m_bSignalNMI = true;
+    m_bSignalNMI = bSignal;
 }
 
-void CPU6502::SignalIRQ()
+void CPU6502::SignalIRQ(bool bSignal)
 {
-    m_bSignalIRQ = true;
+    m_bSignalIRQ = bSignal;
 }
 
 #ifdef EMULATION_LOG
@@ -232,28 +232,10 @@ void CPU6502::Tick()
     }
 #endif
 
-    // TODO Interrupt(s) / reset may take a certain number of ticks to execute so may need tickable handler functions and executation halt
-    if(m_bSignalReset)
-    {
-        // TODO
-        m_bSignalReset = false;
-    }
-
-    if(m_bSignalNMI)
-    {
-        // TODO
-        m_bSignalNMI = false;
-    }
-    
-    if(m_bSignalIRQ)
-    {
-        // TODO
-        m_bSignalIRQ = false;
-    }
-    
     bool bInstructionTStatesCompleted = false;
     if(m_instructionCycle == 0)
     {
+        m_opCode = 0;
         m_dataBus = 0;
         m_addressBusH = 0;
         m_addressBusL = 0;
@@ -264,8 +246,20 @@ void CPU6502::Tick()
         m_effectiveAddressH = 0;
         m_effectiveAddressL = 0;
         
-        // This is Tn == 0 (opCode fetch) for every instruction
-        m_opCode = m_dataBus = programCounterReadByte();
+        if(m_bSignalReset || m_bSignalNMI || (m_bSignalIRQ && TestFlag(Flag_IRQDisable) == false))
+        {
+            m_opCode = 0;
+            ClearFlag(Flag_Break);
+        }
+        else
+        {
+            // This is Tn == 0 (opCode fetch) for every instruction
+            m_opCode = m_dataBus = programCounterReadByte();
+            if(m_opCode == 0)
+            {
+                SetFlag(Flag_Break);
+            }
+        }
     }
     else
     {
@@ -1266,6 +1260,7 @@ void CPU6502::PHA(uint8_t Tn)
 void CPU6502::PLP(uint8_t Tn)
 {
     m_flags = m_dataBus;
+    ClearFlag(Flag_Break); // TODO?  its not clear if this is actually the case
 }
 
 void CPU6502::PLA(uint8_t Tn)
@@ -1345,6 +1340,33 @@ bool CPU6502::JSR(uint8_t Tn)
         m_addressBusH = m_dataBus;
         m_pc = uint16FromRegisterPair(m_addressBusH, m_addressBusL);
         return true;
+    }
+    
+    return false;
+}
+
+bool CPU6502::BRK(uint8_t Tn)
+{
+    // TODO: on RTI does ClearFlag(Flag_Break);
+    // Flag_Break is set then
+    //(NMI=0xFFFA-0xFFFB, Reset=0xFFFC-0xFFFD, IRQ/BRK=0xFFFE-0xFFFF)
+    
+    // Order of priority
+    if(m_bSignalReset)
+    {
+        m_bSignalReset = false;
+    }
+    else if(m_bSignalNMI)
+    {
+        m_bSignalNMI = false;
+    }
+    else if(m_bSignalIRQ)
+    {
+        m_bSignalIRQ = false;
+    }
+    else if(TestFlag(Flag_Break))
+    {
+        // software break same vector as IRQ
     }
     
     return false;

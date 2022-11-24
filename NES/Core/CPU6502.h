@@ -32,9 +32,9 @@ public:
     void Reset();
     void Tick();
     
-    void SignalReset();
-    void SignalNMI();
-    void SignalIRQ();
+    void SignalReset(bool bSignal);
+    void SignalNMI(bool bSignal);
+    void SignalIRQ(bool bSignal);
     
     // Debug
     void SetPC(uint16_t pc);
@@ -136,7 +136,7 @@ private:
     void GenericPushStack(uint8_t data);
     uint8_t GenericPullStack();
     
-    bool JSR(uint8_t Tn);
+    bool JSR(uint8_t Tn); bool BRK(uint8_t Tn);
 };
 
 #endif /* CPU6502_h */
