@@ -135,8 +135,7 @@ private:
     
     void GenericPushStack(uint8_t data);
     uint8_t GenericPullStack();
-    
-    bool JSR(uint8_t Tn); bool BRK(uint8_t Tn);
+    bool JSR(uint8_t Tn); bool BRK(uint8_t Tn); bool RTI(uint8_t Tn);
 };
 
 #endif /* CPU6502_h */

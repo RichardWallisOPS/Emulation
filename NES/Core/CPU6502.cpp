@@ -36,6 +36,16 @@ inline uint16_t uint16FromRegisterPair(uint8_t high, uint8_t low)
     return result;
 }
 
+inline uint8_t highByteFromAddress(uint16_t address)
+{
+    return uint8_t((address & 0xFF00) >> 8);
+}
+
+inline uint8_t lowByteFromAddress(uint16_t address)
+{
+    return (uint8_t(address & 0xFF));
+}
+
 CPU6502::CPU6502(IOBus& bus)
 : m_bus(bus)
 , m_a(0)
@@ -95,10 +105,13 @@ void CPU6502::ConditionalSetFlag(uint8_t flag, bool bCondition)
 
 void CPU6502::PowerOn()
 {
+    // TODO power on takes about 6 CPU cycles to get ready
+    // TODO may have to emulate this and use the reset routine
+    
     m_a = 0;
     m_x = 0;
     m_y = 0;
-    m_stack = 0xFF; // ?
+    m_stack = 0xFF;
     m_flags = 0x34;
     
     uint8_t resetAddressL = m_bus.cpuRead(0xFFFC);
@@ -123,27 +136,7 @@ void CPU6502::PowerOn()
 
 void CPU6502::Reset()
 {
-    //m_stack -= 3;   //?
-    SetFlag(Flag_IRQDisable);
-    
-    uint8_t resetAddressL = m_bus.cpuRead(0xFFFC);
-    uint8_t resetAddressH = m_bus.cpuRead(0xFFFD);
-    m_pc = uint16FromRegisterPair(resetAddressH, resetAddressL);
-    
-    m_tickCount = 0;
-    m_instructionCycle = 0;
-    m_dataBus = 0;
-    m_opCode = 0;
-    m_addressBusH = 0;
-    m_addressBusL = 0;
-    m_baseAddressH = 0;
-    m_baseAddressL = 0;
-    m_indirectAddressH = 0;
-    m_indirectAddressL = 0;
-    m_effectiveAddressH = 0;
-    m_effectiveAddressL = 0;
-    
-    m_bSignalIRQ = m_bSignalNMI = m_bSignalReset = false;
+    m_bSignalReset = true;
 }
 
 void CPU6502::SetPC(uint16_t pc)
@@ -248,6 +241,7 @@ void CPU6502::Tick()
         
         if(m_bSignalReset || m_bSignalNMI || (m_bSignalIRQ && TestFlag(Flag_IRQDisable) == false))
         {
+            // Does a hardware interrupt still advance the program counter? Currently assuming not
             m_opCode = 0;
             ClearFlag(Flag_Break);
         }
@@ -258,6 +252,7 @@ void CPU6502::Tick()
             if(m_opCode == 0)
             {
                 SetFlag(Flag_Break);
+                SetFlag(Flag_IRQDisable);
             }
         }
     }
@@ -1260,7 +1255,7 @@ void CPU6502::PHA(uint8_t Tn)
 void CPU6502::PLP(uint8_t Tn)
 {
     m_flags = m_dataBus;
-    ClearFlag(Flag_Break); // TODO?  its not clear if this is actually the case
+    ClearFlag(Flag_Break);
 }
 
 void CPU6502::PLA(uint8_t Tn)
@@ -1290,7 +1285,7 @@ bool CPU6502::StackPull(uint8_t Tn)
     if(Tn == 3)
     {
         m_addressBusH = 0x01;
-        m_addressBusL = m_stack++;
+        m_addressBusL = ++m_stack;
         m_dataBus = addressBusReadByte();
         
         (this->*(m_Instructions[m_opCode].m_operation))(Tn);
@@ -1308,7 +1303,7 @@ void CPU6502::GenericPushStack(uint8_t data)
 
 uint8_t CPU6502::GenericPullStack()
 {
-    uint16_t address = uint16FromRegisterPair(0x01, m_stack++);
+    uint16_t address = uint16FromRegisterPair(0x01, ++m_stack);
     return m_bus.cpuRead(address);
 }
 
@@ -1326,12 +1321,12 @@ bool CPU6502::JSR(uint8_t Tn)
     }
     else if(Tn == 3)
     {
-        uint8_t pcH = uint8_t((m_pc & 0xFF00) >> 8);
+        uint8_t pcH = highByteFromAddress(m_pc);
         GenericPushStack(pcH);
     }
     else if(Tn == 4)
     {
-        uint8_t pcL = (int8_t(m_pc & 0xFF));
+        uint8_t pcL = lowByteFromAddress(m_pc);
         GenericPushStack(pcL);
     }
     else if(Tn == 5)
@@ -1347,27 +1342,109 @@ bool CPU6502::JSR(uint8_t Tn)
 
 bool CPU6502::BRK(uint8_t Tn)
 {
-    // TODO: on RTI does ClearFlag(Flag_Break);
-    // Flag_Break is set then
-    //(NMI=0xFFFA-0xFFFB, Reset=0xFFFC-0xFFFD, IRQ/BRK=0xFFFE-0xFFFF)
+    if(Tn == 1)
+    {
+        // Software break increments the stack by one
+        if(TestFlag(Flag_Break))
+        {
+            m_dataBus = programCounterReadByte();
+        }
+    }
+    else if(Tn == 2)
+    {
+        uint8_t pcH = highByteFromAddress(m_pc);
+        GenericPushStack(pcH);
+    }
+    else if(Tn == 3)
+    {
+        uint8_t pcL = lowByteFromAddress(m_pc);
+        GenericPushStack(pcL);
+    }
+    else if(Tn == 4)
+    {
+        GenericPushStack(m_flags);
+    }
+    else if(Tn == 5)
+    {
+        // should be low order byte of vector address but going to do both in T6
+    }
+    else if(Tn == 6)
+    {
+        uint16_t vectorAddressL = 0x00;
+        uint16_t vectorAddressH = 0x00;
+        
+        // Order of priority - we may have to use a latch of these values if something external can reset them
+        if(m_bSignalReset)
+        {
+            m_bSignalReset = false;
+            vectorAddressL = 0xFFFC;
+            vectorAddressH = 0xFFFD;
+        }
+        else if(m_bSignalNMI)
+        {
+            m_bSignalNMI = false;
+            vectorAddressL = 0xFFFA;
+            vectorAddressH = 0xFFFB;
+        }
+        else if(m_bSignalIRQ)
+        {
+            m_bSignalIRQ = false;
+            vectorAddressL = 0xFFFE;
+            vectorAddressH = 0xFFFF;
+        }
+        else if(TestFlag(Flag_Break))
+        {
+            vectorAddressL = 0xFFFE;
+            vectorAddressH = 0xFFFF;
+        }
+        else
+        {
+            // Some thing has been unset since being set
+            // Default reset vector - if we get weird resets then this is the reason
+            vectorAddressL = 0xFFFC;
+            vectorAddressH = 0xFFFD;
+        }
+        
+        ClearFlag(Flag_Break);
+        
+        m_addressBusL = m_bus.cpuRead(vectorAddressL);
+        m_addressBusH = m_bus.cpuRead(vectorAddressH);
+        
+        m_pc = uint16FromRegisterPair(m_addressBusH, m_addressBusL);
+        return true;
+    }
     
-    // Order of priority
-    if(m_bSignalReset)
+    return false;
+}
+
+bool CPU6502::RTI(uint8_t Tn)
+{
+    if(Tn == 1)
     {
-        m_bSignalReset = false;
+        m_dataBus = programCounterReadByte();
     }
-    else if(m_bSignalNMI)
+    else if(Tn == 2)
     {
-        m_bSignalNMI = false;
+        m_addressBusH = 0x01;
+        m_addressBusL = m_stack;
     }
-    else if(m_bSignalIRQ)
+    else if(Tn == 3)
     {
-        m_bSignalIRQ = false;
+        m_dataBus = GenericPullStack();
+        m_flags = m_dataBus;
+        ClearFlag(Flag_Break);
     }
-    else if(TestFlag(Flag_Break))
+    else if(Tn == 4)
     {
-        // software break same vector as IRQ
+        m_dataBus = GenericPullStack();
+        m_addressBusL = m_dataBus;
     }
-    
+    else if(Tn == 5)
+    {
+        m_dataBus = GenericPullStack();
+        m_addressBusH = m_dataBus;
+        m_pc = uint16FromRegisterPair(m_addressBusH, m_addressBusL);
+        return true;
+    }
     return false;
 }

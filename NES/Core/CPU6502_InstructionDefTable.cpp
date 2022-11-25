@@ -22,6 +22,12 @@ void CPU6502::InitInstructions()
     char const* indirectX = "(ind,X)";
     char const* indirectY = "(ind),Y";
     
+    m_Instructions[0x00].m_opOrAddrMode = &CPU6502::BRK;
+    m_Instructions[0x00].m_operation = nullptr;
+    m_Instructions[0x00].m_opStr = "BRK";
+    m_Instructions[0x00].m_opAddressModeStr = "";
+    m_Instructions[0x00].m_cycles = 7;
+    
     m_Instructions[0x01].m_opOrAddrMode = &CPU6502::InternalExecutionMemory_indX;
     m_Instructions[0x01].m_operation = &CPU6502::ORA;
     m_Instructions[0x01].m_opStr = "ORA";
@@ -225,6 +231,12 @@ void CPU6502::InitInstructions()
     m_Instructions[0x3E].m_opStr = "ROL";
     m_Instructions[0x3E].m_opAddressModeStr = absoluteX;
     m_Instructions[0x3E].m_cycles = 7;
+    
+    m_Instructions[0x40].m_opOrAddrMode = &CPU6502::RTI;
+    m_Instructions[0x40].m_operation = nullptr;
+    m_Instructions[0x40].m_opStr = "RTI";
+    m_Instructions[0x40].m_opAddressModeStr = "";
+    m_Instructions[0x40].m_cycles = 6;
     
     m_Instructions[0x41].m_opOrAddrMode = &CPU6502::InternalExecutionMemory_indX;
     m_Instructions[0x41].m_operation = &CPU6502::EOR;
@@ -876,12 +888,11 @@ void CPU6502::InitInstructions()
 
 // m_Instructions[0x].m_additionalCycle = 1;
 
-
-m_Instructions[0x20].m_opOrAddrMode = &CPU6502::JSR;
-m_Instructions[0x20].m_operation = nullptr
-m_Instructions[0x20].m_opStr = "JSR";
-m_Instructions[0x20].m_opAddressModeStr = "";
-m_Instructions[0x20].m_cycles = 3;
+m_Instructions[0x40].m_opOrAddrMode = &CPU6502::RTI;
+m_Instructions[0x40].m_operation = nullptr;
+m_Instructions[0x40].m_opStr = "RTI";
+m_Instructions[0x40].m_opAddressModeStr = "";
+m_Instructions[0x40].m_cycles = 6;
 
 
 */
