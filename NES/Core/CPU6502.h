@@ -17,6 +17,7 @@
 // Instruction cycle Tn states taken from 6502 data sheet
 // Registers, memory, address and data buses values try to follow the rules for these states
 // This means some Tn operations look superfluous but this is trying to be cpu register state cycle "accurate"
+// However some operations on the data bus that would be discared are not always done
 // No instruction implements T0 as that is the generic opCode fetch and is handled by the core update
 // NOTE:    Decimal mode is not implemented - it and any illegal op-codes will error in Debug and NOP in Release
 // https://www.masswerk.at/6502/6502_instruction_set.html
@@ -135,7 +136,7 @@ private:
     
     void GenericPushStack(uint8_t data);
     uint8_t GenericPullStack();
-    bool JSR(uint8_t Tn); bool BRK(uint8_t Tn); bool RTI(uint8_t Tn); bool JMP_abs(uint8_t Tn); bool JMP_ind(uint8_t Tn);
+    bool JSR(uint8_t Tn); bool RTS(uint8_t Tn); bool BRK(uint8_t Tn); bool RTI(uint8_t Tn); bool JMP_abs(uint8_t Tn); bool JMP_ind(uint8_t Tn);
 };
 
 #endif /* CPU6502_h */

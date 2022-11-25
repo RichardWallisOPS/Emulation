@@ -1340,6 +1340,35 @@ bool CPU6502::JSR(uint8_t Tn)
     return false;
 }
 
+bool CPU6502::RTS(uint8_t Tn)
+{
+    if(Tn == 1)
+    {
+        m_dataBus = programCounterReadByte();
+    }
+    else if(Tn == 2)
+    {
+        m_addressBusH = 0x01;
+        m_addressBusL = m_stack;
+    }
+    else if(Tn == 3)
+    {
+        m_dataBus = GenericPullStack();
+        m_addressBusL = m_dataBus;
+    }
+    else if(Tn == 4)
+    {
+        m_dataBus = GenericPullStack();
+        m_addressBusH = m_dataBus;
+    }
+    else if(Tn == 5)
+    {
+        m_pc = uint16FromRegisterPair(m_addressBusH, m_addressBusL);
+        return true;
+    }
+    return false;
+}
+
 bool CPU6502::BRK(uint8_t Tn)
 {
     if(Tn == 1)

@@ -338,6 +338,12 @@ void CPU6502::InitInstructions()
     m_Instructions[0x5E].m_opAddressModeStr = absoluteX;
     m_Instructions[0x5E].m_cycles = 7;
     
+    m_Instructions[0x60].m_opOrAddrMode = &CPU6502::RTS;
+    m_Instructions[0x60].m_operation = nullptr;
+    m_Instructions[0x60].m_opStr = "RTS";
+    m_Instructions[0x60].m_opAddressModeStr = "";
+    m_Instructions[0x60].m_cycles = 6;
+    
     m_Instructions[0x61].m_opOrAddrMode = &CPU6502::InternalExecutionMemory_indX;
     m_Instructions[0x61].m_operation = &CPU6502::ADC;
     m_Instructions[0x61].m_opStr = "ADC";
@@ -901,11 +907,11 @@ void CPU6502::InitInstructions()
 
 // m_Instructions[0x].m_additionalCycle = 1;
 
-m_Instructions[0x6C].m_opOrAddrMode = &CPU6502::JMP_ind;
-m_Instructions[0x6C].m_operation = nullptr;
-m_Instructions[0x6C].m_opStr = "JMP";
-m_Instructions[0x6C].m_opAddressModeStr = indirect;
-m_Instructions[0x6C].m_cycles = 5;
+m_Instructions[0x60].m_opOrAddrMode = &CPU6502::RTS;
+m_Instructions[0x60].m_operation = nullptr;
+m_Instructions[0x60].m_opStr = "RTS";
+m_Instructions[0x60].m_opAddressModeStr = "";
+m_Instructions[0x60].m_cycles = 6;
 
 
 */
