@@ -21,6 +21,7 @@ void CPU6502::InitInstructions()
     char const* absoluteY = "abs,Y";
     char const* indirectX = "(ind,X)";
     char const* indirectY = "(ind),Y";
+    char const* indirect = "(ind)";
     
     m_Instructions[0x00].m_opOrAddrMode = &CPU6502::BRK;
     m_Instructions[0x00].m_operation = nullptr;
@@ -125,7 +126,7 @@ void CPU6502::InitInstructions()
     m_Instructions[0x20].m_operation = nullptr;
     m_Instructions[0x20].m_opStr = "JSR";
     m_Instructions[0x20].m_opAddressModeStr = "";
-    m_Instructions[0x20].m_cycles = 3;
+    m_Instructions[0x20].m_cycles = 6;
     
     m_Instructions[0x21].m_opOrAddrMode = &CPU6502::InternalExecutionMemory_indX;
     m_Instructions[0x21].m_operation = &CPU6502::AND;
@@ -274,6 +275,12 @@ void CPU6502::InitInstructions()
     m_Instructions[0x4A].m_opAddressModeStr = zeroPage;
     m_Instructions[0x4A].m_cycles = 2;
     
+    m_Instructions[0x4C].m_opOrAddrMode = &CPU6502::JMP_abs;
+    m_Instructions[0x4C].m_operation = nullptr;
+    m_Instructions[0x4C].m_opStr = "JMP";
+    m_Instructions[0x4C].m_opAddressModeStr = absolute;
+    m_Instructions[0x4C].m_cycles = 3;
+    
     m_Instructions[0x4D].m_opOrAddrMode = &CPU6502::InternalExecutionMemory_abs;
     m_Instructions[0x4D].m_operation = &CPU6502::EOR;
     m_Instructions[0x4D].m_opStr = "EOR";
@@ -366,6 +373,12 @@ void CPU6502::InitInstructions()
     m_Instructions[0x6A].m_opStr = "ROR";
     m_Instructions[0x6A].m_opAddressModeStr = "";
     m_Instructions[0x6A].m_cycles = 2;
+    
+    m_Instructions[0x6C].m_opOrAddrMode = &CPU6502::JMP_ind;
+    m_Instructions[0x6C].m_operation = nullptr;
+    m_Instructions[0x6C].m_opStr = "JMP";
+    m_Instructions[0x6C].m_opAddressModeStr = indirect;
+    m_Instructions[0x6C].m_cycles = 5;
     
     m_Instructions[0x6D].m_opOrAddrMode = &CPU6502::InternalExecutionMemory_abs;
     m_Instructions[0x6D].m_operation = &CPU6502::ADC;
@@ -888,11 +901,11 @@ void CPU6502::InitInstructions()
 
 // m_Instructions[0x].m_additionalCycle = 1;
 
-m_Instructions[0x40].m_opOrAddrMode = &CPU6502::RTI;
-m_Instructions[0x40].m_operation = nullptr;
-m_Instructions[0x40].m_opStr = "RTI";
-m_Instructions[0x40].m_opAddressModeStr = "";
-m_Instructions[0x40].m_cycles = 6;
+m_Instructions[0x6C].m_opOrAddrMode = &CPU6502::JMP_ind;
+m_Instructions[0x6C].m_operation = nullptr;
+m_Instructions[0x6C].m_opStr = "JMP";
+m_Instructions[0x6C].m_opAddressModeStr = indirect;
+m_Instructions[0x6C].m_cycles = 5;
 
 
 */
@@ -904,7 +917,7 @@ m_Instructions[0x40].m_cycles = 6;
         if(m_Instructions[i].m_opOrAddrMode != &CPU6502::ERROR)
         {
             ++implementedInstructions;
-            
+
             for(uint32_t j = 0;j < 256;++j)
             {
                 if(i != j)

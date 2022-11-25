@@ -271,7 +271,7 @@ void CPU6502::Tick()
         uint8_t cyclesTaken = m_instructionCycle + 1;
         if(cyclesTaken != instruction.m_cycles && cyclesTaken != instruction.m_cycles + instruction.m_additionalCycle)
         {
-            printf("Executation cycle vs instruction cycle mismatch");
+            printf("\nExecutation cycle vs instruction cycle mismatch");
             ERROR(m_instructionCycle);
         }
 #endif
@@ -1442,6 +1442,54 @@ bool CPU6502::RTI(uint8_t Tn)
     else if(Tn == 5)
     {
         m_dataBus = GenericPullStack();
+        m_addressBusH = m_dataBus;
+        m_pc = uint16FromRegisterPair(m_addressBusH, m_addressBusL);
+        return true;
+    }
+    return false;
+}
+
+bool CPU6502::JMP_abs(uint8_t Tn)
+{
+    if(Tn == 1)
+    {
+        m_dataBus = programCounterReadByte();
+        m_addressBusL = m_dataBus;
+    }
+    else if(Tn == 2)
+    {
+        m_dataBus = programCounterReadByte();
+        m_addressBusH = m_dataBus;
+        m_pc = uint16FromRegisterPair(m_addressBusH, m_addressBusL);
+        return true;
+    }
+    return false;
+}
+
+bool CPU6502::JMP_ind(uint8_t Tn)
+{
+    if(Tn == 1)
+    {
+        m_dataBus = programCounterReadByte();
+        m_indirectAddressL = m_dataBus;
+    }
+    else if(Tn == 2)
+    {
+        m_dataBus = programCounterReadByte();
+        m_indirectAddressH = m_dataBus;
+    }
+    else if(Tn == 3)
+    {
+        m_addressBusH = m_indirectAddressH;
+        m_addressBusL = m_indirectAddressL;
+        uint16_t address = uint16FromRegisterPair(m_addressBusH, m_addressBusL);
+        m_dataBus = m_bus.cpuRead(address);
+    }
+    else if(Tn == 4)
+    {
+        uint16_t address = uint16FromRegisterPair(m_addressBusH, m_addressBusL + 1);
+        m_addressBusL = m_dataBus;
+        m_dataBus = m_bus.cpuRead(address);
         m_addressBusH = m_dataBus;
         m_pc = uint16FromRegisterPair(m_addressBusH, m_addressBusL);
         return true;
