@@ -69,6 +69,7 @@ CPU6502::CPU6502(IOBus& bus)
 , m_bSignalReset(false)
 , m_bSignalIRQ(false)
 , m_bSignalNMI(false)
+, m_bBranch(false)
 {
     InitInstructions();
 }
@@ -132,6 +133,7 @@ void CPU6502::PowerOn()
     m_effectiveAddressL = 0;
     
     m_bSignalIRQ = m_bSignalNMI = m_bSignalReset = false;
+    m_bBranch = false;
 }
 
 void CPU6502::Reset()
@@ -264,17 +266,6 @@ void CPU6502::Tick()
     
     if(bInstructionTStatesCompleted)
     {
-#if DEBUG
-        // check we have executed the correct number of cycles for an instruction
-        // not perfect as address page boundry crossses can be two values but if it matches either then that will do for now
-        CPUInstruction& instruction = m_Instructions[m_opCode];
-        uint8_t cyclesTaken = m_instructionCycle + 1;
-        if(cyclesTaken != instruction.m_cycles && cyclesTaken != instruction.m_cycles + instruction.m_additionalCycle)
-        {
-            printf("\nExecutation cycle vs instruction cycle mismatch");
-            ERROR(m_instructionCycle);
-        }
-#endif
         m_instructionCycle = 0;
     }
     else
@@ -1521,6 +1512,83 @@ bool CPU6502::JMP_ind(uint8_t Tn)
         m_dataBus = m_bus.cpuRead(address);
         m_addressBusH = m_dataBus;
         m_pc = uint16FromRegisterPair(m_addressBusH, m_addressBusL);
+        return true;
+    }
+    return false;
+}
+
+void CPU6502::BCC(uint8_t Tn)
+{
+
+}
+
+void CPU6502::BCS(uint8_t Tn)
+{
+
+}
+
+void CPU6502::BEQ(uint8_t Tn)
+{
+
+}
+
+void CPU6502::BMI(uint8_t Tn)
+{
+
+}
+
+void CPU6502::BNE(uint8_t Tn)
+{
+
+}
+
+void CPU6502::BPL(uint8_t Tn)
+{
+
+}
+
+void CPU6502::BVC(uint8_t Tn)
+{
+
+}
+
+void CPU6502::BVS(uint8_t Tn)
+{
+
+}
+
+bool CPU6502::Branch(uint8_t Tn)
+{
+    if(Tn == 1)
+    {
+        m_bBranch = false;
+        m_dataBus = programCounterReadByte();
+        
+        (this->*(m_Instructions[m_opCode].m_operation))(Tn);
+        
+        // if branch not taken we are done
+        return m_bBranch == false;
+    }
+    else if(Tn == 2)
+    {
+        uint16_t oldPC = m_pc;
+        
+        int8_t* pInt = (int8_t*)(&m_dataBus);
+        int8_t Int = *pInt;
+        
+        m_pc = m_pc + Int;
+        
+        // if bit 8 changed the page boundry has been crossed
+        if((m_pc & (1 << 8)) != (oldPC & (1 << 8)))
+        {
+            return false;
+        }
+        
+        return true;
+    }
+    else if(Tn == 3)
+    {
+        // alredy done program counter calc above - we just need the extra cycle for the emulation carry
         return true;
     }
     return false;

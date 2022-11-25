@@ -85,6 +85,8 @@ private:
     bool m_bSignalIRQ;
     bool m_bSignalNMI;
     
+    bool m_bBranch;
+    
 
     // Instructions
 private:
@@ -94,8 +96,6 @@ private:
         void(CPU6502::*m_operation)(uint8_t Tn)     = nullptr;
         char const* m_opStr                         = "UNIMPLEMENTED";
         char const* m_opAddressModeStr              = "";
-        uint8_t m_cycles                            = 0;                // TODO remove this once we are happy...
-        uint8_t m_additionalCycle                   = 0;                // TODO remove this once we are happy...
     };
     CPUInstruction m_Instructions[256];
     
@@ -137,6 +137,9 @@ private:
     void GenericPushStack(uint8_t data);
     uint8_t GenericPullStack();
     bool JSR(uint8_t Tn); bool RTS(uint8_t Tn); bool BRK(uint8_t Tn); bool RTI(uint8_t Tn); bool JMP_abs(uint8_t Tn); bool JMP_ind(uint8_t Tn);
+    
+    void BCC(uint8_t Tn); void BCS(uint8_t Tn); void BEQ(uint8_t Tn); void BMI(uint8_t Tn); void BNE(uint8_t Tn); void BPL(uint8_t Tn); void BVC(uint8_t Tn); void BVS(uint8_t Tn);
+    bool Branch(uint8_t Tn);
 };
 
 #endif /* CPU6502_h */
