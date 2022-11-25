@@ -53,6 +53,11 @@ void CPU6502::InitInstructions()
     m_Instructions[0x09].m_opStr = "ORA";
     m_Instructions[0x09].m_opAddressModeStr = immediate;
     
+    m_Instructions[0x10].m_opOrAddrMode = &CPU6502::Branch;
+    m_Instructions[0x10].m_operation = &CPU6502::BPL;
+    m_Instructions[0x10].m_opStr = "BPL";
+    m_Instructions[0x10].m_opAddressModeStr = "";
+    
     m_Instructions[0x11].m_opOrAddrMode = &CPU6502::InternalExecutionMemory_indY;
     m_Instructions[0x11].m_operation = &CPU6502::ORA;
     m_Instructions[0x11].m_opStr = "ORA";
@@ -158,6 +163,11 @@ void CPU6502::InitInstructions()
     m_Instructions[0x2E].m_opStr = "ROL";
     m_Instructions[0x2E].m_opAddressModeStr = absolute;
     
+    m_Instructions[0x30].m_opOrAddrMode = &CPU6502::Branch;
+    m_Instructions[0x30].m_operation = &CPU6502::BMI;
+    m_Instructions[0x30].m_opStr = "BMI";
+    m_Instructions[0x30].m_opAddressModeStr = "";
+    
     m_Instructions[0x31].m_opOrAddrMode = &CPU6502::InternalExecutionMemory_indY;
     m_Instructions[0x31].m_operation = &CPU6502::AND;
     m_Instructions[0x31].m_opStr = "AND";
@@ -243,6 +253,11 @@ void CPU6502::InitInstructions()
     m_Instructions[0x4E].m_opStr = "LSR";
     m_Instructions[0x4E].m_opAddressModeStr = absolute;
     
+    m_Instructions[0x50].m_opOrAddrMode = &CPU6502::Branch;
+    m_Instructions[0x50].m_operation = &CPU6502::BVC;
+    m_Instructions[0x50].m_opStr = "BVC";
+    m_Instructions[0x50].m_opAddressModeStr = "";
+    
     m_Instructions[0x51].m_opOrAddrMode = &CPU6502::InternalExecutionMemory_indY;
     m_Instructions[0x51].m_operation = &CPU6502::EOR;
     m_Instructions[0x51].m_opStr = "EOR";
@@ -307,6 +322,11 @@ void CPU6502::InitInstructions()
     m_Instructions[0x69].m_operation = &CPU6502::ADC;
     m_Instructions[0x69].m_opStr = "ADC";
     m_Instructions[0x69].m_opAddressModeStr = immediate;
+    
+    m_Instructions[0x70].m_opOrAddrMode = &CPU6502::Branch;
+    m_Instructions[0x70].m_operation = &CPU6502::BVS;
+    m_Instructions[0x70].m_opStr = "BVS";
+    m_Instructions[0x70].m_opAddressModeStr = "";
     
     m_Instructions[0x6A].m_opOrAddrMode = &CPU6502::Accum_ROR;
     m_Instructions[0x6A].m_operation = nullptr;
@@ -408,6 +428,11 @@ void CPU6502::InitInstructions()
     m_Instructions[0x8E].m_opStr = "STX";
     m_Instructions[0x8E].m_opAddressModeStr = absolute;
     
+    m_Instructions[0x90].m_opOrAddrMode = &CPU6502::Branch;
+    m_Instructions[0x90].m_operation = &CPU6502::BCC;
+    m_Instructions[0x90].m_opStr = "BCC";
+    m_Instructions[0x90].m_opAddressModeStr = "";
+    
     m_Instructions[0x91].m_opOrAddrMode = &CPU6502::Store_indY;
     m_Instructions[0x91].m_operation = &CPU6502::STA;
     m_Instructions[0x91].m_opStr = "STA";
@@ -507,6 +532,11 @@ void CPU6502::InitInstructions()
     m_Instructions[0xAE].m_operation = &CPU6502::LDX;
     m_Instructions[0xAE].m_opStr = "LDX";
     m_Instructions[0xAE].m_opAddressModeStr = absolute;
+    
+    m_Instructions[0xB0].m_opOrAddrMode = &CPU6502::Branch;
+    m_Instructions[0xB0].m_operation = &CPU6502::BCS;
+    m_Instructions[0xB0].m_opStr = "BCS";
+    m_Instructions[0xB0].m_opAddressModeStr = "";
     
     m_Instructions[0xB1].m_opOrAddrMode = &CPU6502::InternalExecutionMemory_indY;
     m_Instructions[0xB1].m_operation = &CPU6502::LDA;
@@ -613,6 +643,11 @@ void CPU6502::InitInstructions()
     m_Instructions[0xCE].m_opStr = "DEC";
     m_Instructions[0xCE].m_opAddressModeStr = absolute;
     
+    m_Instructions[0xD0].m_opOrAddrMode = &CPU6502::Branch;
+    m_Instructions[0xD0].m_operation = &CPU6502::BNE;
+    m_Instructions[0xD0].m_opStr = "BNE";
+    m_Instructions[0xD0].m_opAddressModeStr = "";
+    
     m_Instructions[0xD1].m_opOrAddrMode = &CPU6502::InternalExecutionMemory_indY;
     m_Instructions[0xD1].m_operation = &CPU6502::CMP;
     m_Instructions[0xD1].m_opStr = "CMP";
@@ -703,6 +738,11 @@ void CPU6502::InitInstructions()
     m_Instructions[0xEE].m_opStr = "INC";
     m_Instructions[0xEE].m_opAddressModeStr = absolute;
     
+    m_Instructions[0xF0].m_opOrAddrMode = &CPU6502::Branch;
+    m_Instructions[0xF0].m_operation = &CPU6502::BEQ;
+    m_Instructions[0xF0].m_opStr = "BEQ";
+    m_Instructions[0xF0].m_opAddressModeStr = "";
+    
     m_Instructions[0xF1].m_opOrAddrMode = &CPU6502::InternalExecutionMemory_indY;
     m_Instructions[0xF1].m_operation = &CPU6502::SBC;
     m_Instructions[0xF1].m_opStr = "SBC";
@@ -737,14 +777,7 @@ void CPU6502::InitInstructions()
     m_Instructions[0xFE].m_operation = &CPU6502::RMW_INC;
     m_Instructions[0xFE].m_opStr = "INC";
     m_Instructions[0xFE].m_opAddressModeStr = absoluteX;
-/*
 
-m_Instructions[0x60].m_opOrAddrMode = &CPU6502::Branch;
-m_Instructions[0x60].m_operation = &CPU6502::BCC;
-m_Instructions[0x60].m_opStr = "BCC";
-m_Instructions[0x60].m_opAddressModeStr = "";
-
-*/
 #if DEBUG
     // implemented and duplicate instruction set checks
     int implementedInstructions = 0;

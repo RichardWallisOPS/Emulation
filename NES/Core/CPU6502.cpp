@@ -1519,42 +1519,42 @@ bool CPU6502::JMP_ind(uint8_t Tn)
 
 void CPU6502::BCC(uint8_t Tn)
 {
-
+    m_bBranch = TestFlag(Flag_Carry) == false;
 }
 
 void CPU6502::BCS(uint8_t Tn)
 {
-
+     m_bBranch = TestFlag(Flag_Carry) == true;
 }
 
 void CPU6502::BEQ(uint8_t Tn)
 {
-
+    m_bBranch = TestFlag(Flag_Zero) == true;
 }
 
 void CPU6502::BMI(uint8_t Tn)
 {
-
+     m_bBranch = TestFlag(Flag_Negative) == true;
 }
 
 void CPU6502::BNE(uint8_t Tn)
 {
-
+    m_bBranch = TestFlag(Flag_Zero) == false;
 }
 
 void CPU6502::BPL(uint8_t Tn)
 {
-
+    m_bBranch = TestFlag(Flag_Negative) == false;
 }
 
 void CPU6502::BVC(uint8_t Tn)
 {
-
+    m_bBranch = TestFlag(Flag_Overflow) == false;
 }
 
 void CPU6502::BVS(uint8_t Tn)
 {
-
+    m_bBranch = TestFlag(Flag_Overflow) == true;
 }
 
 bool CPU6502::Branch(uint8_t Tn)

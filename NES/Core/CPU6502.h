@@ -106,7 +106,9 @@ private:
     void InitInstructions();
     bool ERROR(uint8_t Tn);
     
-    // Individual instructions and address modes + their instructions
+    //
+    // Address modes + their instructions
+    //
     void ASL(uint8_t& cpuReg); void LSR(uint8_t& cpuReg); void ROL(uint8_t& cpuReg); void ROR(uint8_t& cpuReg); void REG_CMP(uint8_t& cpuReg); void REG_LOAD(uint8_t& cpuReg);
     
     bool Accum_ASL(uint8_t Tn); bool Accum_LSR(uint8_t Tn); bool Accum_ROL(uint8_t Tn); bool Accum_ROR(uint8_t Tn);
