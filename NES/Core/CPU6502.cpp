@@ -204,11 +204,7 @@ void CPU6502::Tick()
                 LinePosition += snprintf(&LineBuffer[LinePosition], LineBufferSize - LinePosition, " ");
             }
             CPUInstruction& instruction = m_Instructions[m_opCode];
-            LinePosition += snprintf(&LineBuffer[LinePosition], LineBufferSize - LinePosition, "  %s %s", instruction.m_opStr ? instruction.m_opStr : "", instruction.m_opAddressModeStr ? instruction.m_opAddressModeStr : "");
-            while(LinePosition < 49)
-            {
-                LinePosition += snprintf(&LineBuffer[LinePosition], LineBufferSize - LinePosition, " ");
-            }
+            LinePosition += snprintf(&LineBuffer[LinePosition], LineBufferSize - LinePosition, "  %s  ", instruction.m_opStr ? instruction.m_opStr : "???");
             LinePosition += snprintf(&LineBuffer[LinePosition], LineBufferSize - LinePosition, "A:%02X X:%02X Y:%02X P:%02X SP:%02X", m_a, m_x, m_y, m_flags, m_stack);
         
             LineBuffer[LinePosition] = 0;
@@ -766,12 +762,9 @@ void CPU6502::ORA(uint8_t Tn)
 
 void CPU6502::REG_CMP(uint8_t& cpuReg)
 {
-    int16_t result16 = int16_t(cpuReg) - int16_t(m_dataBus);
-    uint8_t result8 = uint8_t(result16);
-    
-    ConditionalSetFlag(Flag_Zero, result16 == 0);
-    ConditionalSetFlag(Flag_Negative, (result8 & (1 << 7)) != 0);
-    ConditionalSetFlag(Flag_Carry, result16 = 0 || result16 > 0);
+    ConditionalSetFlag(Flag_Zero, cpuReg == m_dataBus);
+    ConditionalSetFlag(Flag_Negative, cpuReg < m_dataBus);
+    ConditionalSetFlag(Flag_Carry, cpuReg == m_dataBus || cpuReg > m_dataBus);
 }
 
 void CPU6502::CMP(uint8_t Tn)
@@ -1347,7 +1340,7 @@ bool CPU6502::RTS(uint8_t Tn)
 {
     if(Tn == 1)
     {
-        m_dataBus = programCounterReadByte();
+        //m_dataBus = programCounterReadByte();
     }
     else if(Tn == 2)
     {
