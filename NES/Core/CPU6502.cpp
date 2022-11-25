@@ -112,8 +112,8 @@ void CPU6502::PowerOn()
     m_a = 0;
     m_x = 0;
     m_y = 0;
-    m_stack = 0xFF;
-    m_flags = 0x34;
+    m_stack = 0xFD;//0xFF;
+    m_flags = 0x24;
     
     uint8_t resetAddressL = m_bus.cpuRead(0xFFFC);
     uint8_t resetAddressH = m_bus.cpuRead(0xFFFD);
@@ -174,6 +174,7 @@ void CPU6502::SignalIRQ(bool bSignal)
 }
 
 #ifdef EMULATION_LOG
+int LineCount = 0;
 int LinePosition = 0;
 const int LineBufferSize = 512;
 char LineBuffer[LineBufferSize];
@@ -192,26 +193,19 @@ uint8_t CPU6502::programCounterReadByte()
     
 void CPU6502::Tick()
 {
-    // Some instructions perform final executation during next op code fetch, allow executation to occur during this next tick but use max Tn value so they know
-    // TODO If we have come back from an interrupt etc then this is not a valid operation - may need to protect from this case
-    if(m_instructionCycle == 0 && m_tickCount > 0)
-    {
-        (this->*(m_Instructions[m_opCode].m_opOrAddrMode))(nTnPreNextOpCodeFetch);
-    }
-    
 #ifdef EMULATION_LOG
     if(m_instructionCycle == 0)
     {
         if(m_tickCount > 0 && LinePosition > 0)
         {
             // Finalize old logging
-            while(LinePosition < 16)
+            while(LinePosition < 15)
             {
                 LinePosition += snprintf(&LineBuffer[LinePosition], LineBufferSize - LinePosition, " ");
             }
             CPUInstruction& instruction = m_Instructions[m_opCode];
             LinePosition += snprintf(&LineBuffer[LinePosition], LineBufferSize - LinePosition, "  %s %s", instruction.m_opStr ? instruction.m_opStr : "", instruction.m_opAddressModeStr ? instruction.m_opAddressModeStr : "");
-            while(LinePosition < 40)
+            while(LinePosition < 49)
             {
                 LinePosition += snprintf(&LineBuffer[LinePosition], LineBufferSize - LinePosition, " ");
             }
@@ -222,10 +216,17 @@ void CPU6502::Tick()
         }
 
         // begin log of new instruction
+        ++LineCount;
         LinePosition = 0;
         LinePosition += snprintf(&LineBuffer[LinePosition], LineBufferSize - LinePosition, "\n%04X ", m_pc);
     }
 #endif
+
+    // Some instructions perform final executation during next op code fetch, allow executation to occur during this next tick but use max Tn value so they know
+    if(m_instructionCycle == 0 && m_tickCount > 0)
+    {
+        (this->*(m_Instructions[m_opCode].m_opOrAddrMode))(nTnPreNextOpCodeFetch);
+    }
 
     bool bInstructionTStatesCompleted = false;
     if(m_instructionCycle == 0)
@@ -397,8 +398,11 @@ bool CPU6502::SEC(uint8_t Tn)
 
 bool CPU6502::SED(uint8_t Tn)
 {
-    // Not implemented in NES CPU
-    return ERROR(Tn);
+     if(Tn == 1)
+    {
+        SetFlag(Flag_Decimal);
+    }
+    return Tn == 1;
 }
 
 bool CPU6502::CLD(uint8_t Tn)
@@ -762,10 +766,12 @@ void CPU6502::ORA(uint8_t Tn)
 
 void CPU6502::REG_CMP(uint8_t& cpuReg)
 {
-    int16_t result = int16_t(cpuReg) - int16_t(m_dataBus);
-    ConditionalSetFlag(Flag_Zero, result == 0);
-    ConditionalSetFlag(Flag_Negative, (result & (1 << 7)) != 0);
-    ConditionalSetFlag(Flag_Carry, result = 0 || result > 0);
+    int16_t result16 = int16_t(cpuReg) - int16_t(m_dataBus);
+    uint8_t result8 = uint8_t(result16);
+    
+    ConditionalSetFlag(Flag_Zero, result16 == 0);
+    ConditionalSetFlag(Flag_Negative, (result8 & (1 << 7)) != 0);
+    ConditionalSetFlag(Flag_Carry, result16 = 0 || result16 > 0);
 }
 
 void CPU6502::CMP(uint8_t Tn)
@@ -1309,6 +1315,11 @@ bool CPU6502::JSR(uint8_t Tn)
     {
         m_addressBusH = 0;
         m_addressBusL = m_dataBus;
+        
+        // Note: Acccording to data sheet this should be in T5
+        // Moved here so Program Counter is correct for LH stack push
+        m_dataBus = programCounterReadByte();
+        m_addressBusH = m_dataBus;
     }
     else if(Tn == 3)
     {
@@ -1322,8 +1333,9 @@ bool CPU6502::JSR(uint8_t Tn)
     }
     else if(Tn == 5)
     {
-        m_dataBus = programCounterReadByte();
-        m_addressBusH = m_dataBus;
+        // Note: Moved to T2
+        //m_dataBus = programCounterReadByte();
+        //m_addressBusH = m_dataBus;
         m_pc = uint16FromRegisterPair(m_addressBusH, m_addressBusL);
         return true;
     }
