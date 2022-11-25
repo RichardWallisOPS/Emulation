@@ -199,13 +199,12 @@ void CPU6502::Tick()
         if(m_tickCount > 0 && LinePosition > 0)
         {
             // Finalize old logging
-            while(LinePosition < 15)
-            {
-                LinePosition += snprintf(&LineBuffer[LinePosition], LineBufferSize - LinePosition, " ");
-            }
+            while(LinePosition < 15) LinePosition += snprintf(&LineBuffer[LinePosition], LineBufferSize - LinePosition, " ");
             CPUInstruction& instruction = m_Instructions[m_opCode];
-            LinePosition += snprintf(&LineBuffer[LinePosition], LineBufferSize - LinePosition, "  %s  ", instruction.m_opStr ? instruction.m_opStr : "???");
-            LinePosition += snprintf(&LineBuffer[LinePosition], LineBufferSize - LinePosition, "A:%02X X:%02X Y:%02X P:%02X SP:%02X", m_a, m_x, m_y, m_flags, m_stack);
+            LinePosition += snprintf(&LineBuffer[LinePosition], LineBufferSize - LinePosition, " %s ", instruction.m_opStr ? instruction.m_opStr : "???");
+            LinePosition += snprintf(&LineBuffer[LinePosition], LineBufferSize - LinePosition, " %s ", instruction.m_opAddressModeStr ? instruction.m_opAddressModeStr : "???");
+            while(LinePosition < 49) LinePosition += snprintf(&LineBuffer[LinePosition], LineBufferSize - LinePosition, " ");
+            LinePosition += snprintf(&LineBuffer[LinePosition], LineBufferSize - LinePosition, " A:%02X X:%02X Y:%02X P:%02X SP:%02X", m_a, m_x, m_y, m_flags, m_stack);
         
             LineBuffer[LinePosition] = 0;
             printf("%s", LineBuffer);
