@@ -108,7 +108,7 @@ SystemNES g_NESConsole;
             {
                 g_NESConsole.PowerOn();
                 
-                // Set some values for debug test cart
+                // Set some values for the debug test cart
                 if([path containsString:@"nestest"])
                 {
                     g_NESConsole.SetCPUProgramCounter(0xC000);

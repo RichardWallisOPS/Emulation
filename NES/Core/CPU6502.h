@@ -19,7 +19,8 @@
 // This means some Tn operations look superfluous but this is trying to be cpu register state cycle "accurate"
 // However some operations on the data bus that would be discared are not always done
 // No instruction implements T0 as that is the generic opCode fetch and is handled by the core update
-// NOTE:    Decimal mode is not implemented - it and any illegal op-codes will error in Debug and NOP in Release
+// NOTE: Decimal mode is not implemented - it and any illegal op-codes will error in Debug and NOP in Release
+// NOTE: Illegal opcode are not implemented
 // https://www.masswerk.at/6502/6502_instruction_set.html
 // https://www.nesdev.org/
 
@@ -94,7 +95,7 @@ private:
     {
         bool(CPU6502::*m_opOrAddrMode)(uint8_t Tn)  = &CPU6502::ERROR;
         void(CPU6502::*m_operation)(uint8_t Tn)     = nullptr;
-        char const* m_opStr                         = "UNIMPLEMENTED";
+        char const* m_opStr                         = "NOT-IMPLEMENTED";
         char const* m_opAddressModeStr              = "";
     };
     CPUInstruction m_Instructions[256];
