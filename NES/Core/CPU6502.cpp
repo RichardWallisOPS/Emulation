@@ -193,6 +193,12 @@ uint8_t CPU6502::programCounterReadByte()
     
 void CPU6502::Tick()
 {
+    // Some instructions perform final executation during next op code fetch, allow executation to occur during this next tick but use max Tn value so they know
+    if(m_instructionCycle == 0 && m_tickCount > 0)
+    {
+        (this->*(m_Instructions[m_opCode].m_opOrAddrMode))(nTnPreNextOpCodeFetch);
+    }
+    
 #ifdef EMULATION_LOG
     if(m_instructionCycle == 0)
     {
@@ -216,12 +222,6 @@ void CPU6502::Tick()
         LinePosition += snprintf(&LineBuffer[LinePosition], LineBufferSize - LinePosition, "\n%04X ", m_pc);
     }
 #endif
-
-    // Some instructions perform final executation during next op code fetch, allow executation to occur during this next tick but use max Tn value so they know
-    if(m_instructionCycle == 0 && m_tickCount > 0)
-    {
-        (this->*(m_Instructions[m_opCode].m_opOrAddrMode))(nTnPreNextOpCodeFetch);
-    }
 
     bool bInstructionTStatesCompleted = false;
     if(m_instructionCycle == 0)
@@ -718,16 +718,19 @@ void CPU6502::ADC(uint8_t Tn)
 
 void CPU6502::SBC(uint8_t Tn)
 {
-    uint8_t u8Carry = (m_flags & Flag_Carry) != 0 ? 1 : 0;
-    int16_t s16Result =  int16_t(m_a) - int16_t(m_dataBus) - int16_t(u8Carry);
-    int16_t s8_16Result = int16_t(int8_t(m_a)) - int16_t(int8_t(m_dataBus)) - int16_t(int8_t(u8Carry));
-    
-    m_a = m_a - m_dataBus - u8Carry;
-    
-    ConditionalSetFlag(Flag_Zero, m_a == 0);
-    ConditionalSetFlag(Flag_Carry, s16Result < 0);
-    ConditionalSetFlag(Flag_Negative, (m_a & (1 << 7)) != 0);
-    ConditionalSetFlag(Flag_Overflow, s8_16Result > 127 || s8_16Result < -128);
+    m_dataBus = ~m_dataBus;
+    ADC(Tn);
+    m_dataBus = ~m_dataBus;
+//    uint8_t u8Carry = (m_flags & Flag_Carry) != 0 ? 1 : 0;
+//    int16_t s16Result =  int16_t(m_a) - int16_t(m_dataBus) - int16_t(u8Carry);
+//    int16_t s8_16Result = int16_t(int8_t(m_a)) - int16_t(int8_t(m_dataBus)) - int16_t(int8_t(u8Carry));
+//
+//    m_a = m_a - m_dataBus - u8Carry;
+//
+//    ConditionalSetFlag(Flag_Zero, m_a == 0);
+//    ConditionalSetFlag(Flag_Carry, s16Result < 0);
+//    ConditionalSetFlag(Flag_Negative, (m_a & (1 << 7)) != 0);
+//    ConditionalSetFlag(Flag_Overflow, s8_16Result > 127 || s8_16Result < -128);
 }
 
 void CPU6502::AND(uint8_t Tn)
@@ -761,8 +764,9 @@ void CPU6502::ORA(uint8_t Tn)
 
 void CPU6502::REG_CMP(uint8_t& cpuReg)
 {
+    uint8_t result = cpuReg - m_dataBus;
     ConditionalSetFlag(Flag_Zero, cpuReg == m_dataBus);
-    ConditionalSetFlag(Flag_Negative, cpuReg < m_dataBus);
+    ConditionalSetFlag(Flag_Negative, (result & (1 << 7)) != 0);
     ConditionalSetFlag(Flag_Carry, cpuReg == m_dataBus || cpuReg > m_dataBus);
 }
 
