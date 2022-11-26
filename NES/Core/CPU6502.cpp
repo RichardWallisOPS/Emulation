@@ -1311,11 +1311,6 @@ bool CPU6502::JSR(uint8_t Tn)
     {
         m_addressBusH = 0;
         m_addressBusL = m_dataBus;
-        
-        // Note: Acccording to data sheet this should be in T5
-        // Moved here so Program Counter is correct for LH stack push
-        m_dataBus = programCounterReadByte();
-        m_addressBusH = m_dataBus;
     }
     else if(Tn == 3)
     {
@@ -1329,9 +1324,8 @@ bool CPU6502::JSR(uint8_t Tn)
     }
     else if(Tn == 5)
     {
-        // Note: Moved to T2
-        //m_dataBus = programCounterReadByte();
-        //m_addressBusH = m_dataBus;
+        m_dataBus = programCounterReadByte();
+        m_addressBusH = m_dataBus;
         m_pc = uint16FromRegisterPair(m_addressBusH, m_addressBusL);
         return true;
     }
@@ -1362,7 +1356,7 @@ bool CPU6502::RTS(uint8_t Tn)
     }
     else if(Tn == 5)
     {
-        m_pc = uint16FromRegisterPair(m_addressBusH, m_addressBusL);
+        m_pc = uint16FromRegisterPair(m_addressBusH, m_addressBusL) + 1;
         return true;
     }
     return false;
