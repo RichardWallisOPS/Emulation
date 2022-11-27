@@ -109,9 +109,11 @@ void PPUNES::cpuWrite(uint16_t address, uint8_t byte)
 
 void PPUNES::WritePatternTables(uint32_t* pOutputData)
 {
+    // Assumes a 256px  source texture width
+    // Grey scaleoutput
     auto fnDrawPattenTable = [&](uint32_t* pOutputData, uint32_t xOffset, uint32_t yOffset, uint16_t baseAddress)
     {
-        uint32_t colourTable[4] = {0x00000000,  0xff555555,  0xffAAAAAA,  0xffFFFFff};
+        uint32_t colourLUT[4] = {0x00000000,  0xff555555,  0xffAAAAAA,  0xffFFFFff};
         
         for(uint32_t tileX = 0;tileX < 16;++tileX)
         {
@@ -129,11 +131,10 @@ void PPUNES::WritePatternTables(uint32_t* pOutputData)
                         uint8_t pixel0 = (plane0 >> (7 - pX)) & 1;
                         uint8_t pixel1 = (plane1 >> (7 - pX)) & 1;
 
-                        // 256 is the source texture width
                         uint8_t pixelColourLUT = pixel0 | (pixel1 << 1);
                         uint32_t pixelIndex = ((yOffset * 256) + xOffset) + (((tileY * 8) + pY) * 256) + ((tileX * 8) + pX);
 
-                        pOutputData[pixelIndex] =  colourTable[pixelColourLUT];
+                        pOutputData[pixelIndex] = colourLUT[pixelColourLUT];
                     }
                 }
             }
