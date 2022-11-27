@@ -9,7 +9,7 @@
 #include <stdio.h>
 #include <string.h>
 
-#if DEBUG && 1
+#if DEBUG && 0
     #define EMULATION_LOG
 #endif
 

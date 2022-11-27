@@ -40,6 +40,7 @@ public:
 
     // Debug
     void SetCPUProgramCounter(uint16_t pc);
+    void WritePPUMetaData(uint32_t* pData);
 
 private:
     bool        m_bPowerOn;

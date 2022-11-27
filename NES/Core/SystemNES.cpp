@@ -50,11 +50,6 @@ void SystemNES::PowerOn()
     m_bPowerOn = true;
 }
 
-void SystemNES::SetCPUProgramCounter(uint16_t pc)
-{
-    m_cpu.SetPC(pc);
-}
-
 void SystemNES::Reset()
 {
     m_cycleCount = 0;
@@ -217,4 +212,15 @@ uint8_t SystemNES::ppuRead(uint16_t address)
 void SystemNES::ppuWrite(uint16_t address, uint8_t Byte)
 {
     // !
+}
+
+// Debug
+void SystemNES::SetCPUProgramCounter(uint16_t pc)
+{
+    m_cpu.SetPC(pc);
+}
+
+void SystemNES::WritePPUMetaData(uint32_t* pData)
+{
+    m_ppu.WritePatternTables(pData);
 }

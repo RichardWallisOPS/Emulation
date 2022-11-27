@@ -46,6 +46,9 @@ public:
     
     uint8_t cpuRead(uint16_t address);
     void cpuWrite(uint16_t address, uint8_t byte);
+    
+    // Debug
+    void WritePatternTables(uint32_t* pOutputData);
 
 private:
     IOBus& m_bus;

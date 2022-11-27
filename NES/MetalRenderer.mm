@@ -148,30 +148,32 @@ SystemNES g_NESConsole;
         g_NESConsole.Tick();
     }
     
+    g_NESConsole.WritePPUMetaData((uint32_t*)self.emulationOutputData.contents);
+    
     // TODO This is test data only - read from NES PPU
-    {
-        // Write some test data
-        uint32_t width = (uint32_t)self.emulationOutput.width;
-        uint32_t height = (uint32_t)self.emulationOutput.height;
-        uint32_t* data = (uint32_t*)self.emulationOutputData.contents;
-        
-        for(uint32_t y = 0;y < height;++y)
-        {
-            for(uint32 x = 0;x < width;++x)
-            {
-                uint32 pixelIndex = y * width + x;
-                if(x % 2)
-                {
-                    // AARRGGBB
-                    data[pixelIndex] = 0xffff0000;
-                }
-                else
-                {
-                    data[pixelIndex] = 0x00;
-                }
-            }
-        }
-    }
+//    {
+//        // Write some test data
+//        uint32_t width = (uint32_t)self.emulationOutput.width;
+//        uint32_t height = (uint32_t)self.emulationOutput.height;
+//        uint32_t* data = (uint32_t*)self.emulationOutputData.contents;
+//
+//        for(uint32_t y = 0;y < height;++y)
+//        {
+//            for(uint32 x = 0;x < width;++x)
+//            {
+//                uint32 pixelIndex = y * width + x;
+//                if(x % 2)
+//                {
+//                    // AARRGGBB
+//                    data[pixelIndex] = 0xffff0000;
+//                }
+//                else
+//                {
+//                    data[pixelIndex] = 0x00;
+//                }
+//            }
+//        }
+//    }
     
     if(self.emulationOutputData.storageMode == MTLStorageModeManaged)
     {
