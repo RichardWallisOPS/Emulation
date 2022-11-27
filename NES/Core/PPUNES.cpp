@@ -111,31 +111,35 @@ void PPUNES::WritePatternTables(uint32_t* pOutputData)
 {
     uint32_t colourTable[4] = {0x00000000,  0xff555555,  0xffAAAAAA,  0xffFFFFff};
 
-    uint16_t baseAddress = 0x1000;
-    for(uint32_t tileX = 0;tileX < 16;++tileX)
+    auto drawPattenTable = [&](uint32_t* pOutputData, uint32_t xOffset, uint32_t yOffset, uint16_t baseAddress)
     {
-        for(uint32_t tileY = 0;tileY < 16;++tileY)
+        for(uint32_t tileX = 0;tileX < 16;++tileX)
         {
-            uint16_t addressPlane0 = baseAddress + (((tileY * 16) + tileX) * 16);
-            //uint16_t addressPlane1 = addressPlane0 + 8;
-            
-            for(uint32_t pX = 0;pX < 8;++pX)
+            for(uint32_t tileY = 0;tileY < 16;++tileY)
             {
-                for(uint32_t pY = 0;pY < 8;++pY)
+                uint16_t addressPlane0 = baseAddress + (((tileY * 16) + tileX) * 16);
+                
+                for(uint32_t pX = 0;pX < 8;++pX)
                 {
-                    uint8_t plane0 = m_bus.ppuRead(addressPlane0 + pY);
-                    uint8_t plane1 = m_bus.ppuRead(addressPlane0 + pY + 8);
-                    
-                    uint8_t pixel0 = (plane0 >> (8 - pX)) & 1;
-                    uint8_t pixel1 = (plane1 >> (8 - pX)) & 1;
-            
-                    uint8_t pixel = pixel0 | (pixel1 << 1);
-                    // 256 is the source texture width
-                    uint32_t pixelIndex = (((tileY * 8) + pY) * 256) + ((tileX * 8) + pX);
-                    uint32_t colour = colourTable[pixel];
-                    pOutputData[pixelIndex] = colour;
+                    for(uint32_t pY = 0;pY < 8;++pY)
+                    {
+                        uint8_t plane0 = m_bus.ppuRead(addressPlane0 + pY);
+                        uint8_t plane1 = m_bus.ppuRead(addressPlane0 + pY + 8);
+                        
+                        uint8_t pixel0 = (plane0 >> (8 - pX)) & 1;
+                        uint8_t pixel1 = (plane1 >> (8 - pX)) & 1;
+                
+                        uint8_t pixel = pixel0 | (pixel1 << 1);
+                        // 256 is the source texture width
+                        uint32_t pixelIndex = (yOffset * 256 + xOffset) + (((tileY * 8) + pY) * 256) + ((tileX * 8) + pX);
+                        uint32_t colour = colourTable[pixel];
+                        pOutputData[pixelIndex] = colour;
+                    }
                 }
             }
         }
-    }
+    };
+    
+    drawPattenTable(pOutputData, 0, 0, 0x0000);
+    drawPattenTable(pOutputData, 128, 0, 0x1000);
 }
