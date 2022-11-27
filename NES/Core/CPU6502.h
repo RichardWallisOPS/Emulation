@@ -3,7 +3,6 @@
 //  NES
 //
 //  Created by richardwallis on 15/11/2022.
-//  Copyright © 2022 openplanetsoftware. All rights reserved.
 //
 
 #ifndef CPU6502_h
@@ -21,8 +20,6 @@
 // No instruction implements T0 as that is the generic opCode fetch and is handled by the core update
 // NOTE: Decimal mode is not implemented - it and any illegal op-codes will error in Debug and NOP in Release
 // NOTE: Illegal opcode are not implemented
-// https://www.masswerk.at/6502/6502_instruction_set.html
-// https://www.nesdev.org/
 
 class CPU6502
 {

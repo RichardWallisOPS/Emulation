@@ -3,7 +3,6 @@
 //  NES
 //
 //  Created by richardwallis on 15/11/2022.
-//  Copyright © 2022 openplanetsoftware. All rights reserved.
 //
 
 #include "Cartridge.h"
@@ -90,7 +89,7 @@ uint8_t Cartridge::ppuRead(uint16_t address)
         // TODO absolute or local space address
         return m_pChr[address];
     }
-    return 0;
+    return address & 0xFF; // open bus low byte return
 }
 
 void Cartridge::ppuWrite(uint16_t address, uint8_t byte)

@@ -3,7 +3,6 @@
 //  NES
 //
 //  Created by richardwallis on 15/11/2022.
-//  Copyright © 2022 openplanetsoftware. All rights reserved.
 //
 
 #ifndef Cartridge_h

@@ -1,9 +1,7 @@
 //
 //  RenderDefs.h
-//  MetalTest
 //
-//  Created by Richard Wallis on 26/02/2020.
-//  Copyright © 2020 openplanetsoftware. All rights reserved.
+//  Created by Richard Wallis on 26/02/2022
 //
 
 #if defined(__METAL_MACOS__) || defined(__METAL_IOS__)

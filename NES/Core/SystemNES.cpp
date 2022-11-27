@@ -3,7 +3,6 @@
 //  NES
 //
 //  Created by richardwallis on 15/11/2022.
-//  Copyright © 2022 openplanetsoftware. All rights reserved.
 //
 
 // Implementation Notes:
@@ -12,14 +11,10 @@
 // 2A03 [CPU+APU+IO]; This implementation has CPU saparate with APU+IO inside the System
 // Cart is currently only mapper 0, todo make generic to allow other mapper implementations
 
-// TODO Confirm cold / reset values across System / CPU / APU
-
-// NEXT TASKs:
-// 1) Implement instructions
-// 2) TODO handle interrupts... IRQ NMI
-// 3) Load a cartridge and see the errors fly in the instruction error trap
-// 4) Implement any missing ones that trap
-
+// PPU:
+// registers
+// memory map - including cartridge mapping
+// OAM DMA
 
 #include "SystemNES.h"
 #include <string>
@@ -128,6 +123,21 @@ bool SystemNES::InsertCartridge(void const* pData, uint32_t dataSize)
     return m_pCart != nullptr && m_pCart->IsValid();
 }
 
+void SystemNES::SignalReset(bool bSignal)
+{
+    m_cpu.SignalReset(bSignal);
+}
+
+void SystemNES::SignalNMI(bool bSignal)
+{
+    m_cpu.SignalNMI(bSignal);
+}
+
+void SystemNES::SignalIRQ(bool bSignal)
+{
+    m_cpu.SignalIRQ(bSignal);
+}
+
 void SystemNES::Tick()
 {
     // NTSC:
@@ -158,7 +168,7 @@ uint8_t SystemNES::cpuRead(uint16_t address)
     else if(address >= 0x2000 && address <= 0x3FFF)
     {
         uint16_t memAddress = (address - 0x2000) % 8;
-        // PPU TODO
+        m_ppu.cpuRead(memAddress);
     }
     else if(address >= 0x4000 && address <= 0x401F)
     {
@@ -168,42 +178,43 @@ uint8_t SystemNES::cpuRead(uint16_t address)
     }
     else if(address >= 0x4020 && address < 0xFFFF && m_pCart != nullptr)
     {
-        // Cart with mapper+prg+chr data + interrupt vectors (NMI=0xFFFA-0xFFFB, Reset=0xFFFC-0xFFFD, IRQ/BRK=0xFFFE-0xFFFF)
+        // Cart with mapper+prg+chr data + interrupt vectors
         return m_pCart->cpuRead(address);
     }
-            
+    
+    // Open bus read
     return 0x00;
 }
 
-void SystemNES::cpuWrite(uint16_t address, uint8_t Byte)
+void SystemNES::cpuWrite(uint16_t address, uint8_t byte)
 {
     if(address >= 0x0000 && address <= 0x1FFF)
     {
         uint16_t memAddress = address % 0x0800;
-        m_ram[memAddress] = Byte;
+        m_ram[memAddress] = byte;
     }
     else if(address >= 0x2000 && address <= 0x3FFF)
     {
         uint16_t memAddress = (address - 0x2000) % 8;
-        // PPU TODO
+        m_ppu.cpuWrite(memAddress, byte);
     }
     else if(address >= 0x4000 && address <= 0x401F)
     {
         uint16_t memAddress = address - 0x4000;
-        m_apuRegisters[memAddress] = Byte;
+        m_apuRegisters[memAddress] = byte;
     }
     else if(address >= 0x4020 && address < 0xFFFF && m_pCart != nullptr)
     {
-        m_pCart->cpuWrite(address, Byte);
+        m_pCart->cpuWrite(address, byte);
     }
 }
 
 uint8_t SystemNES::ppuRead(uint16_t address)
 {
-    return 0;
+    return m_pCart->ppuRead(address);
 }
 
 void SystemNES::ppuWrite(uint16_t address, uint8_t Byte)
 {
-
+    // !
 }

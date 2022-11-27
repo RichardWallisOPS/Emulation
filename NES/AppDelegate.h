@@ -1,9 +1,7 @@
 //
 //  AppDelegate.h
-//  MetalTest
 //
-//  Created by richardwallis on 15/11/2016.
-//  Copyright © 2016 openplanetsoftware. All rights reserved.
+//  Created by richardwallis on 15/11/2022.
 //
 
 #import <Cocoa/Cocoa.h>

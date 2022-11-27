@@ -3,7 +3,6 @@
 //  NES
 //
 //  Created by richardwallis on 15/11/2022.
-//  Copyright © 2022 openplanetsoftware. All rights reserved.
 //
 
 #ifndef SystemNES_h
@@ -34,6 +33,10 @@ public:
     virtual void cpuWrite(uint16_t address, uint8_t byte) override;
     virtual uint8_t ppuRead(uint16_t address) override;
     virtual void ppuWrite(uint16_t address, uint8_t byte) override;
+    
+    virtual void SignalReset(bool bSignal) override;
+    virtual void SignalNMI(bool bSignal) override;
+    virtual void SignalIRQ(bool bSignal) override;
 
     // Debug
     void SetCPUProgramCounter(uint16_t pc);

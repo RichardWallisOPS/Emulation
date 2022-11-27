@@ -3,7 +3,6 @@
 //  NES
 //
 //  Created by richardwallis on 20/11/2022.
-//  Copyright © 2022 openplanetsoftware. All rights reserved.
 //
 
 #include "CPU6502.h"

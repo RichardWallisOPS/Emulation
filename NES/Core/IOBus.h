@@ -3,7 +3,6 @@
 //  NES
 //
 //  Created by richardwallis on 15/11/2022.
-//  Copyright © 2022 openplanetsoftware. All rights reserved.
 //
 
 #ifndef IOBus_h
@@ -18,6 +17,10 @@ public:
     virtual void cpuWrite(uint16_t address, uint8_t byte) = 0;
     virtual uint8_t ppuRead(uint16_t address) = 0;
     virtual void ppuWrite(uint16_t address, uint8_t byte) = 0;
+    
+    virtual void SignalReset(bool bSignal)  {}
+    virtual void SignalNMI(bool bSignal)    {}
+    virtual void SignalIRQ(bool bSignal)    {}
 };
 
 #endif /* IOBus_h */
