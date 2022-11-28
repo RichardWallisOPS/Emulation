@@ -197,6 +197,13 @@ void SystemNES::cpuWrite(uint16_t address, uint8_t byte)
     {
         uint16_t memAddress = address - 0x4000;
         m_apuRegisters[memAddress] = byte;
+        
+        if(address == 0x4014)
+        {
+            //TODO:
+            // Writing value XX (high byte) to 0x4014 will upload 256 bytes of data from
+            // 0xXX00 - 0xXXFF at PPU address OAMADDR
+        }
     }
     else if(address >= 0x4020 && address < 0xFFFF && m_pCart != nullptr)
     {

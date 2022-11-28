@@ -48,6 +48,7 @@ public:
     void cpuWrite(uint16_t address, uint8_t byte);
     
     // Debug
+    // Expects a 256x240 RGBA data pointer
     void WritePatternTables(uint32_t* pOutputData);
 
 private:
@@ -55,6 +56,7 @@ private:
     
     uint8_t m_vram[nVRamSize];                      // 2x 1024 byte name tables - last 64 bytes of each are the attribute tables`
     uint8_t m_portRegisters[PortRegister_Count];    // Communications with the CPU
+    uint8_t m_portLatch;                            // data bus between CPU and GPU
     
     union                                           // object attribute ram
     {

@@ -10,8 +10,8 @@
 
 // PPU memory map
 // Range        Size    Description
-// $0000-$0FFF 	$1000 	Pattern table 0
-// $1000-$1FFF 	$1000 	Pattern table 1
+// $0000-$0FFF 	$1000 	Pattern table 0 - cart
+// $1000-$1FFF 	$1000 	Pattern table 1 - cart
 // $2000-$23FF 	$0400 	Nametable 0
 // $2400-$27FF 	$0400 	Nametable 1
 // $2800-$2BFF 	$0400 	Nametable 2
@@ -22,6 +22,7 @@
 
 PPUNES::PPUNES(IOBus& bus)
 : m_bus(bus)
+, m_portLatch(0)
 {
     memset(m_vram, 0x00, nVRamSize);
     memset(m_portRegisters, 0x00, PortRegister_Count);
@@ -41,7 +42,9 @@ void PPUNES::PowerOn()
 
 void PPUNES::Reset()
 {
-
+    m_portLatch = 0;
+    
+    // TODO
 }
 
 void PPUNES::Tick()
@@ -52,31 +55,36 @@ void PPUNES::Tick()
 uint8_t PPUNES::cpuRead(uint16_t address)
 {
     uint8_t data = 0;
-    
     if(address < PortRegister_Count)
     {
-        data = m_portRegisters[address];
         switch(address)
         {
             case PPUCTRL:
+                data = m_portLatch;
                 break;
             case PPUMASK:
+                data = m_portLatch;
                 break;
             case PPUSTATUS:
+                data = m_portLatch = m_portRegisters[address];
                 break;
             case OAMADDR:
+                data = m_portLatch;
                 break;
             case OAMDATA:
+                data = m_portLatch = m_portRegisters[address];
                 break;
             case PPUSCROLL:
+                data = m_portLatch;;
                 break;
             case PPUADDR:
+                data = m_portLatch;
                 break;
             case PPUDATA:
+                data = m_portLatch = m_portRegisters[address];
                 break;
         }
     }
-    
     return data;
 }
 
@@ -84,24 +92,32 @@ void PPUNES::cpuWrite(uint16_t address, uint8_t byte)
 {
     if(address < PortRegister_Count)
     {
-        m_portRegisters[address] = byte;
+        m_portLatch = byte;
         switch(address)
         {
             case PPUCTRL:
+                m_portRegisters[address] = byte;
                 break;
             case PPUMASK:
+                m_portRegisters[address] = byte;
                 break;
             case PPUSTATUS:
+                // read only
                 break;
             case OAMADDR:
+                m_portRegisters[address] = byte;
                 break;
             case OAMDATA:
+                m_portRegisters[address] = byte;
                 break;
             case PPUSCROLL:
+                m_portRegisters[address] = byte;
                 break;
             case PPUADDR:
+                m_portRegisters[address] = byte;
                 break;
             case PPUDATA:
+                m_portRegisters[address] = byte;
                 break;
         }
     }
@@ -109,6 +125,16 @@ void PPUNES::cpuWrite(uint16_t address, uint8_t byte)
 
 void PPUNES::WritePatternTables(uint32_t* pOutputData)
 {
+//    DCBA98 76543210
+//    ---------------
+//    0HRRRR CCCCPTTT
+//    |||||| |||||+++- T: Fine Y offset, the row number within a tile
+//    |||||| ||||+---- P: Bit plane (0: "lower"; 1: "upper")
+//    |||||| ++++----- C: Tile column
+//    ||++++---------- R: Tile row
+//    |+-------------- H: Half of pattern table (0: "left"; 1: "right")
+//    +--------------- 0: Pattern table is at $0000-$1FFF
+
     // Assumes a 256px  source texture width
     // Grey scaleoutput
     auto fnDrawPattenTable = [&](uint32_t* pOutputData, uint32_t xOffset, uint32_t yOffset, uint16_t baseAddress)
