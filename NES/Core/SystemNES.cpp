@@ -214,9 +214,12 @@ uint8_t SystemNES::ppuRead(uint16_t address)
     return 0;
 }
 
-void SystemNES::ppuWrite(uint16_t address, uint8_t Byte)
+void SystemNES::ppuWrite(uint16_t address, uint8_t byte)
 {
-    // !
+    if(m_pCart != nullptr)
+    {
+        m_pCart->ppuWrite(address, byte);
+    }
 }
 
 // Debug

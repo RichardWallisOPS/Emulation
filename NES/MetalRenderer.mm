@@ -93,28 +93,31 @@ SystemNES g_NESConsole;
             NSProcessInfo* process = [NSProcessInfo processInfo];
             NSArray* arguments = [process arguments];
             
-            NSString* path = arguments[1];
-            
-            NSLog(@"Trying to load cart: %@", path);
-            
-            NSURL* gamePakURL = [[NSURL alloc] initFileURLWithPath:path isDirectory:NO];
-            
-            NSError* pError = nil;
-            NSData* pakData = [NSData dataWithContentsOfURL:gamePakURL options:0 error:&pError];
-            
-            if(g_NESConsole.InsertCartridge(pakData.bytes, (uint32_t)pakData.length))
+            if(arguments.count > 1)
             {
-                g_NESConsole.PowerOn();
+                NSString* path = arguments[1];
                 
-                // Set some values for the debug test cart
-                if([path containsString:@"nestest"])
+                NSLog(@"Trying to load cart: %@", path);
+                
+                NSURL* gamePakURL = [[NSURL alloc] initFileURLWithPath:path isDirectory:NO];
+                
+                NSError* pError = nil;
+                NSData* pakData = [NSData dataWithContentsOfURL:gamePakURL options:0 error:&pError];
+                
+                if(g_NESConsole.InsertCartridge(pakData.bytes, (uint32_t)pakData.length))
                 {
-                    g_NESConsole.SetCPUProgramCounter(0xC000);
+                    g_NESConsole.PowerOn();
+                    
+                    // Set some values for the debug test cart
+                    if([path containsString:@"nestest"])
+                    {
+                        g_NESConsole.SetCPUProgramCounter(0xC000);
+                    }
                 }
-            }
-            else
-            {
-                NSLog(@"Insert Cartridge failed!!!");
+                else
+                {
+                    NSLog(@"Insert Cartridge failed!!!");
+                }
             }
         }
     }

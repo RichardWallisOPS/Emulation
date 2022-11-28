@@ -86,7 +86,6 @@ uint8_t Cartridge::ppuRead(uint16_t address)
 {
     if(m_pChr != nullptr)
     {
-        // TODO absolute or local space address
         return m_pChr[address];
     }
     return address & 0xFF; // open bus low byte return

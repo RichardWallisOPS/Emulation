@@ -27,7 +27,6 @@
 {
     if(self.renderer == nil)
     {
-        self.view.frame = CGRectMake(0, 0, 1024, 960);
         [self.view addSubview:self.metalView];
         self.metalView.frame = self.view.frame;
         
