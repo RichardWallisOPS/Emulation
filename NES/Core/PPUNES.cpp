@@ -29,8 +29,8 @@ PPUNES::PPUNES(IOBus& bus)
 {
     memset(m_vram, 0x00, nVRamSize);
     memset(m_portRegisters, 0x00, PortRegister_Count);
-    memset(m_oam, 0x00, sizeof(m_oam));
-    memset(m_oamScanline, 0x00, sizeof(m_oamScanline));
+    memset(m_primaryOAM, 0x00, sizeof(m_primaryOAM));
+    memset(m_secondaryOAM, 0x00, sizeof(m_secondaryOAM));
 }
 
 PPUNES::~PPUNES()

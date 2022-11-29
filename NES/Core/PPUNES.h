@@ -61,13 +61,13 @@ private:
     
     union                                           // object attribute ram
     {
-        OAMEntry m_oamEntries[64];
-        uint8_t m_oam[256];
+        OAMEntry m_primaryOAMEntries[64];
+        uint8_t m_primaryOAM[256];
     };
     union                                           // current scan line sprites
     {
-        OAMEntry m_scanlineEntries[8];
-        uint8_t m_oamScanline[32];
+        OAMEntry m_secondaryOAMEntries[8];
+        uint8_t m_secondaryOAM[32];
     };
     
     // Emulation
