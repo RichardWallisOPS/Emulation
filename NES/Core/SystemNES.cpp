@@ -61,6 +61,8 @@ void SystemNES::Reset()
     
     // TODO apu registers on reset
     memset(m_apuRegisters, 0x00, nAPURegisterCount);
+    
+    SignalReset(true);
 }
 
 void SystemNES::EjectCartridge()

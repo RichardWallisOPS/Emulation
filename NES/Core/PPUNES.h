@@ -54,6 +54,7 @@ public:
 private:
     IOBus& m_bus;
     
+    // Registers and ram
     uint8_t m_vram[nVRamSize];                      // 2x 1024 byte name tables - last 64 bytes of each are the attribute tables`
     uint8_t m_portRegisters[PortRegister_Count];    // Communications with the CPU
     uint8_t m_portLatch;                            // data bus between CPU and GPU
@@ -68,6 +69,11 @@ private:
         OAMEntry m_scanlineEntries[8];
         uint8_t m_oamScanline[32];
     };
+    
+    // Emulation
+    uint64_t m_tickCount;
+    uint16_t m_scanline;
+    uint16_t m_scanlineDot;
 };
 
 #endif /* PPUNES_h */

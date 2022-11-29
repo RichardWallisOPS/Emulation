@@ -23,6 +23,9 @@
 PPUNES::PPUNES(IOBus& bus)
 : m_bus(bus)
 , m_portLatch(0)
+, m_tickCount(0)
+, m_scanline(0)
+, m_scanlineDot(0)
 {
     memset(m_vram, 0x00, nVRamSize);
     memset(m_portRegisters, 0x00, PortRegister_Count);
@@ -37,19 +40,36 @@ PPUNES::~PPUNES()
 
 void PPUNES::PowerOn()
 {
-
+    // TODO
 }
 
 void PPUNES::Reset()
 {
     m_portLatch = 0;
-    
+    m_tickCount = 0;
+    m_scanline = 0;
+    m_scanlineDot = 0;
     // TODO
 }
 
 void PPUNES::Tick()
 {
+    //TODO scanline and dot updates
 
+    // update next dot positon and scanline
+    ++m_tickCount;
+    ++m_scanlineDot;
+    
+    if(m_scanlineDot > 340)
+    {
+        m_scanlineDot = 0;
+        ++m_scanline;
+        
+        if(m_scanline > 261)
+        {
+            m_scanline = 0;
+        }
+    }
 }
 
 uint8_t PPUNES::cpuRead(uint16_t address)
