@@ -50,7 +50,7 @@ public:
     // Debug
     // Expects a 256x240 RGBA data pointer
     void WritePatternTables(uint32_t* pOutputData);
-
+    
 private:
     IOBus& m_bus;
     
@@ -69,6 +69,12 @@ private:
         OAMEntry m_secondaryOAMEntries[8];
         uint8_t m_secondaryOAM[32];
     };
+    
+    // Background pattern shift registers
+    uint8_t m_bgNextPattern0;
+    uint8_t m_bgNextPattern1;
+    uint16_t m_bgShift0;
+    uint16_t m_bgShift1;
     
     // Emulation
     uint64_t m_tickCount;

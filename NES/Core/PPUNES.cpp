@@ -20,6 +20,39 @@
 // $3F00-$3F1F 	$0020 	Palette RAM indexes
 // $3F20-$3FFF 	$00E0 	Mirrors of $3F00-$3F1F
 
+enum FlagControl : uint8_t
+{
+    CTRL_NAMETABLE_ADDRESS_BIT0 = 1 << 0,
+    CTRL_NAMETABLE_ADDRESS_BIT1 = 1 << 1,
+    
+    // [bit 1 | bit 0]  - 0 = $2000; 1 = $2400; 2 = $2800; 3 = $2C00 = 0x2000 + (0x0400 * (CTRL & mask))
+    CTRL_NAMETABLE_ADDRESS_MASK = CTRL_NAMETABLE_ADDRESS_BIT0 | CTRL_NAMETABLE_ADDRESS_BIT1,
+    
+    CTRL_VRAM_ADDRESS_INC       = 1 << 2,   // 0 = add 1, 1 = add 32, per CPU read, write PPUDATA
+    CTRL_SPRITE_TABLE_ADDR      = 1 << 3,   // 0 = 0x0000, 1 = 0x1000
+    CTRL_PATTERN_TABLE_ADDR     = 1 << 4,   // 0 = 0x0000, 1 = 0x1000
+    CTRL_SPRITE_SIZE            = 1 << 5,   // 0 = 8 X 8, 1 = 8 x 16
+    CTRL_MASTER_SLAVE           = 1 << 6,
+    CTRL_GEN_VBLaNK_NMI         = 1 << 7
+};
+
+enum FlagMask : uint8_t
+{
+    // TODO
+};
+
+enum FlagStatus : uint8_t
+{
+    STATUS_BIT0_OPEN_BUS    = 1 << 0,
+    STATUS_BIT1_OPEN_BUS    = 1 << 1,
+    STATUS_BIT2_OPEN_BUS    = 1 << 2,
+    STATUS_BIT3_OPEN_BUS    = 1 << 3,
+    STATUS_BIT4_OPEN_BUS    = 1 << 4,
+    STATUS_SPRITE_OVERFLOW  = 1 << 5,
+    STATUS_SPRITE0_HIT      = 1 << 6,
+    STATUS_VBLANK           = 1 << 7
+};
+
 PPUNES::PPUNES(IOBus& bus)
 : m_bus(bus)
 , m_portLatch(0)
