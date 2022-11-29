@@ -30,10 +30,10 @@ enum FlagControl : uint8_t
     
     CTRL_VRAM_ADDRESS_INC       = 1 << 2,   // 0 = add 1, 1 = add 32, per CPU read, write PPUDATA
     CTRL_SPRITE_TABLE_ADDR      = 1 << 3,   // 0 = 0x0000, 1 = 0x1000
-    CTRL_PATTERN_TABLE_ADDR     = 1 << 4,   // 0 = 0x0000, 1 = 0x1000
+    CTRL_BACKGROUND_TABLE_ADDR  = 1 << 4,   // 0 = 0x0000, 1 = 0x1000
     CTRL_SPRITE_SIZE            = 1 << 5,   // 0 = 8 X 8, 1 = 8 x 16
     CTRL_MASTER_SLAVE           = 1 << 6,
-    CTRL_GEN_VBLaNK_NMI         = 1 << 7
+    CTRL_GEN_VBLANK_NMI         = 1 << 7
 };
 
 enum FlagMask : uint8_t
@@ -59,6 +59,10 @@ PPUNES::PPUNES(IOBus& bus)
 , m_tickCount(0)
 , m_scanline(0)
 , m_scanlineDot(0)
+, m_bgNextPattern0(0)
+, m_bgNextPattern1(0)
+, m_bgShift0(0)
+, m_bgShift1(0)
 {
     memset(m_vram, 0x00, nVRamSize);
     memset(m_portRegisters, 0x00, PortRegister_Count);
@@ -71,9 +75,40 @@ PPUNES::~PPUNES()
 
 }
 
+void PPUNES::SetFlag(uint8_t flag, uint8_t ppuRegister)
+{
+    uint8_t& ppuReg = m_portRegisters[ppuRegister];
+    ppuReg |= flag;
+}
+
+void PPUNES::ClearFlag(uint8_t flag, uint8_t ppuRegister)
+{
+    uint8_t& ppuReg = m_portRegisters[ppuRegister];
+    ppuReg &= ~flag;
+}
+
+bool PPUNES::TestFlag(uint8_t flag, uint8_t ppuRegister)
+{
+    uint8_t& ppuReg = m_portRegisters[ppuRegister];
+    return (ppuReg & flag) != 0;
+}
+
 void PPUNES::PowerOn()
 {
-    // TODO
+    m_portLatch = 0;
+    m_tickCount = 0;
+    m_scanline = 0;
+    m_scanlineDot = 0;
+    
+    m_bgNextPattern0 = 0;
+    m_bgNextPattern1 = 0;
+    m_bgShift0 = 0;
+    m_bgShift1 = 0;
+    
+    memset(m_vram, 0x00, nVRamSize);
+    memset(m_portRegisters, 0x00, PortRegister_Count);
+    memset(m_primaryOAM, 0x00, sizeof(m_primaryOAM));
+    memset(m_secondaryOAM, 0x00, sizeof(m_secondaryOAM));
 }
 
 void PPUNES::Reset()
@@ -82,12 +117,44 @@ void PPUNES::Reset()
     m_tickCount = 0;
     m_scanline = 0;
     m_scanlineDot = 0;
-    // TODO
+    
+    m_bgNextPattern0 = 0;
+    m_bgNextPattern1 = 0;
+    m_bgShift0 = 0;
+    m_bgShift1 = 0;
+    
+    memset(m_vram, 0x00, nVRamSize);
+    memset(m_portRegisters, 0x00, PortRegister_Count);
+    memset(m_primaryOAM, 0x00, sizeof(m_primaryOAM));
+    memset(m_secondaryOAM, 0x00, sizeof(m_secondaryOAM));
 }
 
 void PPUNES::Tick()
 {
-    //TODO scanline and dot updates
+    // vblank set
+    if(m_scanline == 241 && m_scanlineDot == 1)
+    {
+        SetFlag(STATUS_VBLANK, PPUSTATUS);
+        
+        if(TestFlag(CTRL_GEN_VBLANK_NMI, PPUCTRL))
+        {
+            m_bus.SignalNMI(true);
+        }
+    }
+    
+    // clear vblank etc ready for next frame
+    if(m_scanline == 261 && m_scanlineDot == 1)
+    {
+        ClearFlag(STATUS_VBLANK, PPUSTATUS);
+        ClearFlag(STATUS_SPRITE0_HIT, PPUSTATUS);
+        ClearFlag(STATUS_SPRITE_OVERFLOW, PPUSTATUS);
+    }
+    
+    // Main update draw
+    if((m_scanline >= 0 && m_scanline <= 239) || m_scanline == 261)
+    {
+        // 0-239 is the visible scan lines, 261 is the pre-render line
+    }
 
     // update next dot positon and scanline
     ++m_tickCount;
@@ -145,11 +212,21 @@ void PPUNES::cpuWrite(uint16_t address, uint8_t byte)
 {
     if(address < PortRegister_Count)
     {
+        uint8_t oldByte =  m_portRegisters[address];
         m_portLatch = byte;
         switch(address)
         {
             case PPUCTRL:
                 m_portRegisters[address] = byte;
+
+                // if in vblank and NMI request toggled from 0 - 1 gen the NMI now
+                if(TestFlag(STATUS_VBLANK, PPUSTATUS))
+                {
+                    if((oldByte & CTRL_GEN_VBLANK_NMI) == 0 && (byte & CTRL_GEN_VBLANK_NMI) != 0)
+                    {
+                        m_bus.SignalNMI(true);
+                    }
+                }
                 break;
             case PPUMASK:
                 m_portRegisters[address] = byte;

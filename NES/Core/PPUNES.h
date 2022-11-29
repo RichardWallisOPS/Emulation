@@ -52,13 +52,22 @@ public:
     void WritePatternTables(uint32_t* pOutputData);
     
 private:
+
+    void SetFlag(uint8_t flag, uint8_t ppuRegister);
+    void ClearFlag(uint8_t flag, uint8_t ppuRegister);
+    bool TestFlag(uint8_t flag, uint8_t ppuRegister);
+    
+private:
     IOBus& m_bus;
     
-    // Registers and ram
-    uint8_t m_vram[nVRamSize];                      // 2x 1024 byte name tables - last 64 bytes of each are the attribute tables`
+    // Nmetable + Pallette RAM
+    uint8_t m_vram[nVRamSize];                      // 2x 1024 byte name tables - last 64 bytes of each are the attribute tables
+    
+    // Registers - CPU accessible
     uint8_t m_portRegisters[PortRegister_Count];    // Communications with the CPU
     uint8_t m_portLatch;                            // data bus between CPU and GPU
     
+    // OAM RAM
     union                                           // object attribute ram
     {
         OAMEntry m_primaryOAMEntries[64];
