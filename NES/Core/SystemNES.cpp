@@ -161,13 +161,13 @@ void SystemNES::Tick()
         {
             m_cpu.Tick();
         }
-        
+
         // DMA handling
         if((m_dmaAddress & 0xFF) != 0xFF)
         {
             if(m_bDMARead)
             {
-                m_dmaData = cpuRead(m_dmaAddress++);
+                m_dmaData = this->cpuRead(m_dmaAddress++);
             }
             else
             {
@@ -190,7 +190,7 @@ uint8_t SystemNES::cpuRead(uint16_t address)
     {
         // 8 port addresses from 0x2000 - 0x3FFF repeating every 8 bytes
         uint8_t port = (address - 0x2000) % 8;
-        m_ppu.cpuRead(port);
+        return m_ppu.cpuRead(port);
     }
     else if(address >= 0x4000 && address <= 0x401F)
     {
@@ -255,6 +255,11 @@ void SystemNES::ppuWrite(uint16_t address, uint8_t byte)
     {
         m_pCart->ppuWrite(address, byte);
     }
+}
+
+void SystemNES::SetVideoOutputDataPtr(uint32_t* pVideoOutData)
+{
+    m_ppu.SetVideoOutputDataPtr(pVideoOutData);
 }
 
 // Debug

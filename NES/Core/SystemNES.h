@@ -38,7 +38,9 @@ public:
     virtual void SignalNMI(bool bSignal) override;
     virtual void SignalIRQ(bool bSignal) override;
 
-
+    // assumed space for a 32bit colour 256x240 image data
+    void SetVideoOutputDataPtr(uint32_t* pVideoOutData);
+    
     // Debug
     void SetCPUProgramCounter(uint16_t pc);
     void WritePPUMetaData(uint32_t* pData);

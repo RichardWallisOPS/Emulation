@@ -9,6 +9,7 @@
 #include <stdio.h>
 #include <string.h>
 
+// This will spew a lot of logging use at own peril!
 #if DEBUG && 0
     #define EMULATION_LOG
 #endif

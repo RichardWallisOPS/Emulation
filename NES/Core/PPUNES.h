@@ -57,6 +57,8 @@ public:
     uint8_t cpuRead(uint8_t port);
     void cpuWrite(uint8_t port, uint8_t byte);
     
+    void SetVideoOutputDataPtr(uint32_t* pVideoOutData);
+    
     // Debug
     // Expects a 256x240 RGBA data pointer
     void WritePatternTables(uint32_t* pOutputData);
@@ -68,6 +70,8 @@ private:
     bool TestFlag(uint8_t flag, PortRegisterID ppuRegister);
     
     uint16_t memoryAddressToNameTableOffset(uint16_t address);
+    
+    void GenerateVideoPixel();
     
 private:
     IOBus& m_bus;
@@ -101,6 +105,9 @@ private:
     uint64_t m_tickCount;
     uint16_t m_scanline;
     uint16_t m_scanlineDot;
+    
+    // Output
+    uint32_t* m_pVideoOutput;
 };
 
 #endif /* PPUNES_h */

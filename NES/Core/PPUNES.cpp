@@ -67,6 +67,7 @@ PPUNES::PPUNES(IOBus& bus)
 , m_bgNextPattern1(0)
 , m_bgShift0(0)
 , m_bgShift1(0)
+, m_pVideoOutput(nullptr)
 {
     memset(m_vram, 0x00, nVRamSize);
     memset(m_portRegisters, 0x00, PortRegister_Count);
@@ -77,6 +78,11 @@ PPUNES::PPUNES(IOBus& bus)
 PPUNES::~PPUNES()
 {
 
+}
+
+void PPUNES::SetVideoOutputDataPtr(uint32_t* pVideoOutData)
+{
+    m_pVideoOutput = pVideoOutData;
 }
 
 void PPUNES::SetMirrorMode(MirrorMode mode)
@@ -188,6 +194,12 @@ void PPUNES::Tick()
             
             // TODO sprite evaluation
         }
+        
+        // Output current pixel
+        if(m_scanline >= 0 && m_scanline <= 239 && m_scanlineDot >= 1 && m_scanlineDot <= 256)
+        {
+            GenerateVideoPixel();
+        }
     }
 
     // update next dot positon and scanline
@@ -203,6 +215,49 @@ void PPUNES::Tick()
         {
             m_scanline = 0;
         }
+    }
+}
+
+void PPUNES::GenerateVideoPixel()
+{
+    // TEMP
+    uint32_t colourLUT[4] = {0x00000000,  0xff555555,  0xffAAAAAA,  0xffFFFFff};
+    
+    // rough output to test data
+    if(m_pVideoOutput != nullptr)
+    {
+        // nametable byte
+        // attribute table byte
+        // pattern table low
+        // pattern table high
+        uint16_t baseAddress = 0x0000;
+        if(TestFlag(CTRL_BACKGROUND_TABLE_ADDR, PPUCTRL))
+        {
+            baseAddress = 0x1000;
+        }
+        
+        uint16_t y = m_scanline;
+        uint16_t x = m_scanlineDot - 1;
+        uint16_t tileY = y / 15;
+        uint16_t tileX = x / 16;
+        uint16_t nametableIndex = tileY * 16 + tileX;
+        uint8_t tileIndex = m_vram[nametableIndex];
+        
+        uint16_t tileAddress = baseAddress + tileIndex * 16;//(((tileY * 16) + tileX) * 16);
+        
+        uint16_t pY = y % 8;
+        uint16_t pX = x % 8;
+        
+        uint8_t plane0 = m_bus.ppuRead(tileAddress + pY);
+        uint8_t plane1 = m_bus.ppuRead(tileAddress + pY + 8);
+        
+        uint8_t pixel0 = (plane0 >> (7 - pX)) & 1;
+        uint8_t pixel1 = (plane1 >> (7 - pX)) & 1;
+
+        uint8_t pixelColourLUT = pixel0 | (pixel1 << 1);
+        uint32_t pixelIndex = y * 256 + x;
+
+        m_pVideoOutput[pixelIndex] = colourLUT[pixelColourLUT];
     }
 }
 
