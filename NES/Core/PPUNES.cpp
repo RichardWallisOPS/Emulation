@@ -220,10 +220,8 @@ void PPUNES::Tick()
 
 void PPUNES::GenerateVideoPixel()
 {
-    // TEMP
+    // Hack some test output
     uint32_t colourLUT[4] = {0x00000000,  0xff555555,  0xffAAAAAA,  0xffFFFFff};
-    
-    // rough output to test data
     if(m_pVideoOutput != nullptr)
     {
         // nametable byte
@@ -238,12 +236,12 @@ void PPUNES::GenerateVideoPixel()
         
         uint16_t y = m_scanline;
         uint16_t x = m_scanlineDot - 1;
-        uint16_t tileY = y / 15;
-        uint16_t tileX = x / 16;
-        uint16_t nametableIndex = tileY * 16 + tileX;
+        uint16_t tileY = y / 8;
+        uint16_t tileX = x / 8;
+        uint16_t nametableIndex = tileY * 32 + tileX;
         uint8_t tileIndex = m_vram[nametableIndex];
         
-        uint16_t tileAddress = baseAddress + tileIndex * 16;//(((tileY * 16) + tileX) * 16);
+        uint16_t tileAddress = baseAddress + (uint16_t(tileIndex) * 16);
         
         uint16_t pY = y % 8;
         uint16_t pX = x % 8;

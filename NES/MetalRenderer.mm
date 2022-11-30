@@ -108,13 +108,6 @@ SystemNES g_NESConsole;
                 if(g_NESConsole.InsertCartridge(pakData.bytes, (uint32_t)pakData.length))
                 {
                     g_NESConsole.PowerOn();
-#if DEBUG
-                    // Set some values for the debug test cart
-                    if([path containsString:@"nestest"])
-                    {
-                        g_NESConsole.SetCPUProgramCounter(0xC000);
-                    }
-#endif
                 }
                 else
                 {
