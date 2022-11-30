@@ -114,6 +114,13 @@ bool SystemNES::InsertCartridge(void const* pData, uint32_t dataSize)
         return false;
     }
     
+    // VRAM Name table mirror mode
+    {
+        MirrorMode vramMirror = (pHeader->m_flags6 & 1) == 0 ? VRAM_MIRROR_H : VRAM_MIRROR_V;
+        vramMirror = (pHeader->m_flags6 & 1 << 3) != 0 ? VRAM_MIRROR_CART4 : vramMirror;
+        m_ppu.SetMirrorMode(vramMirror);
+    }
+    
     uint8_t mapperID = (pHeader->m_flags7 & 0xF0) | ((pHeader->m_flags6 & 0xF0) >> 4);
     m_pCart = new Cartridge(mapperID, pCartData, pHeader->m_prg16KChunks, pHeader->m_chr8KChunks);
     
@@ -164,8 +171,9 @@ uint8_t SystemNES::cpuRead(uint16_t address)
     }
     else if(address >= 0x2000 && address <= 0x3FFF)
     {
-        uint16_t memAddress = (address - 0x2000) % 8;
-        m_ppu.cpuRead(memAddress);
+        // 8 port addresses from 0x2000 - 0x3FFF repeating every 8 bytes
+        uint8_t port = (address - 0x2000) % 8;
+        m_ppu.cpuRead(port);
     }
     else if(address >= 0x4000 && address <= 0x401F)
     {
@@ -192,8 +200,8 @@ void SystemNES::cpuWrite(uint16_t address, uint8_t byte)
     }
     else if(address >= 0x2000 && address <= 0x3FFF)
     {
-        uint16_t memAddress = (address - 0x2000) % 8;
-        m_ppu.cpuWrite(memAddress, byte);
+        uint8_t port = (address - 0x2000) % 8;
+        m_ppu.cpuWrite(port, byte);
     }
     else if(address >= 0x4000 && address <= 0x401F)
     {
