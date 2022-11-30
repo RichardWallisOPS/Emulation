@@ -25,6 +25,7 @@ SystemNES::SystemNES()
 , m_cpu(*this)
 , m_ppu(*this)
 , m_pCart(nullptr)
+, m_dmaAddress(0xFFFF)
 {
     memset(m_ram, 0x00, nRamSize);
     memset(m_apuRegisters, 0x00, nAPURegisterCount);
@@ -38,6 +39,7 @@ SystemNES::~SystemNES()
 void SystemNES::PowerOn()
 {
     m_cycleCount = 0;
+    m_dmaAddress = 0xFFFF;
     
     m_ppu.PowerOn();
     m_cpu.PowerOn();
@@ -53,6 +55,7 @@ void SystemNES::PowerOn()
 void SystemNES::Reset()
 {
     m_cycleCount = 0;
+    m_dmaAddress = 0xFFFF;
     
     m_ppu.Reset();
     m_cpu.Reset();
@@ -154,9 +157,23 @@ void SystemNES::Tick()
         ++m_cycleCount;
         m_ppu.Tick();
         
-        if(m_cycleCount % 3 == 0)
+        if((m_cycleCount % 3) == 0 && (m_dmaAddress & 0xFF) == 0xFF)
         {
             m_cpu.Tick();
+        }
+        
+        // DMA handling
+        if((m_dmaAddress & 0xFF) != 0xFF)
+        {
+            if(m_bDMARead)
+            {
+                m_dmaData = cpuRead(m_dmaAddress++);
+            }
+            else
+            {
+                m_ppu.cpuWrite(OAMDATA, m_dmaData);
+            }
+            m_bDMARead = !m_bDMARead;
         }
     }
 }
@@ -210,9 +227,10 @@ void SystemNES::cpuWrite(uint16_t address, uint8_t byte)
         
         if(address == 0x4014)
         {
-            //TODO:
             // Writing value XX (high byte) to 0x4014 will upload 256 bytes of data from
             // 0xXX00 - 0xXXFF at PPU address OAMADDR
+            m_dmaAddress = uint16_t(byte) << 8;
+            m_bDMARead = true;
         }
     }
     else if(address >= 0x4020 && address < 0xFFFF && m_pCart != nullptr)

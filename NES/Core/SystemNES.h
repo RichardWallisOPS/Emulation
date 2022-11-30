@@ -38,6 +38,7 @@ public:
     virtual void SignalNMI(bool bSignal) override;
     virtual void SignalIRQ(bool bSignal) override;
 
+
     // Debug
     void SetCPUProgramCounter(uint16_t pc);
     void WritePPUMetaData(uint32_t* pData);
@@ -50,6 +51,11 @@ private:
     CPU6502     m_cpu;
     PPUNES      m_ppu;
     Cartridge*  m_pCart;
+    
+    // DMA
+    uint16_t    m_dmaAddress;
+    uint8_t     m_dmaData;
+    bool        m_bDMARead;
 };
 
 #endif /* SystemNES_h */
