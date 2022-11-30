@@ -167,10 +167,27 @@ void PPUNES::Tick()
         ClearFlag(STATUS_SPRITE_OVERFLOW, PPUSTATUS);
     }
     
-    // Main update draw
+    // Main update draw, 0-239 is the visible scan lines, 261 is the pre-render line
     if((m_scanline >= 0 && m_scanline <= 239) || m_scanline == 261)
     {
-        // 0-239 is the visible scan lines, 261 is the pre-render line
+        if(m_scanlineDot >= 257 && m_scanlineDot <= 320)
+        {
+            m_portRegisters[OAMADDR] = 0;
+        }
+        
+        if(m_scanlineDot == 65)
+        {
+            uint8_t spriteAddress = m_portRegisters[OAMADDR];
+
+            uint8_t* pEvalStartAddress = &m_primaryOAM[spriteAddress];
+            uint8_t* pEvalEndAddress = pEvalStartAddress + sizeof(m_primaryOAM);
+
+            // Eval start might not be aligned - this is as per hardware - interpret as start
+            OAMEntry* pStart = (OAMEntry*)pEvalStartAddress;
+            uint8_t spriteEvalCount = (pEvalEndAddress - pEvalStartAddress) / sizeof(m_primaryOAM);
+            
+            // TODO sprite evaluation
+        }
     }
 
     // update next dot positon and scanline
@@ -242,10 +259,14 @@ uint8_t PPUNES::cpuRead(uint8_t port)
                 data = m_portLatch;
                 break;
             case OAMDATA:
-                data = m_portLatch = m_portRegisters[port];
+            {
+                uint8_t spriteAddress = m_portRegisters[OAMADDR];
+                data = m_primaryOAM[spriteAddress];
+                m_portRegisters[port] = m_portLatch = data;
                 break;
+            }
             case PPUSCROLL:
-                data = m_portLatch;;
+                data = m_portLatch;
                 break;
             case PPUADDR:
                 data = m_portLatch;
@@ -327,8 +348,12 @@ void PPUNES::cpuWrite(uint8_t port, uint8_t byte)
                 m_portRegisters[port] = byte;
                 break;
             case OAMDATA:
+            {
                 m_portRegisters[port] = byte;
+                uint8_t spriteAddress = m_portRegisters[OAMADDR]++;
+                m_primaryOAM[spriteAddress] = byte;
                 break;
+            }
             case PPUSCROLL:
                 m_portRegisters[port] = byte;
                 break;

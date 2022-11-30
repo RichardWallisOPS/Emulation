@@ -79,16 +79,8 @@ private:
     uint8_t m_pallette[nPalletteSize];
     
     // OAM RAM
-    union                                           // object attribute ram
-    {
-        OAMEntry m_primaryOAMEntries[64];
-        uint8_t m_primaryOAM[256];
-    };
-    union                                           // current scan line sprites
-    {
-        OAMEntry m_secondaryOAMEntries[8];
-        uint8_t m_secondaryOAM[32];
-    };
+    uint8_t m_primaryOAM[256];                      // object attribute ram
+    uint8_t m_secondaryOAM[32];                     // current scan line sprites
     
     // Registers - CPU accessible
     uint8_t m_portRegisters[PortRegister_Count];    // Communications with the CPU
