@@ -13,14 +13,14 @@
 
 enum PortRegisterID :uint8_t
 {
-    PPUCTRL = 0,
-    PPUMASK,
-    PPUSTATUS,
-    OAMADDR,
-    OAMDATA,
-    PPUSCROLL,
-    PPUADDR,
-    PPUDATA,
+    PPUCTRL = 0,        // 0x2000
+    PPUMASK,            // 0x2001
+    PPUSTATUS,          // 0x2002
+    OAMADDR,            // 0x2003
+    OAMDATA,            // 0x2004
+    PPUSCROLL,          // 0x2005
+    PPUADDR,            // 0x2006
+    PPUDATA,            // 0x2007
     PortRegister_Count
 };
 
@@ -90,9 +90,10 @@ private:
     uint8_t m_portRegisters[PortRegister_Count];    // Communications with the CPU
     uint8_t m_portLatch;                            // data bus between CPU and GPU
     
-    // PPUADDR + PPUDATA
+    // Internal Registers
     uint16_t m_ppuAddress;
-    uint8_t m_ppuAddressLatch;
+    uint16_t m_ppuTAddress;
+    uint8_t m_ppuWriteToggle;
     uint8_t m_ppuData;
     
     // Background pattern shift registers

@@ -61,7 +61,8 @@ PPUNES::PPUNES(IOBus& bus)
 , m_scanline(0)
 , m_scanlineDot(0)
 , m_ppuAddress(0)
-, m_ppuAddressLatch(0)
+, m_ppuTAddress(0)
+, m_ppuWriteToggle(0)
 , m_ppuData(0)
 , m_bgNextPattern0(0)
 , m_bgNextPattern1(0)
@@ -115,8 +116,9 @@ void PPUNES::PowerOn()
     m_scanline = 0;
     m_scanlineDot = 0;
     
+    m_ppuTAddress = 0;
     m_ppuAddress = 0;
-    m_ppuAddressLatch = 0;
+    m_ppuWriteToggle = 0;
     m_ppuData = 0;
     
     m_bgNextPattern0 = 0;
@@ -137,8 +139,9 @@ void PPUNES::Reset()
     m_scanline = 0;
     m_scanlineDot = 0;
     
+    m_ppuTAddress = 0;
     m_ppuAddress = 0;
-    m_ppuAddressLatch = 0;
+    m_ppuWriteToggle = 0;
     m_ppuData = 0;
     
     m_bgNextPattern0 = 0;
@@ -220,7 +223,7 @@ void PPUNES::Tick()
 
 void PPUNES::GenerateVideoPixel()
 {
-    // Hack some test output
+    // HACK some test output
     uint32_t colourLUT[4] = {0x00000000,  0xff555555,  0xffAAAAAA,  0xffFFFFff};
     if(m_pVideoOutput != nullptr)
     {
@@ -305,7 +308,7 @@ uint8_t PPUNES::cpuRead(uint8_t port)
                 data = m_portLatch = m_portRegisters[port];
                 ClearFlag(STATUS_VBLANK, PPUSTATUS);
                 m_ppuAddress = 0;
-                m_ppuAddressLatch = 0;
+                m_ppuWriteToggle = 0;
                 break;
             }
             case OAMADDR:
@@ -343,8 +346,15 @@ uint8_t PPUNES::cpuRead(uint8_t port)
                 else if(memAddress >= 0x2000 && memAddress <= 0x2FFF)
                 {
                     // name table mirrors
-                    uint16_t offset = memoryAddressToNameTableOffset(memAddress);
-                    data = m_vram[offset];
+                    if(m_mirrorMode == VRAM_MIRROR_CART4)
+                    {
+                        data = m_bus.ppuRead(memAddress);
+                    }
+                    else
+                    {
+                        uint16_t offset = memoryAddressToNameTableOffset(memAddress);
+                        data = m_vram[offset];
+                    }
                 }
                 else if(memAddress >= 0x3F00 && memAddress <= 0x3FFF)
                 {
@@ -409,11 +419,20 @@ void PPUNES::cpuWrite(uint8_t port, uint8_t byte)
             }
             case PPUSCROLL:
                 m_portRegisters[port] = byte;
+                if(m_ppuWriteToggle == 0)
+                {
+                    //TODO
+                }
+                else
+                {
+                    //TODO
+                }
+                m_ppuWriteToggle = m_ppuWriteToggle == 0 ? 1 : 0;
                 break;
             case PPUADDR:
             {
                 m_portRegisters[port] = byte;
-                if(m_ppuAddressLatch == 0)
+                if(m_ppuWriteToggle == 0)
                 {
                     m_ppuAddress = byte;
                     m_ppuAddress <<= 8;
@@ -422,7 +441,7 @@ void PPUNES::cpuWrite(uint8_t port, uint8_t byte)
                 {
                     m_ppuAddress = (m_ppuAddress & 0xFF00) | byte;
                 }
-                m_ppuAddressLatch = m_ppuAddressLatch == 0 ? 1 : 0;
+                m_ppuWriteToggle = m_ppuWriteToggle == 0 ? 1 : 0;
                 break;
             }
             case PPUDATA:
@@ -446,12 +465,32 @@ void PPUNES::cpuWrite(uint8_t port, uint8_t byte)
                 else if(memAddress >= 0x2000 && memAddress <= 0x2FFF)
                 {
                     // name table mirrors
-                    uint16_t offset = memoryAddressToNameTableOffset(memAddress);
-                    m_vram[offset] = byte;
+                    if(m_mirrorMode == VRAM_MIRROR_CART4)
+                    {
+                        m_bus.ppuWrite(memAddress, byte);
+                    }
+                    else
+                    {
+                        uint16_t offset = memoryAddressToNameTableOffset(memAddress);
+                        m_vram[offset] = byte;
+                    }
                 }
                 else if(memAddress >= 0x3F00 && memAddress <= 0x3FFF)
                 {
-                    // pallette is not writable
+                    uint16_t palletteIndex = (memAddress - 0x3F00) % nPalletteSize;
+                    m_pallette[palletteIndex] = byte;
+                    
+                    // $3F10/$3F14/$3F18/$3F1C <-Mirror-> $3F00/$3F04/$3F08/$3F0C - mirror writes to keep read simple
+                    if(palletteIndex == 0x0 || palletteIndex == 0x4 || palletteIndex == 0x8 || palletteIndex == 0xC)
+                    {
+                        palletteIndex += 0x10;
+                        m_pallette[palletteIndex] = byte;
+                    }
+                    else if(palletteIndex == 0x10 || palletteIndex == 0x14 || palletteIndex == 0x18 || palletteIndex == 0x1C)
+                    {
+                        palletteIndex -= 0x10;
+                        m_pallette[palletteIndex] = byte;
+                    }
                 }
                 
                 if(TestFlag(CTRL_VRAM_ADDRESS_INC, PPUCTRL) == false)
