@@ -69,7 +69,7 @@ private:
     void ClearFlag(uint8_t flag, PortRegisterID ppuRegister);
     bool TestFlag(uint8_t flag, PortRegisterID ppuRegister);
     
-    uint16_t memoryAddressToNameTableOffset(uint16_t address);
+    uint16_t absoluteAddressToVRAMAddress(uint16_t address);
     
     void GenerateVideoPixel();
     

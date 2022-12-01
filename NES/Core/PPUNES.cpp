@@ -262,13 +262,13 @@ void PPUNES::GenerateVideoPixel()
     }
 }
 
-uint16_t PPUNES::memoryAddressToNameTableOffset(uint16_t address)
+uint16_t PPUNES::absoluteAddressToVRAMAddress(uint16_t address)
 {
     if(address >= 0x2000 && address <= 0x2FFF)
     {
         if(m_mirrorMode == VRAM_MIRROR_H)
         {
-            if(address >= 0x2400 && address <= 0x2BFF)
+            if(address >= 0x2400 && address <= 0x27FF)
             {
                 address -= 0x0400;
             }
@@ -276,7 +276,6 @@ uint16_t PPUNES::memoryAddressToNameTableOffset(uint16_t address)
             {
                 address -= 0x0800;
             }
-            address -= 0x2000;
         }
         else if(m_mirrorMode == VRAM_MIRROR_V)
         {
@@ -284,7 +283,6 @@ uint16_t PPUNES::memoryAddressToNameTableOffset(uint16_t address)
             {
                 address -= 0x0800;
             }
-            address -= 0x2000;
         }
     }
     return address;
@@ -352,8 +350,9 @@ uint8_t PPUNES::cpuRead(uint8_t port)
                     }
                     else
                     {
-                        uint16_t offset = memoryAddressToNameTableOffset(memAddress);
-                        data = m_vram[offset];
+                        uint16_t vramAddress = absoluteAddressToVRAMAddress(memAddress);
+                        uint16_t vramOffset = vramAddress - 0x2000;
+                        data = m_vram[vramOffset];
                     }
                 }
                 else if(memAddress >= 0x3F00 && memAddress <= 0x3FFF)
@@ -471,8 +470,9 @@ void PPUNES::cpuWrite(uint8_t port, uint8_t byte)
                     }
                     else
                     {
-                        uint16_t offset = memoryAddressToNameTableOffset(memAddress);
-                        m_vram[offset] = byte;
+                        uint16_t vramAddress = absoluteAddressToVRAMAddress(memAddress);
+                        uint16_t vramOffset = vramAddress - 0x2000;
+                        m_vram[vramOffset] = byte;
                     }
                 }
                 else if(memAddress >= 0x3F00 && memAddress <= 0x3FFF)
