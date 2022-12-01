@@ -70,6 +70,7 @@ private:
     bool TestFlag(uint8_t flag, PortRegisterID ppuRegister);
     
     uint16_t absoluteAddressToVRAMAddress(uint16_t address);
+    uint32_t GetPixelColour(uint32_t palletteIndex);
     
     void GenerateVideoPixel();
     
