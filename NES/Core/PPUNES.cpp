@@ -262,12 +262,40 @@ void PPUNES::GenerateVideoPixel()
 
         uint8_t tilePalletteSelect = pixel0 | (pixel1 << 1);
         
-        //uint8_t attributeIndex = tileY * 32 + tileX;
-        //uint8_t attribute =  m_vram[baseAddress + 0x3C0 + attributeIndex];
+        uint8_t attributeX = x / 32;
+        uint8_t attributeY = y / 32;
+        uint8_t attributeIndex = attributeY * 8 + attributeX;
+        uint8_t attribute =  m_vram[0 + 0x3C0 + attributeIndex];
         
+        uint8_t attribQuadX = (x / 16) % 2;
+        uint8_t attribQuadY = (y / 16) % 2;
+                
         uint8_t attributePalletteSelect = 0x00;
+        if(attribQuadX == 0 && attribQuadY == 0)
+        {
+            attributePalletteSelect = attribute & 0x3;
+        }
+        else if(attribQuadX == 1 && attribQuadY == 0)
+        {
+            attributePalletteSelect = (attribute >> 2) & 0x3;
+        }
+        else if(attribQuadX == 0 && attribQuadY == 1)
+        {
+            attributePalletteSelect = (attribute >> 4) & 0x3;
+        }
+        else if(attribQuadX == 1 && attribQuadY == 1)
+        {
+            attributePalletteSelect = (attribute >> 6) & 0x3;
+        }
+
         
-        uint8_t palletteSelect = (1 << 4) + (attributePalletteSelect << 2) + (tilePalletteSelect << 0);
+        // 7654 3210
+        // |||| ||++- Color bits 3-2 for top left quadrant of this byte
+        // |||| ++--- Color bits 3-2 for top right quadrant of this byte
+        // ||++------ Color bits 3-2 for bottom left quadrant of this byte
+        // ++-------- Color bits 3-2 for bottom right quadrant of this byte
+        
+        uint8_t palletteSelect = (0 << 4) + (attributePalletteSelect << 2) + (tilePalletteSelect << 0);
         uint8_t palletteIndex = m_pallette[palletteSelect];
         
         m_pVideoOutput[y * 256 + x] = GetPixelColour(palletteIndex);
