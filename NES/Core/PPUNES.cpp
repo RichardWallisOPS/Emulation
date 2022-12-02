@@ -73,8 +73,8 @@ PPUNES::PPUNES(IOBus& bus)
 {
     memset(m_vram, 0x00, nVRamSize);
     memset(m_portRegisters, 0x00, PortRegister_Count);
-    memset(m_primaryOAM, 0x00, sizeof(m_primaryOAM));
-    memset(m_secondaryOAM, 0x00, sizeof(m_secondaryOAM));
+    memset(m_primaryOAM, 0xFF, sizeof(m_primaryOAM));
+    memset(m_secondaryOAM, 0xFF, sizeof(m_secondaryOAM));
 }
 
 PPUNES::~PPUNES()
@@ -130,8 +130,8 @@ void PPUNES::PowerOn()
     
     memset(m_vram, 0x00, nVRamSize);
     memset(m_portRegisters, 0x00, PortRegister_Count);
-    memset(m_primaryOAM, 0x00, sizeof(m_primaryOAM));
-    memset(m_secondaryOAM, 0x00, sizeof(m_secondaryOAM));
+    memset(m_primaryOAM, 0xFF, sizeof(m_primaryOAM));
+    memset(m_secondaryOAM, 0xFF, sizeof(m_secondaryOAM));
 }
 
 void PPUNES::Reset()
@@ -154,8 +154,8 @@ void PPUNES::Reset()
     
     memset(m_vram, 0x00, nVRamSize);
     memset(m_portRegisters, 0x00, PortRegister_Count);
-    memset(m_primaryOAM, 0x00, sizeof(m_primaryOAM));
-    memset(m_secondaryOAM, 0x00, sizeof(m_secondaryOAM));
+    memset(m_primaryOAM, 0xFF, sizeof(m_primaryOAM));
+    memset(m_secondaryOAM, 0xFF, sizeof(m_secondaryOAM));
 }
 
 void PPUNES::Tick()
@@ -189,11 +189,7 @@ void PPUNES::Tick()
     {
         if(m_scanlineDot >= 1 && m_scanlineDot <= 64)
         {
-            // clearing secondary OEM
-            m_secondaryOAM[m_scanlineDot / 4 - 1 + 0] = 0xFF;
-            m_secondaryOAM[m_scanlineDot / 4 - 1 + 1] = 0xFF;
-            m_secondaryOAM[m_scanlineDot / 4 - 1 + 2] = 0xFF;
-            m_secondaryOAM[m_scanlineDot / 4 - 1 + 3] = 0xFF;
+            ClearSecondaryOEM();
         }
         else if(m_scanlineDot >= 65 && m_scanlineDot <= 256)
         {
@@ -203,6 +199,7 @@ void PPUNES::Tick()
         {
             m_portRegisters[OAMADDR] = 0;
             m_secondaryOAMWrite = 0;
+            // TODO sprie fetch
         }
         
         // Output current pixel
@@ -228,6 +225,20 @@ void PPUNES::Tick()
     }
 }
 
+void PPUNES::ClearSecondaryOEM()
+{
+    if(m_scanlineDot >= 1 && m_scanlineDot <= 64)
+    {
+        // clearing secondary OEM 32 bytes 32 reads / 32 writes 0xFF
+        if(m_scanlineDot % 2 == 0)
+        {
+            m_secondaryOAM[(m_scanlineDot - 1) / 2] = 0xFF;
+        }
+    }
+}
+
+// dad 08722 121994
+
 void PPUNES::SpriteEvaluation()
 {
     // odd data read even data write
@@ -235,25 +246,27 @@ void PPUNES::SpriteEvaluation()
     {
         if(m_scanlineDot % 2 == 0)
         {
-            uint8_t& spriteAddress = m_portRegisters[OAMADDR];
-            
-            uint8_t spriteTop = m_primaryOAM[spriteAddress];
+            uint8_t& spriteIndex = m_portRegisters[OAMADDR];
+            uint8_t spriteTop = m_primaryOAM[spriteIndex];
             uint8_t spriteBottom = spriteTop + 8;
             
             if(m_scanline >= spriteTop && m_scanline <= spriteBottom && m_secondaryOAMWrite < 32)
             {
-                m_portRegisters[OAMADDR + 0] = m_secondaryOAM[m_secondaryOAMWrite + 0];
-                m_portRegisters[OAMADDR + 1] = m_secondaryOAM[m_secondaryOAMWrite + 1];
-                m_portRegisters[OAMADDR + 2] = m_secondaryOAM[m_secondaryOAMWrite + 2];
-                m_portRegisters[OAMADDR + 3] = m_secondaryOAM[m_secondaryOAMWrite + 3];
-                m_secondaryOAMWrite += 4;
+                m_secondaryOAM[m_secondaryOAMWrite++] = m_primaryOAM[spriteIndex + 0];
+                m_secondaryOAM[m_secondaryOAMWrite++] = m_primaryOAM[spriteIndex + 1];
+                m_secondaryOAM[m_secondaryOAMWrite++] = m_primaryOAM[spriteIndex + 2];
+                m_secondaryOAM[m_secondaryOAMWrite++] = m_primaryOAM[spriteIndex + 3];
             }
+
+            spriteIndex += 4;
             
-            spriteAddress += 4;
-            if(spriteAddress == 0)
-            {
-                //
-            }
+            // TODO other steps for overflow etc
+        }
+        
+        // TODO remove this!!!
+        if(m_scanlineDot == 256)
+        {
+            memcpy(m_renderOAM, m_secondaryOAM, 32);
         }
     }
 }
@@ -261,81 +274,128 @@ void PPUNES::SpriteEvaluation()
 void PPUNES::GenerateVideoPixel()
 {
     // HACK some test output
+    // TODO Do the sprite and background properly
     if(m_pVideoOutput != nullptr)
     {
-        // nametable byte
-        // attribute table byte
-        // pattern table low
-        // pattern table high
-        uint16_t baseAddress = 0x0000;
-        if(TestFlag(CTRL_BACKGROUND_TABLE_ADDR, PPUCTRL))
-        {
-            baseAddress = 0x1000;
-        }
-        
         uint16_t y = m_scanline;
         uint16_t x = m_scanlineDot - 1;
-        uint16_t tileY = y / 8;
-        uint16_t tileX = x / 8;
-        uint16_t nametableIndex = tileY * 32 + tileX;
-        uint8_t tileIndex = m_vram[nametableIndex];
         
-        uint16_t tileAddress = baseAddress + (uint16_t(tileIndex) * 16);
-        
-        uint16_t pY = y % 8;
-        uint16_t pX = x % 8;
-        
-        uint8_t plane0 = m_bus.ppuRead(tileAddress + pY);
-        uint8_t plane1 = m_bus.ppuRead(tileAddress + pY + 8);
-        
-        uint8_t pixel0 = (plane0 >> (7 - pX)) & 1;
-        uint8_t pixel1 = (plane1 >> (7 - pX)) & 1;
-        
-        // 43210
-        // |||||
-        // |||++- Pixel value from tile data
-        // |++--- Palette number from attribute table or OAM
-        // +----- Background/Sprite select
+        // Test background
+        {
+            // nametable byte
+            // attribute table byte
+            // pattern table low
+            // pattern table high
+            uint16_t baseAddress = 0x0000;
+            if(TestFlag(CTRL_BACKGROUND_TABLE_ADDR, PPUCTRL))
+            {
+                baseAddress = 0x1000;
+            }
+            
+            uint16_t tileY = y / 8;
+            uint16_t tileX = x / 8;
+            uint16_t nametableIndex = tileY * 32 + tileX;
+            uint8_t tileIndex = m_vram[nametableIndex];
+            
+            uint16_t tileAddress = baseAddress + (uint16_t(tileIndex) * 16);
+            
+            uint16_t pY = y % 8;
+            uint16_t pX = x % 8;
+            
+            uint8_t plane0 = m_bus.ppuRead(tileAddress + pY);
+            uint8_t plane1 = m_bus.ppuRead(tileAddress + pY + 8);
+            
+            uint8_t pixel0 = (plane0 >> (7 - pX)) & 1;
+            uint8_t pixel1 = (plane1 >> (7 - pX)) & 1;
+            
+            // 43210
+            // |||||
+            // |||++- Pixel value from tile data
+            // |++--- Palette number from attribute table or OAM
+            // +----- Background/Sprite select
 
-        uint8_t tilePalletteSelect = pixel0 | (pixel1 << 1);
+            uint8_t tilePalletteSelect = pixel0 | (pixel1 << 1);
+            
+            uint8_t attributeX = x / 32;
+            uint8_t attributeY = y / 32;
+            uint8_t attributeIndex = attributeY * 8 + attributeX;
+            uint8_t attribute =  m_vram[0 + 0x3C0 + attributeIndex];
+            
+            uint8_t attribQuadX = (x / 16) % 2;
+            uint8_t attribQuadY = (y / 16) % 2;
+                    
+            uint8_t attributePalletteSelect = 0x00;
+            if(attribQuadX == 0 && attribQuadY == 0)
+            {
+                attributePalletteSelect = attribute & 0x3;
+            }
+            else if(attribQuadX == 1 && attribQuadY == 0)
+            {
+                attributePalletteSelect = (attribute >> 2) & 0x3;
+            }
+            else if(attribQuadX == 0 && attribQuadY == 1)
+            {
+                attributePalletteSelect = (attribute >> 4) & 0x3;
+            }
+            else if(attribQuadX == 1 && attribQuadY == 1)
+            {
+                attributePalletteSelect = (attribute >> 6) & 0x3;
+            }
+
+            
+            // 7654 3210
+            // |||| ||++- Color bits 3-2 for top left quadrant of this byte
+            // |||| ++--- Color bits 3-2 for top right quadrant of this byte
+            // ||++------ Color bits 3-2 for bottom left quadrant of this byte
+            // ++-------- Color bits 3-2 for bottom right quadrant of this byte
+            
+            uint8_t palletteSelect = (0 << 4) + (attributePalletteSelect << 2) + (tilePalletteSelect << 0);
+            uint8_t palletteIndex = m_pallette[palletteSelect];
+            
+            m_pVideoOutput[y * 256 + x] = GetPixelColour(palletteIndex);
+        }
         
-        uint8_t attributeX = x / 32;
-        uint8_t attributeY = y / 32;
-        uint8_t attributeIndex = attributeY * 8 + attributeX;
-        uint8_t attribute =  m_vram[0 + 0x3C0 + attributeIndex];
-        
-        uint8_t attribQuadX = (x / 16) % 2;
-        uint8_t attribQuadY = (y / 16) % 2;
+        // TEST sprites
+        {
+            uint16_t spriteBaseAddress = 0x0000;
+            if(TestFlag(CTRL_SPRITE_TABLE_ADDR, PPUCTRL))
+            {
+                spriteBaseAddress = 0x1000;
+            }
+            
+            for(uint8_t idx = 0;idx < 32;idx += 4)
+            {
+                uint8_t yPos = m_renderOAM[idx + 0];
+                uint8_t xPos = m_renderOAM[idx + 3];
                 
-        uint8_t attributePalletteSelect = 0x00;
-        if(attribQuadX == 0 && attribQuadY == 0)
-        {
-            attributePalletteSelect = attribute & 0x3;
-        }
-        else if(attribQuadX == 1 && attribQuadY == 0)
-        {
-            attributePalletteSelect = (attribute >> 2) & 0x3;
-        }
-        else if(attribQuadX == 0 && attribQuadY == 1)
-        {
-            attributePalletteSelect = (attribute >> 4) & 0x3;
-        }
-        else if(attribQuadX == 1 && attribQuadY == 1)
-        {
-            attributePalletteSelect = (attribute >> 6) & 0x3;
-        }
+                if(yPos != 0xFF && x >= xPos && x < xPos + 8 && y >= yPos && y < yPos + 8)
+                {
+                    uint8_t spriteTileId  = m_renderOAM[idx + 1];
+                    uint8_t attrib  = m_renderOAM[idx + 2];
+                    
+                    // TODO flipping
+                    bool bFlipH = (attrib & 1 << 6) != 0;
+                    bool bFlipV = (attrib & 1 << 7) != 0;
+                
+                    uint16_t spriteTileAddress = spriteBaseAddress + (uint16_t(spriteTileId) * 16);
 
-        
-        // 7654 3210
-        // |||| ||++- Color bits 3-2 for top left quadrant of this byte
-        // |||| ++--- Color bits 3-2 for top right quadrant of this byte
-        // ||++------ Color bits 3-2 for bottom left quadrant of this byte
-        // ++-------- Color bits 3-2 for bottom right quadrant of this byte
-        
-        uint8_t palletteSelect = (0 << 4) + (attributePalletteSelect << 2) + (tilePalletteSelect << 0);
-        uint8_t palletteIndex = m_pallette[palletteSelect];
-        
-        m_pVideoOutput[y * 256 + x] = GetPixelColour(palletteIndex);
+                    uint8_t spritePlane0 = m_bus.ppuRead(spriteTileAddress + m_scanline - yPos);
+                    uint8_t spritePlane1 = m_bus.ppuRead(spriteTileAddress + m_scanline - yPos + 8);
+                    
+                    uint8_t spritePixel0 = (spritePlane0 >> (7 - x - xPos)) & 1;
+                    uint8_t spritePixel1 = (spritePlane1 >> (7 - x - xPos)) & 1;
+                    
+                    uint8_t spritePalletteSelect = spritePixel0 | (spritePixel1 << 1);
+                    
+                    uint8_t palletteSelect = (1 << 4) + ((attrib & 0x3) << 2) + (spritePalletteSelect << 0);
+                    uint8_t palletteIndex = m_pallette[palletteSelect];
+    
+                    m_pVideoOutput[y * 256 + x] = GetPixelColour(palletteIndex);
+                    
+                    break;
+                }
+            }
+        }
     }
 }
 
