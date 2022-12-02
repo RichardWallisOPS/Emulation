@@ -373,22 +373,26 @@ void PPUNES::GenerateVideoPixel()
                     uint8_t spriteTileId = m_renderOAM[idx + 1];
                     uint8_t attrib = m_renderOAM[idx + 2];
                     
-                    // TODO flipping
-                    bool bFlipH = (attrib & 1 << 6) != 0;
-                    bool bFlipV = (attrib & 1 << 7) != 0;
+                    // TODO correct flipping
+                    bool bFlipH = (attrib & (1 << 6)) != 0;
+                    bool bFlipV = (attrib & (1 << 7)) != 0;
                 
                     uint16_t spriteTileAddress = spriteBaseAddress + (uint16_t(spriteTileId) * 16);
 
                     uint8_t spritePlane0 = m_bus.ppuRead(spriteTileAddress + m_scanline - yPos);
                     uint8_t spritePlane1 = m_bus.ppuRead(spriteTileAddress + m_scanline - yPos + 8);
-                    
-                    //uint8_t spritePixel0 = (spritePlane0 >> (7 - x + xPos)) & 1;
-                    //uint8_t spritePixel1 = (spritePlane1 >> (7 - x + xPos)) & 1;
-                    
+
+                    // TODO Figure out the shift
                     uint8_t spritePixel0 = (spritePlane0 >> (7 - x + xPos)) & 1;
                     uint8_t spritePixel1 = (spritePlane1 >> (7 - x + xPos)) & 1;
-
-                                        
+                    
+                    // TODO Figure out the shift
+                    if(bFlipH)
+                    {
+                        spritePixel0 = (spritePlane0 >> (7 - (7 - x + xPos))) & 1;
+                        spritePixel1 = (spritePlane1 >> (7 - (7 - x + xPos))) & 1;
+                    }
+                    
                     uint8_t spritePalletteSelect = spritePixel0 | (spritePixel1 << 1);
                     
                     uint8_t palletteSelect = (1 << 4) + ((attrib & 0x3) << 2) + (spritePalletteSelect << 0);
