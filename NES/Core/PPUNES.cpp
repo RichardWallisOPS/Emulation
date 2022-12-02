@@ -56,6 +56,7 @@ enum FlagStatus : uint8_t
 PPUNES::PPUNES(IOBus& bus)
 : m_bus(bus)
 , m_mirrorMode(VRAM_MIRROR_H)
+, m_secondaryOAMWrite(0)
 , m_portLatch(0)
 , m_tickCount(0)
 , m_scanline(0)
@@ -111,6 +112,7 @@ bool PPUNES::TestFlag(uint8_t flag, PortRegisterID ppuRegister)
 
 void PPUNES::PowerOn()
 {
+    m_secondaryOAMWrite = 0;
     m_portLatch = 0;
     m_tickCount = 0;
     m_scanline = 0;
@@ -134,6 +136,7 @@ void PPUNES::PowerOn()
 
 void PPUNES::Reset()
 {
+    m_secondaryOAMWrite = 0;
     m_portLatch = 0;
     m_tickCount = 0;
     m_scanline = 0;
@@ -176,8 +179,13 @@ void PPUNES::Tick()
         ClearFlag(STATUS_SPRITE_OVERFLOW, PPUSTATUS);
     }
     
+    if(m_scanline == 261)
+    {
+        // TODO still need to fill the shift registers
+    }
+    
     // Main update draw, 0-239 is the visible scan lines, 261 is the pre-render line
-    if((m_scanline >= 0 && m_scanline <= 239) || m_scanline == 261)
+    if(m_scanline >= 0 && m_scanline <= 239)
     {
         if(m_scanlineDot >= 1 && m_scanlineDot <= 64)
         {
@@ -189,25 +197,16 @@ void PPUNES::Tick()
         }
         else if(m_scanlineDot >= 65 && m_scanlineDot <= 256)
         {
-            // Sprite evaluation for next scanline
-            uint8_t spriteAddress = m_portRegisters[OAMADDR];
-
-            uint8_t* pEvalStartAddress = &m_primaryOAM[spriteAddress];
-            uint8_t* pEvalEndAddress = pEvalStartAddress + sizeof(m_primaryOAM);
-
-            // Eval start might not be aligned - this is as per hardware - interpret as start
-            OAMEntry* pStart = (OAMEntry*)pEvalStartAddress;
-            uint8_t spriteEvalCount = (pEvalEndAddress - pEvalStartAddress) / sizeof(m_primaryOAM);
-            
-            // TODO sprite evaluation for next scanline
+            SpriteEvaluation();
         }
         else if(m_scanlineDot >= 257 && m_scanlineDot <= 320)
         {
             m_portRegisters[OAMADDR] = 0;
+            m_secondaryOAMWrite = 0;
         }
         
         // Output current pixel
-        if(m_scanline >= 0 && m_scanline <= 239 && m_scanlineDot >= 1 && m_scanlineDot <= 256)
+        if(m_scanlineDot >= 1 && m_scanlineDot <= 256)
         {
             GenerateVideoPixel();
         }
@@ -225,6 +224,36 @@ void PPUNES::Tick()
         if(m_scanline > 261)
         {
             m_scanline = 0;
+        }
+    }
+}
+
+void PPUNES::SpriteEvaluation()
+{
+    // odd data read even data write
+    if(m_scanlineDot >= 65 && m_scanlineDot <= 256)
+    {
+        if(m_scanlineDot % 2 == 0)
+        {
+            uint8_t& spriteAddress = m_portRegisters[OAMADDR];
+            
+            uint8_t spriteTop = m_primaryOAM[spriteAddress];
+            uint8_t spriteBottom = spriteTop + 8;
+            
+            if(m_scanline >= spriteTop && m_scanline <= spriteBottom && m_secondaryOAMWrite < 32)
+            {
+                m_portRegisters[OAMADDR + 0] = m_secondaryOAM[m_secondaryOAMWrite + 0];
+                m_portRegisters[OAMADDR + 1] = m_secondaryOAM[m_secondaryOAMWrite + 1];
+                m_portRegisters[OAMADDR + 2] = m_secondaryOAM[m_secondaryOAMWrite + 2];
+                m_portRegisters[OAMADDR + 3] = m_secondaryOAM[m_secondaryOAMWrite + 3];
+                m_secondaryOAMWrite += 4;
+            }
+            
+            spriteAddress += 4;
+            if(spriteAddress == 0)
+            {
+                //
+            }
         }
     }
 }
@@ -363,7 +392,15 @@ uint8_t PPUNES::cpuRead(uint8_t port)
             case OAMDATA:
             {
                 uint8_t spriteAddress = m_portRegisters[OAMADDR];
-                data = m_primaryOAM[spriteAddress];
+                if(m_scanlineDot >= 1 && m_scanlineDot <= 64)
+                {
+                    // during init of sprite evaluation
+                    data = 0XFF;
+                }
+                else
+                {
+                    data = m_primaryOAM[spriteAddress];
+                }
                 m_portRegisters[port] = m_portLatch = data;
                 break;
             }

@@ -72,6 +72,7 @@ private:
     uint16_t absoluteAddressToVRAMAddress(uint16_t address);
     uint32_t GetPixelColour(uint32_t palletteIndex);
     
+    void SpriteEvaluation();
     void GenerateVideoPixel();
     
 private:
@@ -86,6 +87,7 @@ private:
     // OAM RAM
     uint8_t m_primaryOAM[256];                      // object attribute ram
     uint8_t m_secondaryOAM[32];                     // current scan line sprites
+    uint8_t m_secondaryOAMWrite;
     
     // Registers - CPU accessible
     uint8_t m_portRegisters[PortRegister_Count];    // Communications with the CPU
