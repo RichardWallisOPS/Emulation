@@ -237,8 +237,6 @@ void PPUNES::ClearSecondaryOEM()
     }
 }
 
-// dad 08722 121994
-
 void PPUNES::SpriteEvaluation()
 {
     // odd data read even data write
@@ -368,10 +366,12 @@ void PPUNES::GenerateVideoPixel()
                 uint8_t yPos = m_renderOAM[idx + 0];
                 uint8_t xPos = m_renderOAM[idx + 3];
                 
+                yPos += 1;
+                
                 if(yPos != 0xFF && x >= xPos && x < xPos + 8 && y >= yPos && y < yPos + 8)
                 {
-                    uint8_t spriteTileId  = m_renderOAM[idx + 1];
-                    uint8_t attrib  = m_renderOAM[idx + 2];
+                    uint8_t spriteTileId = m_renderOAM[idx + 1];
+                    uint8_t attrib = m_renderOAM[idx + 2];
                     
                     // TODO flipping
                     bool bFlipH = (attrib & 1 << 6) != 0;
@@ -382,9 +382,13 @@ void PPUNES::GenerateVideoPixel()
                     uint8_t spritePlane0 = m_bus.ppuRead(spriteTileAddress + m_scanline - yPos);
                     uint8_t spritePlane1 = m_bus.ppuRead(spriteTileAddress + m_scanline - yPos + 8);
                     
-                    uint8_t spritePixel0 = (spritePlane0 >> (7 - x - xPos)) & 1;
-                    uint8_t spritePixel1 = (spritePlane1 >> (7 - x - xPos)) & 1;
+                    //uint8_t spritePixel0 = (spritePlane0 >> (7 - x + xPos)) & 1;
+                    //uint8_t spritePixel1 = (spritePlane1 >> (7 - x + xPos)) & 1;
                     
+                    uint8_t spritePixel0 = (spritePlane0 >> (7 - x + xPos)) & 1;
+                    uint8_t spritePixel1 = (spritePlane1 >> (7 - x + xPos)) & 1;
+
+                                        
                     uint8_t spritePalletteSelect = spritePixel0 | (spritePixel1 << 1);
                     
                     uint8_t palletteSelect = (1 << 4) + ((attrib & 0x3) << 2) + (spritePalletteSelect << 0);
