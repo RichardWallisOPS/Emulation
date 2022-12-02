@@ -179,13 +179,17 @@ void PPUNES::Tick()
     // Main update draw, 0-239 is the visible scan lines, 261 is the pre-render line
     if((m_scanline >= 0 && m_scanline <= 239) || m_scanline == 261)
     {
-        if(m_scanlineDot >= 257 && m_scanlineDot <= 320)
+        if(m_scanlineDot >= 1 && m_scanlineDot <= 64)
         {
-            m_portRegisters[OAMADDR] = 0;
+            // clearing secondary OEM
+            m_secondaryOAM[m_scanlineDot / 4 - 1 + 0] = 0xFF;
+            m_secondaryOAM[m_scanlineDot / 4 - 1 + 1] = 0xFF;
+            m_secondaryOAM[m_scanlineDot / 4 - 1 + 2] = 0xFF;
+            m_secondaryOAM[m_scanlineDot / 4 - 1 + 3] = 0xFF;
         }
-        
-        if(m_scanlineDot == 65)
+        else if(m_scanlineDot >= 65 && m_scanlineDot <= 256)
         {
+            // Sprite evaluation for next scanline
             uint8_t spriteAddress = m_portRegisters[OAMADDR];
 
             uint8_t* pEvalStartAddress = &m_primaryOAM[spriteAddress];
@@ -195,7 +199,11 @@ void PPUNES::Tick()
             OAMEntry* pStart = (OAMEntry*)pEvalStartAddress;
             uint8_t spriteEvalCount = (pEvalEndAddress - pEvalStartAddress) / sizeof(m_primaryOAM);
             
-            // TODO sprite evaluation
+            // TODO sprite evaluation for next scanline
+        }
+        else if(m_scanlineDot >= 257 && m_scanlineDot <= 320)
+        {
+            m_portRegisters[OAMADDR] = 0;
         }
         
         // Output current pixel
@@ -580,8 +588,6 @@ void PPUNES::WritePatternTables(uint32_t* pOutputData)
     // Grey scaleoutput
     auto fnDrawPattenTable = [&](uint32_t* pOutputData, uint32_t xOffset, uint32_t yOffset, uint16_t baseAddress)
     {
-        uint32_t colourLUT[4] = {0x00000000,  0xff555555,  0xffAAAAAA,  0xffFFFFff};
-        
         for(uint32_t tileX = 0;tileX < 16;++tileX)
         {
             for(uint32_t tileY = 0;tileY < 16;++tileY)
@@ -601,7 +607,7 @@ void PPUNES::WritePatternTables(uint32_t* pOutputData)
                         uint8_t pixelColourLUT = pixel0 | (pixel1 << 1);
                         uint32_t pixelIndex = ((yOffset * 256) + xOffset) + (((tileY * 8) + pY) * 256) + ((tileX * 8) + pX);
 
-                        pOutputData[pixelIndex] = colourLUT[pixelColourLUT];
+                        pOutputData[pixelIndex] = GetPixelColour(pixelColourLUT);
                     }
                 }
             }
