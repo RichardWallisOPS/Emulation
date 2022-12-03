@@ -273,17 +273,36 @@ void PPUNES::GenerateVideoPixel()
 {
     // HACK some test output
     // TODO Do the sprite and background properly
+    // TODO Correct
+    
+    uint16_t y = m_scanline;
+    uint16_t x = m_scanlineDot - 1;
+    
+    uint8_t tilePalletteSelect = 0x00;
+    uint8_t tileAttributePalletteSelect = 0x00;
+    
+    bool bFoundSprite = false;
+    
+    uint8_t spritePalletteSelect = 0x00;
+    uint8_t spriteAttributePalletteSelect = 0x00;
+    
+    uint8_t spritePriority = 0;
+    
     if(m_pVideoOutput != nullptr)
     {
-        uint16_t y = m_scanline;
-        uint16_t x = m_scanlineDot - 1;
-        
-        // Test background
+        // Background
         {
             // nametable byte
             // attribute table byte
             // pattern table low
             // pattern table high
+            
+            // 43210
+            // |||||
+            // |||++- Pixel value from tile data
+            // |++--- Palette number from attribute table or OAM
+            // +----- Background/Sprite select
+            
             uint16_t baseAddress = 0x0000;
             if(TestFlag(CTRL_BACKGROUND_TABLE_ADDR, PPUCTRL))
             {
@@ -305,14 +324,8 @@ void PPUNES::GenerateVideoPixel()
             
             uint8_t pixel0 = (plane0 >> (7 - pX)) & 1;
             uint8_t pixel1 = (plane1 >> (7 - pX)) & 1;
-            
-            // 43210
-            // |||||
-            // |||++- Pixel value from tile data
-            // |++--- Palette number from attribute table or OAM
-            // +----- Background/Sprite select
 
-            uint8_t tilePalletteSelect = pixel0 | (pixel1 << 1);
+            tilePalletteSelect = pixel0 | (pixel1 << 1);
             
             uint8_t attributeX = x / 32;
             uint8_t attributeY = y / 32;
@@ -321,39 +334,33 @@ void PPUNES::GenerateVideoPixel()
             
             uint8_t attribQuadX = (x / 16) % 2;
             uint8_t attribQuadY = (y / 16) % 2;
-                    
-            uint8_t attributePalletteSelect = 0x00;
-            if(attribQuadX == 0 && attribQuadY == 0)
-            {
-                attributePalletteSelect = attribute & 0x3;
-            }
-            else if(attribQuadX == 1 && attribQuadY == 0)
-            {
-                attributePalletteSelect = (attribute >> 2) & 0x3;
-            }
-            else if(attribQuadX == 0 && attribQuadY == 1)
-            {
-                attributePalletteSelect = (attribute >> 4) & 0x3;
-            }
-            else if(attribQuadX == 1 && attribQuadY == 1)
-            {
-                attributePalletteSelect = (attribute >> 6) & 0x3;
-            }
-
             
+            // attrib
             // 7654 3210
             // |||| ||++- Color bits 3-2 for top left quadrant of this byte
             // |||| ++--- Color bits 3-2 for top right quadrant of this byte
             // ||++------ Color bits 3-2 for bottom left quadrant of this byte
             // ++-------- Color bits 3-2 for bottom right quadrant of this byte
-            
-            uint8_t palletteSelect = (0 << 4) + (attributePalletteSelect << 2) + (tilePalletteSelect << 0);
-            uint8_t palletteIndex = m_pallette[palletteSelect];
-            
-            m_pVideoOutput[y * 256 + x] = GetPixelColour(palletteIndex);
+                    
+            if(attribQuadX == 0 && attribQuadY == 0)
+            {
+                tileAttributePalletteSelect = attribute & 0x3;
+            }
+            else if(attribQuadX == 1 && attribQuadY == 0)
+            {
+                tileAttributePalletteSelect = (attribute >> 2) & 0x3;
+            }
+            else if(attribQuadX == 0 && attribQuadY == 1)
+            {
+                tileAttributePalletteSelect = (attribute >> 4) & 0x3;
+            }
+            else if(attribQuadX == 1 && attribQuadY == 1)
+            {
+                tileAttributePalletteSelect = (attribute >> 6) & 0x3;
+            }
         }
         
-        // TEST sprites
+        // Sprite
         {
             uint16_t spriteBaseAddress = 0x0000;
             if(TestFlag(CTRL_SPRITE_TABLE_ADDR, PPUCTRL))
@@ -371,13 +378,23 @@ void PPUNES::GenerateVideoPixel()
                 if(yPos != 0xFF && x >= xPos && x < xPos + 8 && y >= yPos && y < yPos + 8)
                 {
                     uint8_t spriteTileId = m_renderOAM[idx + 1];
-                    uint8_t attrib = m_renderOAM[idx + 2];
+                    uint8_t spriteAttribute = m_renderOAM[idx + 2];
                     
+                    spriteAttributePalletteSelect = spriteAttribute & 0x3;
+                    
+                    spritePriority = (spriteAttribute & (1 << 5)) != 0 ? 0 : 1;
+                                        
                     // TODO correct flipping
-                    bool bFlipH = (attrib & (1 << 6)) != 0;
-                    bool bFlipV = (attrib & (1 << 7)) != 0;
+                    bool bFlipH = (spriteAttribute & (1 << 6)) != 0;
+                    bool bFlipV = (spriteAttribute & (1 << 7)) != 0;
                 
                     uint16_t spriteTileAddress = spriteBaseAddress + (uint16_t(spriteTileId) * 16);
+                    
+                    if(bFlipV)
+                    {
+                        // TODO not implemented
+                        //*(volatile char*)(0) = (char)(0xc2 | 0x02);
+                    }
 
                     uint8_t spritePlane0 = m_bus.ppuRead(spriteTileAddress + m_scanline - yPos);
                     uint8_t spritePlane1 = m_bus.ppuRead(spriteTileAddress + m_scanline - yPos + 8);
@@ -393,18 +410,45 @@ void PPUNES::GenerateVideoPixel()
                         spritePixel1 = (spritePlane1 >> (7 - (7 - x + xPos))) & 1;
                     }
                     
-                    uint8_t spritePalletteSelect = spritePixel0 | (spritePixel1 << 1);
+                    spritePalletteSelect = spritePixel0 | (spritePixel1 << 1);
                     
-                    uint8_t palletteSelect = (1 << 4) + ((attrib & 0x3) << 2) + (spritePalletteSelect << 0);
-                    uint8_t palletteIndex = m_pallette[palletteSelect];
-    
-                    m_pVideoOutput[y * 256 + x] = GetPixelColour(palletteIndex);
-                    
-                    break;
+                    if(spritePalletteSelect != 0)
+                    {
+                        bFoundSprite = true;
+                        break;
+                    }
                 }
             }
         }
     }
+    
+    uint8_t backgroundSelect = (0 << 4) + (tileAttributePalletteSelect << 2) + (tilePalletteSelect << 0);
+    uint8_t spriteSelect = (1 << 4) + (spriteAttributePalletteSelect << 2) + (spritePalletteSelect << 0);
+    
+    uint8_t finalPalletteSelect = 0x00;
+    
+    if(tilePalletteSelect == 0 && spritePalletteSelect != 0)
+    {
+        finalPalletteSelect = spriteSelect;
+    }
+    else if(tilePalletteSelect != 0 && spritePalletteSelect == 0)
+    {
+        finalPalletteSelect = backgroundSelect;
+    }
+    else if(tilePalletteSelect != 0 && spritePalletteSelect != 0)
+    {
+        if(spritePriority)
+        {
+            finalPalletteSelect = spriteSelect;
+        }
+        else
+        {
+            finalPalletteSelect = backgroundSelect;
+        }
+    }
+    
+    uint8_t palletteIndex = m_pallette[finalPalletteSelect];
+    m_pVideoOutput[y * 256 + x] = GetPixelColour(palletteIndex);
 }
 
 uint16_t PPUNES::absoluteAddressToVRAMAddress(uint16_t address)
