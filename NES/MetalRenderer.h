@@ -7,13 +7,16 @@
 #import "RenderDefs.h"
 #import <Foundation/Foundation.h>
 
+@interface EmulationMetalView : MTKView
+@end
+
 @interface MetalRenderer : NSObject <MTKViewDelegate>
 
 // Device Access
 @property (nonatomic,readonly) id<MTLDevice> CurrentDevice;
 
 // Initialisation
-- (instancetype) initWithView:(MTKView*)metalView;
+- (instancetype) initWithView:(EmulationMetalView*)metalView;
 
 // Global Access
 + (MetalRenderer*) GetRenderer;

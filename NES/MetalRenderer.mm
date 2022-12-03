@@ -8,6 +8,35 @@
 #import "RenderDefs.h"
 #include "SystemNES.h"
 
+// The console we are emulating
+SystemNES g_NESConsole;
+
+@implementation EmulationMetalView
+
+- (BOOL) acceptsFirstResponder
+{
+    return YES;
+}
+
+- (void) keyDown:(NSEvent *)event
+{
+    // 13 == w  up
+    // 1 == s  down
+    // a == 0 left
+    // d == 2  right
+    // o == 31 a
+    // p == 35 b
+    // 22 == 6 select
+    // 26 == 7 staft
+}
+
+- (void) keyUp:(NSEvent *)event
+{
+
+}
+
+@end
+
 @interface MetalRenderer()
 
 @property (nonatomic,readwrite) id<MTLDevice>       device;
@@ -30,8 +59,6 @@ Vertex const g_quadVerts[] = {  {{-1.f,-1.f,0.f,1.f},   {0.f,1.f}},
                                 {{1.f,-1.f,0.f,1.f},    {1.f,1.f}},
                                 {{1.f,1.f,0.f,1.f},     {1.f,0.f}} };
 
-SystemNES g_NESConsole;
-
 + (MetalRenderer*) GetRenderer
 {
     return theRenderer;
@@ -42,7 +69,7 @@ SystemNES g_NESConsole;
     return self.device;
 }
 
-- (instancetype) initWithView:(MTKView*)metalView
+- (instancetype) initWithView:(EmulationMetalView*)metalView
 {
     self = [super init];
     

@@ -9,8 +9,8 @@
 
 @interface ViewController ()
 
-@property (nonatomic,readwrite) MetalRenderer*  renderer;
-@property (nonatomic,readwrite) MTKView*        metalView;
+@property (nonatomic,readwrite) MetalRenderer*      renderer;
+@property (nonatomic,readwrite) EmulationMetalView* metalView;
 
 @end
 
@@ -20,7 +20,7 @@
 {
     [super viewDidLoad];
 
-    self.metalView = [MTKView new];
+    self.metalView = [EmulationMetalView new];
 }
 
 - (void) viewWillAppear

@@ -12,9 +12,9 @@
 // Cart is currently only mapper 0, todo make generic to allow other mapper implementations
 
 // PPU:
-// registers
-// memory map - including cartridge mapping
-// OAM DMA
+// Rework pixel rendering to the correct technique to supoort scrolling etc
+// Fix sprite zero hit to a better test
+// More work on thing like render background on off etc, go through all the flags and operations
 
 #include "SystemNES.h"
 #include <string>

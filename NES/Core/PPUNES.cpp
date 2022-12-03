@@ -272,21 +272,20 @@ void PPUNES::SpriteEvaluation()
 void PPUNES::GenerateVideoPixel()
 {
     // HACK some test output
-    // TODO Do the sprite and background properly
-    // TODO Correct
+    // TODO Do the sprite and background properly with shift registers
     
     uint16_t y = m_scanline;
     uint16_t x = m_scanlineDot - 1;
     
     uint8_t tilePalletteSelect = 0x00;
     uint8_t tileAttributePalletteSelect = 0x00;
-    
-    bool bFoundSprite = false;
-    
+        
     uint8_t spritePalletteSelect = 0x00;
     uint8_t spriteAttributePalletteSelect = 0x00;
     
     uint8_t spritePriority = 0;
+    
+    bool bSpriteZero = false;
     
     if(m_pVideoOutput != nullptr)
     {
@@ -373,7 +372,7 @@ void PPUNES::GenerateVideoPixel()
                 uint8_t yPos = m_renderOAM[idx + 0];
                 uint8_t xPos = m_renderOAM[idx + 3];
                 
-                yPos += 1;
+                yPos += 1;  // Is this right?
                 
                 if(yPos != 0xFF && x >= xPos && x < xPos + 8 && y >= yPos && y < yPos + 8)
                 {
@@ -414,7 +413,16 @@ void PPUNES::GenerateVideoPixel()
                     
                     if(spritePalletteSelect != 0)
                     {
-                        bFoundSprite = true;
+                        // TODO rework sprite zero
+                        if(idx == 0)
+                        {
+                            uint32_t* infoRender = (uint32_t*)&m_renderOAM[0];
+                            uint32_t* infoOEM = (uint32_t*)&m_primaryOAM[0];
+                            if(*infoOEM == *infoRender)
+                            {
+                                bSpriteZero = true;
+                            }
+                        }
                         break;
                     }
                 }
@@ -437,6 +445,11 @@ void PPUNES::GenerateVideoPixel()
     }
     else if(tilePalletteSelect != 0 && spritePalletteSelect != 0)
     {
+        if(bSpriteZero)
+        {
+            SetFlag(STATUS_SPRITE0_HIT, PPUSTATUS);
+        }
+        
         if(spritePriority)
         {
             finalPalletteSelect = spriteSelect;
