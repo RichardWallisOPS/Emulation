@@ -20,19 +20,74 @@ SystemNES g_NESConsole;
 
 - (void) keyDown:(NSEvent *)event
 {
-    // 13 == w  up
-    // 1 == s  down
-    // a == 0 left
-    // d == 2  right
-    // o == 31 a
-    // p == 35 b
-    // 22 == 6 select
-    // 26 == 7 staft
+    if(event.keyCode == 26)
+    {
+        g_NESConsole.SetControllerButtonState(1, Controller_Start, true);
+    }
+    else if(event.keyCode == 22)
+    {
+        g_NESConsole.SetControllerButtonState(1, Controller_Select, true);
+    }
+    else if(event.keyCode == 35)
+    {
+        g_NESConsole.SetControllerButtonState(1, Controller_B, true);
+    }
+    else if(event.keyCode == 31)
+    {
+        g_NESConsole.SetControllerButtonState(1, Controller_A, true);
+    }
+    else if(event.keyCode == 2)
+    {
+        g_NESConsole.SetControllerButtonState(1, Controller_Right, true);
+    }
+    else if(event.keyCode == 0)
+    {
+        g_NESConsole.SetControllerButtonState(1, Controller_Left, true);
+    }
+        else if(event.keyCode == 1)
+    {
+    g_NESConsole.SetControllerButtonState(1, Controller_Down, true);
+    }
+    else if(event.keyCode == 13)
+    {
+        g_NESConsole.SetControllerButtonState(1, Controller_Up, true);
+    }
 }
 
 - (void) keyUp:(NSEvent *)event
 {
-
+    if(event.keyCode == 26)
+    {
+        g_NESConsole.SetControllerButtonState(1, Controller_Start, false);
+    }
+    else if(event.keyCode == 22)
+    {
+        g_NESConsole.SetControllerButtonState(1, Controller_Select, false);
+    }
+    else if(event.keyCode == 35)
+    {
+        g_NESConsole.SetControllerButtonState(1, Controller_B, false);
+    }
+    else if(event.keyCode == 31)
+    {
+        g_NESConsole.SetControllerButtonState(1, Controller_A, false);
+    }
+    else if(event.keyCode == 2)
+    {
+        g_NESConsole.SetControllerButtonState(1, Controller_Right, false);
+    }
+    else if(event.keyCode == 0)
+    {
+        g_NESConsole.SetControllerButtonState(1, Controller_Left, false);
+    }
+        else if(event.keyCode == 1)
+    {
+    g_NESConsole.SetControllerButtonState(1, Controller_Down, false);
+    }
+    else if(event.keyCode == 13)
+    {
+        g_NESConsole.SetControllerButtonState(1, Controller_Up, false);
+    }
 }
 
 @end

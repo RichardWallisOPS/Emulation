@@ -25,6 +25,10 @@ SystemNES::SystemNES()
 , m_cpu(*this)
 , m_ppu(*this)
 , m_pCart(nullptr)
+, m_controller1(0)
+, m_controller2(0)
+, m_controllerLatch1(0)
+, m_controllerLatch2(0)
 , m_dmaAddress(0xFFFF)
 {
     memset(m_ram, 0x00, nRamSize);
@@ -44,6 +48,11 @@ void SystemNES::PowerOn()
     m_ppu.PowerOn();
     m_cpu.PowerOn();
     
+    m_controller1 = 0;
+    m_controller2 = 0;
+    m_controllerLatch1 = 0;
+    m_controllerLatch2 = 0;
+    
     memset(m_ram, 0x00, nRamSize);
     
     // TODO apu registers on power on
@@ -59,6 +68,11 @@ void SystemNES::Reset()
     
     m_ppu.Reset();
     m_cpu.Reset();
+    
+    m_controller1 = 0;
+    m_controller2 = 0;
+    m_controllerLatch1 = 0;
+    m_controllerLatch2 = 0;
     
     // ram does not change on reset
     
@@ -145,6 +159,32 @@ void SystemNES::SignalIRQ(bool bSignal)
     m_cpu.SignalIRQ(bSignal);
 }
 
+void SystemNES::SetControllerButtonState(uint8_t port, ControllerButton Button, bool bSet)
+{
+    if(port == 1)
+    {
+        if(bSet)
+        {
+            m_controller1 |= 1 << Button;
+        }
+        else
+        {
+            m_controller1 &= ~(1 << Button);
+        }
+    }
+    else if(port == 1)
+    {
+        if(bSet)
+        {
+            m_controller2 |= 1 << Button;
+        }
+        else
+        {
+            m_controller2 &= ~(1 << Button);
+        }
+    }
+}
+
 void SystemNES::Tick()
 {
     // NTSC:
@@ -194,6 +234,22 @@ uint8_t SystemNES::cpuRead(uint16_t address)
     }
     else if(address >= 0x4000 && address <= 0x401F)
     {
+        // controller latches
+        if(address == 0x4016)
+        {
+            uint8_t bResult = m_controllerLatch1 & 1;
+            m_controllerLatch1 >>= 1;
+            m_controllerLatch1 |= 1 << 7;
+            return bResult;
+        }
+        else if(address == 0x4017)
+        {
+            uint8_t bResult = m_controllerLatch2 & 1;
+            m_controllerLatch2 >>= 1;
+            m_controllerLatch2 |= 1 << 7;
+            return bResult;
+        }
+        
         // APU and IO registers
         uint16_t memAddress = address - 0x4000;
         return m_apuRegisters[memAddress];
@@ -223,14 +279,22 @@ void SystemNES::cpuWrite(uint16_t address, uint8_t byte)
     else if(address >= 0x4000 && address <= 0x401F)
     {
         uint16_t memAddress = address - 0x4000;
-        m_apuRegisters[memAddress] = byte;
-        
+         m_apuRegisters[memAddress] = byte;
+         
         if(address == 0x4014)
         {
             // Writing value XX (high byte) to 0x4014 will upload 256 bytes of data from
             // 0xXX00 - 0xXXFF at PPU address OAMADDR
             m_dmaAddress = uint16_t(byte) << 8;
             m_bDMARead = true;
+        }
+        else if(address == 0x4016)
+        {
+            if((byte & 1) == 0)
+            {
+                m_controllerLatch1 = m_controller1;
+                m_controllerLatch2 = m_controller2;
+            }
         }
     }
     else if(address >= 0x4020 && address < 0xFFFF && m_pCart != nullptr)

@@ -13,6 +13,18 @@
 #include "PPUNES.h"
 #include "Cartridge.h"
 
+enum ControllerButton : uint8_t
+{
+    Controller_Right    = 7,
+    Controller_Left     = 6,
+    Controller_Down     = 5,
+    Controller_Up       = 4,
+    Controller_Start    = 3,
+    Controller_Select   = 2,
+    Controller_B        = 1,
+    Controller_A        = 0
+};
+
 class SystemNES : public IOBus
 {
 public:
@@ -41,6 +53,8 @@ public:
     // assumed space for a 32bit colour 256x240 image data
     void SetVideoOutputDataPtr(uint32_t* pVideoOutData);
     
+    void SetControllerButtonState(uint8_t port, ControllerButton Button, bool bSet);
+    
     // Debug
     void SetCPUProgramCounter(uint16_t pc);
     void WritePPUMetaData(uint32_t* pData);
@@ -49,10 +63,17 @@ private:
     bool        m_bPowerOn;
     uint64_t    m_cycleCount;
     uint8_t     m_ram[nRamSize];
-    uint8_t     m_apuRegisters[nAPURegisterCount];
+    uint8_t     m_apuRegisters[nAPURegisterCount];  // just cover them all we will probably break them out as required
+
     CPU6502     m_cpu;
     PPUNES      m_ppu;
     Cartridge*  m_pCart;
+    
+    // Controller instantious and latch
+    uint8_t     m_controller1;
+    uint8_t     m_controller2;
+    uint8_t     m_controllerLatch1;
+    uint8_t     m_controllerLatch2;
     
     // DMA
     uint16_t    m_dmaAddress;
