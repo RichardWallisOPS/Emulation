@@ -386,30 +386,30 @@ void PPUNES::GenerateVideoPixel()
                     
                     spritePriority = (spriteAttribute & (1 << 5)) != 0 ? 0 : 1;
                                         
-                    // TODO correct flipping
                     bool bFlipH = (spriteAttribute & (1 << 6)) != 0;
                     bool bFlipV = (spriteAttribute & (1 << 7)) != 0;
                 
                     uint16_t spriteTileAddress = spriteBaseAddress + (uint16_t(spriteTileId) * 16);
                     
+                    
+                    uint8_t spritePlane0 = m_bus.ppuRead(spriteTileAddress + m_scanline - yPos);
+                    uint8_t spritePlane1 = m_bus.ppuRead(spriteTileAddress + (m_scanline - yPos) + 8);
+                    
                     if(bFlipV)
                     {
-                        // TODO not implemented
-                        //*(volatile char*)(0) = (char)(0xc2 | 0x02);
+                        // TODO - check this
+                        spritePlane0 = m_bus.ppuRead(spriteTileAddress + (7 - (m_scanline - yPos)));
+                        spritePlane1 = m_bus.ppuRead(spriteTileAddress + (7 - (m_scanline - yPos) + 8));
                     }
-
-                    uint8_t spritePlane0 = m_bus.ppuRead(spriteTileAddress + m_scanline - yPos);
-                    uint8_t spritePlane1 = m_bus.ppuRead(spriteTileAddress + m_scanline - yPos + 8);
-
-                    // TODO Figure out the shift
-                    uint8_t spritePixel0 = (spritePlane0 >> (7 - x + xPos)) & 1;
-                    uint8_t spritePixel1 = (spritePlane1 >> (7 - x + xPos)) & 1;
                     
-                    // TODO Figure out the shift
+                    // Note watch out for uimt8_t maths due to under/overflow
+                    uint8_t spritePixel0 = (spritePlane0 >> (7 - (x - xPos))) & 1;
+                    uint8_t spritePixel1 = (spritePlane1 >> (7 - (x - xPos))) & 1;
+                    
                     if(bFlipH)
                     {
-                        spritePixel0 = (spritePlane0 >> (7 - (7 - x + xPos))) & 1;
-                        spritePixel1 = (spritePlane1 >> (7 - (7 - x + xPos))) & 1;
+                        spritePixel0 = (spritePlane0 >> (x - xPos)) & 1;
+                        spritePixel1 = (spritePlane1 >> (x - xPos)) & 1;
                     }
                     
                     spritePalletteSelect = spritePixel0 | (spritePixel1 << 1);
