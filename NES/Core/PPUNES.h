@@ -94,6 +94,7 @@ private:
     // Registers - CPU accessible
     uint8_t m_portRegisters[PortRegister_Count];    // Communications with the CPU
     uint8_t m_portLatch;                            // data bus between CPU and GPU
+    uint8_t m_ppuDataBuffer;                        // PPU read return this buffer
     
     // Internal Registers
     uint16_t m_ppuAddress;

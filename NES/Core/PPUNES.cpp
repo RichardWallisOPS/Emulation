@@ -58,6 +58,7 @@ PPUNES::PPUNES(IOBus& bus)
 , m_mirrorMode(VRAM_MIRROR_H)
 , m_secondaryOAMWrite(0)
 , m_portLatch(0)
+, m_ppuDataBuffer(0)
 , m_tickCount(0)
 , m_scanline(0)
 , m_scanlineDot(0)
@@ -114,6 +115,7 @@ void PPUNES::PowerOn()
 {
     m_secondaryOAMWrite = 0;
     m_portLatch = 0;
+    m_ppuDataBuffer = 0;
     m_tickCount = 0;
     m_scanline = 0;
     m_scanlineDot = 0;
@@ -138,6 +140,7 @@ void PPUNES::Reset()
 {
     m_secondaryOAMWrite = 0;
     m_portLatch = 0;
+    m_ppuDataBuffer = 0;
     m_tickCount = 0;
     m_scanline = 0;
     m_scanlineDot = 0;
@@ -537,9 +540,11 @@ uint8_t PPUNES::cpuRead(uint8_t port)
                 break;
             case PPUDATA:
             {
-                uint16_t memAddress = m_ppuAddress;
+                // return value is last read
+                uint8_t readBuffer = m_ppuDataBuffer;
                 
                 // Mirror VRAM ranges
+                uint16_t memAddress = m_ppuAddress;
                 memAddress = (memAddress % 0x3FFF);
                 if(memAddress >= 0x3000 && memAddress <= 0x3EFF)
                 {
@@ -549,26 +554,27 @@ uint8_t PPUNES::cpuRead(uint8_t port)
                 if(memAddress >= 0 && memAddress <= 0x1FFF)
                 {
                     // cart pattern table
-                    data = m_bus.ppuRead(memAddress);
+                    m_ppuDataBuffer = m_bus.ppuRead(memAddress);
                 }
                 else if(memAddress >= 0x2000 && memAddress <= 0x2FFF)
                 {
                     // name table mirrors
                     if(m_mirrorMode == VRAM_MIRROR_CART4)
                     {
-                        data = m_bus.ppuRead(memAddress);
+                        m_ppuDataBuffer = m_bus.ppuRead(memAddress);
                     }
                     else
                     {
                         uint16_t vramAddress = absoluteAddressToVRAMAddress(memAddress);
                         uint16_t vramOffset = vramAddress - 0x2000;
-                        data = m_vram[vramOffset];
+                        m_ppuDataBuffer = m_vram[vramOffset];
                     }
                 }
                 else if(memAddress >= 0x3F00 && memAddress <= 0x3FFF)
                 {
                     uint16_t palletteIndex = (memAddress - 0x3F00) % nPalletteSize;
-                    data = m_pallette[palletteIndex];
+                    m_ppuDataBuffer = m_pallette[palletteIndex];
+                    readBuffer = m_ppuDataBuffer;
                 }
                 
                 if(TestFlag(CTRL_VRAM_ADDRESS_INC, PPUCTRL) == false)
@@ -580,7 +586,8 @@ uint8_t PPUNES::cpuRead(uint8_t port)
                     m_ppuAddress += 32;
                 }
                 
-                m_portRegisters[port] = m_portLatch = data;
+                m_portRegisters[port] = m_portLatch = m_ppuDataBuffer;
+                data = readBuffer;
                 break;
             }
         }
