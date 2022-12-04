@@ -30,6 +30,7 @@ SystemNES::SystemNES()
 , m_controllerLatch1(0)
 , m_controllerLatch2(0)
 , m_dmaAddress(0xFFFF)
+, m_DMAMode(DMA_OFF)
 {
     memset(m_ram, 0x00, nRamSize);
     memset(m_apuRegisters, 0x00, nAPURegisterCount);
@@ -44,6 +45,7 @@ void SystemNES::PowerOn()
 {
     m_cycleCount = 0;
     m_dmaAddress = 0xFFFF;
+    m_DMAMode = DMA_OFF;
     
     m_ppu.PowerOn();
     m_cpu.PowerOn();
@@ -65,6 +67,7 @@ void SystemNES::Reset()
 {
     m_cycleCount = 0;
     m_dmaAddress = 0xFFFF;
+    m_DMAMode = DMA_OFF;
     
     m_ppu.Reset();
     m_cpu.Reset();
@@ -161,27 +164,14 @@ void SystemNES::SignalIRQ(bool bSignal)
 
 void SystemNES::SetControllerButtonState(uint8_t port, ControllerButton Button, bool bSet)
 {
-    if(port == 1)
+    uint8_t & controllerPort = (port == 1 ? m_controller1 : m_controller2);
+    if(bSet)
     {
-        if(bSet)
-        {
-            m_controller1 |= 1 << Button;
-        }
-        else
-        {
-            m_controller1 &= ~(1 << Button);
-        }
+        controllerPort |= 1 << Button;
     }
-    else if(port == 1)
+    else
     {
-        if(bSet)
-        {
-            m_controller2 |= 1 << Button;
-        }
-        else
-        {
-            m_controller2 &= ~(1 << Button);
-        }
+        controllerPort &= ~(1 << Button);
     }
 }
 
@@ -197,23 +187,32 @@ void SystemNES::Tick()
         ++m_cycleCount;
         m_ppu.Tick();
         
-        if((m_cycleCount % 3) == 0 && (m_dmaAddress & 0xFF) == 0xFF)
+        if((m_cycleCount % 3) == 0 && m_DMAMode == DMA_OFF)
         {
             m_cpu.Tick();
         }
 
         // DMA handling
-        if((m_dmaAddress & 0xFF) != 0xFF)
+        // TODO check tick count matches
+        if(m_DMAMode != DMA_OFF)
         {
-            if(m_bDMARead)
+            if(m_DMAMode == DMA_READ)
             {
                 m_dmaData = this->cpuRead(m_dmaAddress++);
+                m_DMAMode = DMA_WRITE;
             }
-            else
+            else if(m_DMAMode == DMA_WRITE)
             {
                 m_ppu.cpuWrite(OAMDATA, m_dmaData);
+                if((m_dmaAddress & 0xFF) != 0xFF)
+                {
+                    m_DMAMode = DMA_READ;
+                }
+                else
+                {
+                    m_DMAMode = DMA_OFF;
+                }
             }
-            m_bDMARead = !m_bDMARead;
         }
     }
 }
@@ -286,7 +285,7 @@ void SystemNES::cpuWrite(uint16_t address, uint8_t byte)
             // Writing value XX (high byte) to 0x4014 will upload 256 bytes of data from
             // 0xXX00 - 0xXXFF at PPU address OAMADDR
             m_dmaAddress = uint16_t(byte) << 8;
-            m_bDMARead = true;
+            m_DMAMode = DMA_READ;
         }
         else if(address == 0x4016)
         {

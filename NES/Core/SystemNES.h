@@ -25,6 +25,13 @@ enum ControllerButton : uint8_t
     Controller_A        = 0
 };
 
+enum DMAMODE : uint8_t
+{
+    DMA_OFF = 0,
+    DMA_READ,
+    DMA_WRITE
+};
+
 class SystemNES : public IOBus
 {
 public:
@@ -78,7 +85,7 @@ private:
     // DMA
     uint16_t    m_dmaAddress;
     uint8_t     m_dmaData;
-    bool        m_bDMARead;
+    DMAMODE     m_DMAMode;
 };
 
 #endif /* SystemNES_h */
