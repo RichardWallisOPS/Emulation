@@ -89,7 +89,7 @@ uint8_t Cartridge::ppuRead(uint16_t address)
     {
         return m_pChr[address];
     }
-    return 0;//address & 0xFF; // open bus low byte return
+    return address & 0xFF; // open bus low byte return
 }
 
 void Cartridge::ppuWrite(uint16_t address, uint8_t byte)
