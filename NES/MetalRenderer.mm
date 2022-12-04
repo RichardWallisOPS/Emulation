@@ -28,11 +28,11 @@ SystemNES g_NESConsole;
     {
         g_NESConsole.SetControllerButtonState(1, Controller_Select, true);
     }
-    else if(event.keyCode == 35)
+    else if(event.keyCode == 31)
     {
         g_NESConsole.SetControllerButtonState(1, Controller_B, true);
     }
-    else if(event.keyCode == 31)
+    else if(event.keyCode == 35)
     {
         g_NESConsole.SetControllerButtonState(1, Controller_A, true);
     }
@@ -64,11 +64,11 @@ SystemNES g_NESConsole;
     {
         g_NESConsole.SetControllerButtonState(1, Controller_Select, false);
     }
-    else if(event.keyCode == 35)
+    else if(event.keyCode == 31)
     {
         g_NESConsole.SetControllerButtonState(1, Controller_B, false);
     }
-    else if(event.keyCode == 31)
+    else if(event.keyCode == 35)
     {
         g_NESConsole.SetControllerButtonState(1, Controller_A, false);
     }
