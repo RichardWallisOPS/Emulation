@@ -66,6 +66,8 @@ PPUNES::PPUNES(IOBus& bus)
 , m_ppuTAddress(0)
 , m_ppuWriteToggle(0)
 , m_ppuData(0)
+, m_scrollX(0)
+, m_scrollY(0)
 , m_bgNextPattern0(0)
 , m_bgNextPattern1(0)
 , m_bgShift0(0)
@@ -124,6 +126,8 @@ void PPUNES::PowerOn()
     m_ppuAddress = 0;
     m_ppuWriteToggle = 0;
     m_ppuData = 0;
+    m_scrollX = 0;
+    m_scrollY = 0;
     
     m_bgNextPattern0 = 0;
     m_bgNextPattern1 = 0;
@@ -149,6 +153,8 @@ void PPUNES::Reset()
     m_ppuAddress = 0;
     m_ppuWriteToggle = 0;
     m_ppuData = 0;
+    m_scrollX = 0;
+    m_scrollY = 0;
     
     m_bgNextPattern0 = 0;
     m_bgNextPattern1 = 0;
@@ -275,7 +281,7 @@ void PPUNES::SpriteEvaluation()
 void PPUNES::GenerateVideoPixel()
 {
     // HACK some test output
-    // TODO Do the sprite and background properly with shift registers
+    // TODO Implement the sprite and background properly with shift registers
     
     uint16_t y = m_scanline;
     uint16_t x = m_scanlineDot - 1;
@@ -290,144 +296,138 @@ void PPUNES::GenerateVideoPixel()
     
     bool bSpriteZero = false;
     
-    if(m_pVideoOutput != nullptr)
+    // Background
     {
-        // Background
+        // nametable byte
+        // attribute table byte
+        // pattern table low
+        // pattern table high
+        
+        // 43210
+        // |||||
+        // |||++- Pixel value from tile data
+        // |++--- Palette number from attribute table or OAM
+        // +----- Background/Sprite select
+        
+        uint16_t baseAddress = 0x0000;
+        if(TestFlag(CTRL_BACKGROUND_TABLE_ADDR, PPUCTRL))
         {
-            // nametable byte
-            // attribute table byte
-            // pattern table low
-            // pattern table high
-            
-            // 43210
-            // |||||
-            // |||++- Pixel value from tile data
-            // |++--- Palette number from attribute table or OAM
-            // +----- Background/Sprite select
-            
-            uint16_t baseAddress = 0x0000;
-            if(TestFlag(CTRL_BACKGROUND_TABLE_ADDR, PPUCTRL))
-            {
-                baseAddress = 0x1000;
-            }
-            
-            uint16_t tileY = y / 8;
-            uint16_t tileX = x / 8;
-            uint16_t nametableIndex = tileY * 32 + tileX;
-            uint8_t tileIndex = m_vram[nametableIndex];
-            
-            uint16_t tileAddress = baseAddress + (uint16_t(tileIndex) * 16);
-            
-            uint16_t pY = y % 8;
-            uint16_t pX = x % 8;
-            
-            uint8_t plane0 = m_bus.ppuRead(tileAddress + pY);
-            uint8_t plane1 = m_bus.ppuRead(tileAddress + pY + 8);
-            
-            uint8_t pixel0 = (plane0 >> (7 - pX)) & 1;
-            uint8_t pixel1 = (plane1 >> (7 - pX)) & 1;
+            baseAddress = 0x1000;
+        }
 
-            tilePalletteSelect = pixel0 | (pixel1 << 1);
-            
-            uint8_t attributeX = x / 32;
-            uint8_t attributeY = y / 32;
-            uint8_t attributeIndex = attributeY * 8 + attributeX;
-            uint8_t attribute =  m_vram[0 + 0x3C0 + attributeIndex];
-            
-            uint8_t attribQuadX = (x / 16) % 2;
-            uint8_t attribQuadY = (y / 16) % 2;
-            
-            // attrib
-            // 7654 3210
-            // |||| ||++- Color bits 3-2 for top left quadrant of this byte
-            // |||| ++--- Color bits 3-2 for top right quadrant of this byte
-            // ||++------ Color bits 3-2 for bottom left quadrant of this byte
-            // ++-------- Color bits 3-2 for bottom right quadrant of this byte
-                    
-            if(attribQuadX == 0 && attribQuadY == 0)
-            {
-                tileAttributePalletteSelect = attribute & 0x3;
-            }
-            else if(attribQuadX == 1 && attribQuadY == 0)
-            {
-                tileAttributePalletteSelect = (attribute >> 2) & 0x3;
-            }
-            else if(attribQuadX == 0 && attribQuadY == 1)
-            {
-                tileAttributePalletteSelect = (attribute >> 4) & 0x3;
-            }
-            else if(attribQuadX == 1 && attribQuadY == 1)
-            {
-                tileAttributePalletteSelect = (attribute >> 6) & 0x3;
-            }
+        uint16_t tileY = y / 8;
+        uint16_t tileX = x / 8;
+        uint16_t nametableIndex = tileY * 32 + tileX;
+        uint8_t tileIndex = m_vram[nametableIndex];
+        
+        uint16_t tileAddress = baseAddress + (uint16_t(tileIndex) * 16);
+        
+        uint16_t pY = y % 8;
+        uint16_t pX = x % 8;
+        
+        uint8_t plane0 = m_bus.ppuRead(tileAddress + pY);
+        uint8_t plane1 = m_bus.ppuRead(tileAddress + pY + 8);
+        
+        uint8_t pixel0 = (plane0 >> (7 - pX)) & 1;
+        uint8_t pixel1 = (plane1 >> (7 - pX)) & 1;
+
+        tilePalletteSelect = pixel0 | (pixel1 << 1);
+        
+        uint8_t attributeX = x / 32;
+        uint8_t attributeY = y / 32;
+        uint8_t attributeIndex = attributeY * 8 + attributeX;
+        uint8_t attribute =  m_vram[0 + 0x3C0 + attributeIndex];
+        
+        uint8_t attribQuadX = (x / 16) % 2;
+        uint8_t attribQuadY = (y / 16) % 2;
+        
+        // attrib
+        // 7654 3210
+        // |||| ||++- Color bits 3-2 for top left quadrant of this byte
+        // |||| ++--- Color bits 3-2 for top right quadrant of this byte
+        // ||++------ Color bits 3-2 for bottom left quadrant of this byte
+        // ++-------- Color bits 3-2 for bottom right quadrant of this byte
+                
+        if(attribQuadX == 0 && attribQuadY == 0)
+        {
+            tileAttributePalletteSelect = attribute & 0x3;
+        }
+        else if(attribQuadX == 1 && attribQuadY == 0)
+        {
+            tileAttributePalletteSelect = (attribute >> 2) & 0x3;
+        }
+        else if(attribQuadX == 0 && attribQuadY == 1)
+        {
+            tileAttributePalletteSelect = (attribute >> 4) & 0x3;
+        }
+        else if(attribQuadX == 1 && attribQuadY == 1)
+        {
+            tileAttributePalletteSelect = (attribute >> 6) & 0x3;
+        }
+    }
+    
+    // Sprite
+    {
+        uint16_t spriteBaseAddress = 0x0000;
+        if(TestFlag(CTRL_SPRITE_TABLE_ADDR, PPUCTRL))
+        {
+            spriteBaseAddress = 0x1000;
         }
         
-        // Sprite
+        for(uint8_t idx = 0;idx < 32;idx += 4)
         {
-            uint16_t spriteBaseAddress = 0x0000;
-            if(TestFlag(CTRL_SPRITE_TABLE_ADDR, PPUCTRL))
-            {
-                spriteBaseAddress = 0x1000;
-            }
+            uint8_t yPos = m_renderOAM[idx + 0];
+            uint8_t xPos = m_renderOAM[idx + 3];
             
-            for(uint8_t idx = 0;idx < 32;idx += 4)
+            yPos += 1;  // Is this right?
+            
+            if(yPos != 0xFF && x >= xPos && x < xPos + 8 && y >= yPos && y < yPos + 8)
             {
-                uint8_t yPos = m_renderOAM[idx + 0];
-                uint8_t xPos = m_renderOAM[idx + 3];
+                uint8_t spriteTileId = m_renderOAM[idx + 1];
+                uint8_t spriteAttribute = m_renderOAM[idx + 2];
                 
-                yPos += 1;  // Is this right?
+                spriteAttributePalletteSelect = spriteAttribute & 0x3;
                 
-                if(yPos != 0xFF && x >= xPos && x < xPos + 8 && y >= yPos && y < yPos + 8)
+                spritePriority = (spriteAttribute & (1 << 5)) != 0 ? 0 : 1;
+                                    
+                bool bFlipH = (spriteAttribute & (1 << 6)) != 0;
+                bool bFlipV = (spriteAttribute & (1 << 7)) != 0;
+            
+                uint16_t spriteTileAddress = spriteBaseAddress + (uint16_t(spriteTileId) * 16);
+
+                uint16_t spriteAddress = spriteTileAddress + m_scanline - yPos;
+                if(bFlipV)
                 {
-                    uint8_t spriteTileId = m_renderOAM[idx + 1];
-                    uint8_t spriteAttribute = m_renderOAM[idx + 2];
-                    
-                    spriteAttributePalletteSelect = spriteAttribute & 0x3;
-                    
-                    spritePriority = (spriteAttribute & (1 << 5)) != 0 ? 0 : 1;
-                                        
-                    bool bFlipH = (spriteAttribute & (1 << 6)) != 0;
-                    bool bFlipV = (spriteAttribute & (1 << 7)) != 0;
+                    spriteAddress = spriteTileAddress + (7 - (m_scanline - yPos));
+                }
                 
-                    uint16_t spriteTileAddress = spriteBaseAddress + (uint16_t(spriteTileId) * 16);
-                    
-                    
-                    uint8_t spritePlane0 = m_bus.ppuRead(spriteTileAddress + m_scanline - yPos);
-                    uint8_t spritePlane1 = m_bus.ppuRead(spriteTileAddress + (m_scanline - yPos) + 8);
-                    
-                    if(bFlipV)
+                uint8_t spritePlane0 = m_bus.ppuRead(spriteAddress);
+                uint8_t spritePlane1 = m_bus.ppuRead(spriteAddress + 8);
+                
+                uint8_t spriteShift = 7 - (x - xPos);
+                if(bFlipH)
+                {
+                    spriteShift = x - xPos;
+                }
+                
+                uint8_t spritePixel0 = (spritePlane0 >> spriteShift) & 1;
+                uint8_t spritePixel1 = (spritePlane1 >> spriteShift) & 1;
+                
+                spritePalletteSelect = spritePixel0 | (spritePixel1 << 1);
+                
+                if(spritePalletteSelect != 0)
+                {
+                    // TODO rework sprite zero
+                    if(idx == 0)
                     {
-                        // TODO - check this
-                        spritePlane0 = m_bus.ppuRead(spriteTileAddress + (7 - (m_scanline - yPos)));
-                        spritePlane1 = m_bus.ppuRead(spriteTileAddress + (7 - (m_scanline - yPos) + 8));
-                    }
-                    
-                    // Note watch out for uimt8_t maths due to under/overflow
-                    uint8_t spritePixel0 = (spritePlane0 >> (7 - (x - xPos))) & 1;
-                    uint8_t spritePixel1 = (spritePlane1 >> (7 - (x - xPos))) & 1;
-                    
-                    if(bFlipH)
-                    {
-                        spritePixel0 = (spritePlane0 >> (x - xPos)) & 1;
-                        spritePixel1 = (spritePlane1 >> (x - xPos)) & 1;
-                    }
-                    
-                    spritePalletteSelect = spritePixel0 | (spritePixel1 << 1);
-                    
-                    if(spritePalletteSelect != 0)
-                    {
-                        // TODO rework sprite zero
-                        if(idx == 0)
+                        uint32_t* infoRender = (uint32_t*)&m_renderOAM[0];
+                        uint32_t* infoOEM = (uint32_t*)&m_primaryOAM[0];
+                        if(*infoOEM == *infoRender)
                         {
-                            uint32_t* infoRender = (uint32_t*)&m_renderOAM[0];
-                            uint32_t* infoOEM = (uint32_t*)&m_primaryOAM[0];
-                            if(*infoOEM == *infoRender)
-                            {
-                                bSpriteZero = true;
-                            }
+                            bSpriteZero = true;
                         }
-                        break;
                     }
+                    break;
                 }
             }
         }
@@ -464,7 +464,10 @@ void PPUNES::GenerateVideoPixel()
     }
     
     uint8_t palletteIndex = m_pallette[finalPalletteSelect];
-    m_pVideoOutput[y * 256 + x] = GetPixelColour(palletteIndex);
+    if(m_pVideoOutput != nullptr)
+    {
+        m_pVideoOutput[y * 256 + x] = GetPixelColour(palletteIndex);
+    }
 }
 
 uint16_t PPUNES::absoluteAddressToVRAMAddress(uint16_t address)
@@ -637,11 +640,11 @@ void PPUNES::cpuWrite(uint8_t port, uint8_t byte)
                 m_portRegisters[port] = byte;
                 if(m_ppuWriteToggle == 0)
                 {
-                    //TODO
+                    m_scrollX = byte;
                 }
                 else
                 {
-                    //TODO
+                    m_scrollY = byte;
                 }
                 m_ppuWriteToggle = m_ppuWriteToggle == 0 ? 1 : 0;
                 break;

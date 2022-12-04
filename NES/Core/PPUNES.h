@@ -101,6 +101,8 @@ private:
     uint16_t m_ppuTAddress;
     uint8_t m_ppuWriteToggle;
     uint8_t m_ppuData;
+    uint8_t m_scrollX;
+    uint8_t m_scrollY;
     
     // Background pattern shift registers
     uint8_t m_bgNextPattern0;
