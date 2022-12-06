@@ -72,6 +72,7 @@ private:
     uint16_t absoluteAddressToVRAMAddress(uint16_t address);
     uint32_t GetPixelColour(uint32_t palletteIndex);
     
+    void UpdateShiftRegisters();
     void ClearSecondaryOEM();
     void SpriteEvaluation();
     void GenerateVideoPixel();
@@ -101,14 +102,13 @@ private:
     uint16_t m_ppuTAddress;
     uint8_t m_ppuWriteToggle;
     uint8_t m_ppuData;
-    uint8_t m_scrollX;
-    uint8_t m_scrollY;
+    uint8_t m_fineX;
     
     // Background pattern shift registers
-    uint8_t m_bgNextPattern0;
-    uint8_t m_bgNextPattern1;
-    uint16_t m_bgShift0;
-    uint16_t m_bgShift1;
+    uint16_t m_bgPatternShift0;
+    uint16_t m_bgPatternShift1;
+    uint8_t m_bgPalletteShift0;
+    uint8_t m_bgPalletteShift1;
     
     // Emulation
     uint64_t m_tickCount;

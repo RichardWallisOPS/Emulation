@@ -66,12 +66,11 @@ PPUNES::PPUNES(IOBus& bus)
 , m_ppuTAddress(0)
 , m_ppuWriteToggle(0)
 , m_ppuData(0)
-, m_scrollX(0)
-, m_scrollY(0)
-, m_bgNextPattern0(0)
-, m_bgNextPattern1(0)
-, m_bgShift0(0)
-, m_bgShift1(0)
+, m_fineX(0)
+, m_bgPatternShift0(0)
+, m_bgPatternShift1(0)
+, m_bgPalletteShift0(0)
+, m_bgPalletteShift1(0)
 , m_pVideoOutput(nullptr)
 {
     memset(m_vram, 0x00, nVRamSize);
@@ -126,13 +125,12 @@ void PPUNES::PowerOn()
     m_ppuAddress = 0;
     m_ppuWriteToggle = 0;
     m_ppuData = 0;
-    m_scrollX = 0;
-    m_scrollY = 0;
+    m_fineX = 0;
     
-    m_bgNextPattern0 = 0;
-    m_bgNextPattern1 = 0;
-    m_bgShift0 = 0;
-    m_bgShift1 = 0;
+    m_bgPatternShift0 = 0;
+    m_bgPatternShift1 = 0;
+    m_bgPalletteShift0 = 0;
+    m_bgPalletteShift1 = 0;
     
     memset(m_vram, 0x00, nVRamSize);
     memset(m_portRegisters, 0x00, PortRegister_Count);
@@ -153,13 +151,12 @@ void PPUNES::Reset()
     m_ppuAddress = 0;
     m_ppuWriteToggle = 0;
     m_ppuData = 0;
-    m_scrollX = 0;
-    m_scrollY = 0;
+    m_fineX = 0;
     
-    m_bgNextPattern0 = 0;
-    m_bgNextPattern1 = 0;
-    m_bgShift0 = 0;
-    m_bgShift1 = 0;
+    m_bgPatternShift0 = 0;
+    m_bgPatternShift1 = 0;
+    m_bgPalletteShift0 = 0;
+    m_bgPalletteShift1 = 0;
     
     memset(m_vram, 0x00, nVRamSize);
     memset(m_portRegisters, 0x00, PortRegister_Count);
@@ -188,9 +185,10 @@ void PPUNES::Tick()
         ClearFlag(STATUS_SPRITE_OVERFLOW, PPUSTATUS);
     }
     
-    if(m_scanline == 261)
+    if( ((m_scanline >= 0 && m_scanline <= 239) || m_scanline == 261) &&
+        (m_scanlineDot > 0))
     {
-        // TODO still need to fill the shift registers
+        UpdateShiftRegisters();
     }
     
     // Main update draw, 0-239 is the visible scan lines, 261 is the pre-render line
@@ -276,6 +274,27 @@ void PPUNES::SpriteEvaluation()
             memcpy(m_renderOAM, m_secondaryOAM, 32);
         }
     }
+}
+
+void PPUNES::UpdateShiftRegisters()
+{
+    // background
+    if( ((m_scanline >= 0 && m_scanline <= 239) || m_scanline == 261) &&
+        (m_scanlineDot > 0))
+    {
+        // TODO next scanline updates 320 - 339
+        // make it zero based for simpler VRAM fetches
+        uint16_t scanlineTick = m_scanline - 1;
+        
+        // between
+        //0-1 nametable fetch
+        //2-3 Attribute table fetch
+        //4-5 bg ls bits
+        //6-7 bg ms bits
+        // inc horizontal address register V (current vram address)
+    }
+
+    //sprites
 }
 
 void PPUNES::GenerateVideoPixel()
@@ -513,7 +532,6 @@ uint8_t PPUNES::cpuRead(uint8_t port)
             {
                 data = m_portLatch = m_portRegisters[port];
                 ClearFlag(STATUS_VBLANK, PPUSTATUS);
-                m_ppuAddress = 0;
                 m_ppuWriteToggle = 0;
                 break;
             }
@@ -608,6 +626,22 @@ void PPUNES::cpuWrite(uint8_t port, uint8_t byte)
         {
             case PPUCTRL:
             {
+                // 7  bit  0
+                // ---- ----
+                // VPHB SINN
+                // |||| ||||
+                // |||| ||++- Base nametable address
+                // |||| ||    (0 = $2000; 1 = $2400; 2 = $2800; 3 = $2C00)
+                // |||| |+--- VRAM address increment per CPU read/write of PPUDATA
+                // |||| |     (0: add 1, going across; 1: add 32, going down)
+                // |||| +---- Sprite pattern table address for 8x8 sprites
+                // ||||       (0: $0000; 1: $1000; ignored in 8x16 mode)
+                // |||+------ Background pattern table address (0: $0000; 1: $1000)
+                // ||+------- Sprite size (0: 8x8 pixels; 1: 8x16 pixels – see PPU OAM#Byte 1)
+                // |+-------- PPU master/slave select
+                // |          (0: read backdrop from EXT pins; 1: output color on EXT pins)
+                // +--------- Generate an NMI at the start of the
+                //            vertical blanking interval (0: off; 1: on)
                 m_portRegisters[port] = byte;
 
                 // if in vblank and NMI request toggled from 0 - 1 gen the NMI now
@@ -618,6 +652,17 @@ void PPUNES::cpuWrite(uint8_t port, uint8_t byte)
                         m_bus.SignalNMI(true);
                     }
                 }
+
+                // VRAM address
+                // yyy NN YYYYY XXXXX
+                // ||| || ||||| +++++-- coarse X scroll
+                // ||| || +++++-------- coarse Y scroll
+                // ||| ++-------------- nametable select
+                // +++----------------- fine Y scroll
+                
+                // add nametable select to ppu address
+                m_ppuAddress |= (byte & 0x3) << 10;
+
                 break;
             }
             case PPUMASK:
@@ -640,11 +685,15 @@ void PPUNES::cpuWrite(uint8_t port, uint8_t byte)
                 m_portRegisters[port] = byte;
                 if(m_ppuWriteToggle == 0)
                 {
-                    m_scrollX = byte;
+                    //ScrollX
+                    m_ppuTAddress |= byte >> 3;      // courseX;
+                    m_fineX = byte & 0b00000111;    // fineX
                 }
                 else
                 {
-                    m_scrollY = byte;
+                    //ScrollY
+                    m_ppuTAddress |= (uint16_t(byte) & 0b11111000) << 2;     // courseY
+                    m_ppuTAddress |= (uint16_t(byte) & 0b00000111) << 12;    // fineY
                 }
                 m_ppuWriteToggle = m_ppuWriteToggle == 0 ? 1 : 0;
                 break;
@@ -653,12 +702,13 @@ void PPUNES::cpuWrite(uint8_t port, uint8_t byte)
                 m_portRegisters[port] = byte;
                 if(m_ppuWriteToggle == 0)
                 {
-                    m_ppuAddress = byte;
-                    m_ppuAddress <<= 8;
+                    m_ppuTAddress = byte & 0b00111111;
+                    m_ppuTAddress <<= 8;
                 }
                 else
                 {
-                    m_ppuAddress = (m_ppuAddress & 0xFF00) | byte;
+                    m_ppuTAddress = (m_ppuTAddress & 0xFF00) | byte;
+                    m_ppuAddress = m_ppuTAddress;
                 }
                 m_ppuWriteToggle = m_ppuWriteToggle == 0 ? 1 : 0;
                 break;
