@@ -24,14 +24,6 @@ enum PortRegisterID :uint8_t
     PortRegister_Count
 };
 
-struct OAMEntry
-{
-    uint8_t m_y;
-    uint8_t m_tileIdx;
-    uint8_t m_attrib;
-    uint8_t m_x;
-};
-
 enum MirrorMode : uint8_t
 {
     VRAM_MIRROR_H = 0,
@@ -80,6 +72,11 @@ private:
     uint8_t ppuReadAddress(uint16_t address);
     void ppuWriteAddress(uint16_t address, uint8_t byte);
     
+    void vramIncHorz();
+    void vramIncVert();
+    void vramHorzCopy();
+    void vramVertCopy();
+    
 private:
     IOBus& m_bus;
     
@@ -103,6 +100,7 @@ private:
     // Internal Registers
     uint16_t m_ppuAddress;
     uint16_t m_ppuTAddress;
+    uint16_t m_ppuRenderAddress;
     uint8_t m_ppuWriteToggle;
     uint8_t m_ppuData;
     uint8_t m_fineX;

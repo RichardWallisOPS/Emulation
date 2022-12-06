@@ -185,12 +185,6 @@ void PPUNES::Tick()
         ClearFlag(STATUS_SPRITE_OVERFLOW, PPUSTATUS);
     }
     
-    if( ((m_scanline >= 0 && m_scanline <= 239) || m_scanline == 261) &&
-        (m_scanlineDot > 0))
-    {
-        UpdateShiftRegisters();
-    }
-    
     // Main update draw, 0-239 is the visible scan lines, 261 is the pre-render line
     if(m_scanline >= 0 && m_scanline <= 239)
     {
@@ -214,6 +208,12 @@ void PPUNES::Tick()
         {
             GenerateVideoPixel();
         }
+    }
+    
+    if( ((m_scanline >= 0 && m_scanline <= 239) || m_scanline == 261) &&
+        (m_scanlineDot > 0))
+    {
+        UpdateShiftRegisters();
     }
 
     // update next dot positon and scanline
@@ -369,6 +369,104 @@ void PPUNES::ppuWriteAddress(uint16_t address, uint8_t byte)
 // ||| ++-------------- nametable select
 // +++----------------- fine Y scroll
 
+void PPUNES::vramIncHorz()
+{
+    // break apart
+    uint16_t coarseX =      (m_ppuRenderAddress >> 0) & 31;
+    uint16_t coarseY =      (m_ppuRenderAddress >> 5) & 31;
+    uint16_t nametable =    (m_ppuRenderAddress >> 10) & 3;
+    uint16_t fineY =        (m_ppuRenderAddress >> 12) & 7;
+    
+    // update coarse for next tile fetch
+    if(coarseX <= 31)
+    {
+        ++coarseX;
+    }
+    else
+    {
+        coarseX = 0;
+        nametable ^= 1;
+    }
+    
+    // put back together
+    m_ppuRenderAddress =  (coarseX & 31) << 0;
+    m_ppuRenderAddress |= (coarseY & 31) << 5;
+    m_ppuRenderAddress |= (nametable & 3) << 10;
+    m_ppuRenderAddress |= (fineY & 7) << 12;
+}
+
+void PPUNES::vramIncVert()
+{
+    // break apart
+    uint16_t coarseX =      (m_ppuRenderAddress >> 0) & 31;
+    uint16_t coarseY =      (m_ppuRenderAddress >> 5) & 31;
+    uint16_t nametable =    (m_ppuRenderAddress >> 10) & 3;
+    uint16_t fineY =        (m_ppuRenderAddress >> 12) & 7;
+    
+    // update coarse for next tile fetch
+    if(fineY < 7)
+    {
+        ++fineY;
+    }
+    else
+    {
+        fineY = 0;
+        if(coarseY == 29)
+        {
+            coarseY = 0;
+            nametable ^= 2;
+        }
+        else if(coarseY == 31)
+        {
+            coarseY = 0;
+        }
+        else
+        {
+            ++coarseY;
+        }
+    }
+    
+    // put back together
+    m_ppuRenderAddress =  (coarseX & 31) << 0;
+    m_ppuRenderAddress |= (coarseY & 31) << 5;
+    m_ppuRenderAddress |= (nametable & 3) << 10;
+    m_ppuRenderAddress |= (fineY & 7) << 12;
+}
+
+void PPUNES::vramHorzCopy()
+{
+    // break apart - some parts from Temp Address
+    uint16_t coarseX =      (m_ppuTAddress >> 0) & 31;
+    uint16_t coarseY =      (m_ppuRenderAddress >> 5) & 31;
+    uint16_t nametableX =   (m_ppuTAddress >> 10) & 1;
+    uint16_t nametableY =   (m_ppuRenderAddress >> 11) & 1;
+    uint16_t fineY =        (m_ppuRenderAddress >> 12) & 7;
+    
+    // put back together
+    m_ppuRenderAddress =  (coarseX & 31) << 0;
+    m_ppuRenderAddress |= (coarseY & 31) << 5;
+    m_ppuRenderAddress |= (nametableX & 1) << 10;
+    m_ppuRenderAddress |= (nametableY & 1) << 11;
+    m_ppuRenderAddress |= (fineY & 7) << 12;
+}
+
+void PPUNES::vramVertCopy()
+{
+    // break apart - some parts from Temp Address
+    uint16_t coarseX =      (m_ppuRenderAddress >> 0) & 31;
+    uint16_t coarseY =      (m_ppuTAddress >> 5) & 31;
+    uint16_t nametableX =   (m_ppuRenderAddress >> 10) & 1;
+    uint16_t nametableY =   (m_ppuTAddress >> 11) & 1;
+    uint16_t fineY =        (m_ppuTAddress >> 12) & 7;
+    
+    // put back together
+    m_ppuRenderAddress =  (coarseX & 31) << 0;
+    m_ppuRenderAddress |= (coarseY & 31) << 5;
+    m_ppuRenderAddress |= (nametableX & 1) << 10;
+    m_ppuRenderAddress |= (nametableY & 1) << 11;
+    m_ppuRenderAddress |= (fineY & 7) << 12;
+}
+
 void PPUNES::UpdateShiftRegisters()
 {
     // background - scanline 261 is prefetch only - norender
@@ -383,23 +481,38 @@ void PPUNES::UpdateShiftRegisters()
             if(vramFetchCycle == 0)
             {
                 // load data into latches
+                uint16_t nametableAddress = 0x2000 + (m_ppuRenderAddress & 0b1111111111);
+                uint8_t tileIndex = ppuReadAddress(nametableAddress);
                 
-                //vramIncHorz(m_ppuAddress);
+                uint16_t baseAddress = TestFlag(CTRL_BACKGROUND_TABLE_ADDR, PPUCTRL) ? 0x1000 : 0x0000;
+                uint16_t tileAddress = baseAddress + (uint16_t(tileIndex) * 16);
+                
+                uint16_t fineY = ((m_ppuRenderAddress >> 12) & 7);
+                
+                uint16_t pattern0 = ppuReadAddress(tileAddress + 0 + fineY);
+                uint16_t pattern1 = ppuReadAddress(tileAddress + 8 + fineY);
+                
+                m_bgPatternShift0 >>= 8;
+                m_bgPatternShift1 >>= 8;
+                m_bgPatternShift0 = (pattern0 << 8) | (m_bgPatternShift0 & 0xFF);
+                m_bgPatternShift1 = (pattern1 << 8) | (m_bgPatternShift1 & 0xFF);
+                
+                vramIncHorz();
             }
         }
 
         if(m_scanlineDot == 256)
         {
-            //vramIncVert(m_ppuAddress);
+            vramIncVert();
         }
         else if(m_scanlineDot == 257)
         {
-            //vramHorzCopy(m_ppuAddress, m_ppuTAddress);
+            vramHorzCopy();
         }
         
         if(m_scanline == 261 && (m_scanlineDot >= 280 && m_scanlineDot <= 304))
         {
-            //vramVertCopy(m_ppuAddress, m_ppuTAddress);
+            vramVertCopy();
         }
     }
 
@@ -426,29 +539,31 @@ void PPUNES::GenerateVideoPixel()
     
     // New background
     {
-//        m_bgPatternShift0 >>= 1;
-//        m_bgPatternShift1 >>= 1;
-//
-//        // TODO finex
-//
-//        uint8_t pixel0 = m_bgPatternShift0 & 1;
-//        uint8_t pixel1 = m_bgPatternShift1 & 1;
-//        tilePalletteSelect = (pixel1 << 1) | pixel0;
+        // TODO finex
+        
+        uint8_t vramFetchCycle = m_scanlineDot % 8;
+        
+        uint8_t pixel0 = (m_bgPatternShift0 >> (7 - vramFetchCycle)) & 1;
+        uint8_t pixel1 = (m_bgPatternShift1 >> (7 - vramFetchCycle)) & 1;
+        
+        tilePalletteSelect = (pixel1 << 1) | pixel0;
     }
     
     // Background
+    if(1)
     {
         // nametable byte
         // attribute table byte
         // pattern table low
         // pattern table high
         
+        // pallette
         // 43210
         // |||||
         // |||++- Pixel value from tile data
         // |++--- Palette number from attribute table or OAM
         // +----- Background/Sprite select
-        
+                
         uint16_t baseAddress = 0x0000;
         if(TestFlag(CTRL_BACKGROUND_TABLE_ADDR, PPUCTRL))
         {
@@ -686,7 +801,7 @@ uint8_t PPUNES::cpuRead(uint8_t port)
                 uint8_t readBuffer = m_ppuDataBuffer;
                 m_ppuDataBuffer = ppuReadAddress(m_ppuAddress);
                 
-                // pallette info is return right away
+                // pallette info is returned right away
                 if(m_ppuAddress >= 0x3F00 && m_ppuAddress <= 0x3FFF)
                 {
                     readBuffer = m_ppuDataBuffer;
@@ -803,6 +918,7 @@ void PPUNES::cpuWrite(uint8_t port, uint8_t byte)
                 {
                     m_ppuTAddress = (m_ppuTAddress & 0xFF00) | byte;
                     m_ppuAddress = m_ppuTAddress;
+                    m_ppuRenderAddress = m_ppuAddress;
                 }
                 m_ppuWriteToggle = m_ppuWriteToggle == 0 ? 1 : 0;
                 break;
