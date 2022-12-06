@@ -77,6 +77,9 @@ private:
     void SpriteEvaluation();
     void GenerateVideoPixel();
     
+    uint8_t ppuReadAddress(uint16_t address);
+    void ppuWriteAddress(uint16_t address, uint8_t byte);
+    
 private:
     IOBus& m_bus;
     

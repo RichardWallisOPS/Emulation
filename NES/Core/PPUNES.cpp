@@ -276,22 +276,131 @@ void PPUNES::SpriteEvaluation()
     }
 }
 
+uint8_t PPUNES::ppuReadAddress(uint16_t address)
+{
+    uint8_t data = 0;
+    
+    address = (address % 0x3FFF);
+    if(address >= 0x3000 && address <= 0x3EFF)
+    {
+        address -= 0x1000;
+    }
+    
+    if(address >= 0 && address <= 0x1FFF)
+    {
+        // cart pattern table
+        data = m_bus.ppuRead(address);
+    }
+    else if(address >= 0x2000 && address <= 0x2FFF)
+    {
+        // name table mirrors
+        if(m_mirrorMode == VRAM_MIRROR_CART4)
+        {
+            data = m_bus.ppuRead(address);
+        }
+        else
+        {
+            uint16_t vramAddress = absoluteAddressToVRAMAddress(address);
+            uint16_t vramOffset = vramAddress - 0x2000;
+            data = m_vram[vramOffset];
+        }
+    }
+    else if(address >= 0x3F00 && address <= 0x3FFF)
+    {
+        uint16_t palletteIndex = (address - 0x3F00) % nPalletteSize;
+        data = m_pallette[palletteIndex];
+    }
+    
+    return data;
+}
+
+void PPUNES::ppuWriteAddress(uint16_t address, uint8_t byte)
+{
+    // Mirror VRAM ranges
+    address = (address % 0x3FFF);
+    if(address >= 0x3000 && address <= 0x3EFF)
+    {
+        address -= 0x1000;
+    }
+    
+    if(address >= 0 && address <= 0x1FFF)
+    {
+        // cart pattern table
+        m_bus.ppuWrite(address, byte);
+    }
+    else if(address >= 0x2000 && address <= 0x2FFF)
+    {
+        // name table mirrors
+        if(m_mirrorMode == VRAM_MIRROR_CART4)
+        {
+            m_bus.ppuWrite(address, byte);
+        }
+        else
+        {
+            uint16_t vramAddress = absoluteAddressToVRAMAddress(address);
+            uint16_t vramOffset = vramAddress - 0x2000;
+            m_vram[vramOffset] = byte;
+        }
+    }
+    else if(address >= 0x3F00 && address <= 0x3FFF)
+    {
+        uint16_t palletteIndex = (address - 0x3F00) % nPalletteSize;
+        m_pallette[palletteIndex] = byte;
+        
+        // $3F10/$3F14/$3F18/$3F1C <-Mirror-> $3F00/$3F04/$3F08/$3F0C - mirror writes to keep read simple
+        if(palletteIndex == 0x0 || palletteIndex == 0x4 || palletteIndex == 0x8 || palletteIndex == 0xC)
+        {
+            palletteIndex += 0x10;
+            m_pallette[palletteIndex] = byte;
+        }
+        else if(palletteIndex == 0x10 || palletteIndex == 0x14 || palletteIndex == 0x18 || palletteIndex == 0x1C)
+        {
+            palletteIndex -= 0x10;
+            m_pallette[palletteIndex] = byte;
+        }
+    }
+}
+
+// VRAM address
+//     VH
+// yyy NN YYYYY XXXXX
+// ||| || ||||| +++++-- coarse X scroll
+// ||| || +++++-------- coarse Y scroll
+// ||| ++-------------- nametable select
+// +++----------------- fine Y scroll
+
 void PPUNES::UpdateShiftRegisters()
 {
-    // background
+    // background - scanline 261 is prefetch only - norender
     if( ((m_scanline >= 0 && m_scanline <= 239) || m_scanline == 261) &&
         (m_scanlineDot > 0))
     {
-        // TODO next scanline updates 320 - 339
-        // make it zero based for simpler VRAM fetches
-        uint16_t scanlineTick = m_scanline - 1;
+        if(m_scanlineDot <= 256 || (m_scanlineDot >= 321 && m_scanlineDot <= 336))
+        {
+            uint8_t vramFetchCycle = m_scanlineDot % 8;
+
+            // Try doing all this at once, if it doesn't work then follow the vram fetch cycles
+            if(vramFetchCycle == 0)
+            {
+                // load data into latches
+                
+                //vramIncHorz(m_ppuAddress);
+            }
+        }
+
+        if(m_scanlineDot == 256)
+        {
+            //vramIncVert(m_ppuAddress);
+        }
+        else if(m_scanlineDot == 257)
+        {
+            //vramHorzCopy(m_ppuAddress, m_ppuTAddress);
+        }
         
-        // between
-        //0-1 nametable fetch
-        //2-3 Attribute table fetch
-        //4-5 bg ls bits
-        //6-7 bg ms bits
-        // inc horizontal address register V (current vram address)
+        if(m_scanline == 261 && (m_scanlineDot >= 280 && m_scanlineDot <= 304))
+        {
+            //vramVertCopy(m_ppuAddress, m_ppuTAddress);
+        }
     }
 
     //sprites
@@ -314,6 +423,18 @@ void PPUNES::GenerateVideoPixel()
     uint8_t spritePriority = 0;
     
     bool bSpriteZero = false;
+    
+    // New background
+    {
+//        m_bgPatternShift0 >>= 1;
+//        m_bgPatternShift1 >>= 1;
+//
+//        // TODO finex
+//
+//        uint8_t pixel0 = m_bgPatternShift0 & 1;
+//        uint8_t pixel1 = m_bgPatternShift1 & 1;
+//        tilePalletteSelect = (pixel1 << 1) | pixel0;
+    }
     
     // Background
     {
@@ -436,7 +557,7 @@ void PPUNES::GenerateVideoPixel()
                 
                 if(spritePalletteSelect != 0)
                 {
-                    // TODO rework sprite zero
+                    // TODO rework sprite zero - note the delay of horz of 2 - see info
                     if(idx == 0)
                     {
                         uint32_t* infoRender = (uint32_t*)&m_renderOAM[0];
@@ -563,38 +684,11 @@ uint8_t PPUNES::cpuRead(uint8_t port)
             {
                 // return value is last read
                 uint8_t readBuffer = m_ppuDataBuffer;
+                m_ppuDataBuffer = ppuReadAddress(m_ppuAddress);
                 
-                // Mirror VRAM ranges
-                uint16_t memAddress = m_ppuAddress;
-                memAddress = (memAddress % 0x3FFF);
-                if(memAddress >= 0x3000 && memAddress <= 0x3EFF)
+                // pallette info is return right away
+                if(m_ppuAddress >= 0x3F00 && m_ppuAddress <= 0x3FFF)
                 {
-                    memAddress -= 0x1000;
-                }
-                
-                if(memAddress >= 0 && memAddress <= 0x1FFF)
-                {
-                    // cart pattern table
-                    m_ppuDataBuffer = m_bus.ppuRead(memAddress);
-                }
-                else if(memAddress >= 0x2000 && memAddress <= 0x2FFF)
-                {
-                    // name table mirrors
-                    if(m_mirrorMode == VRAM_MIRROR_CART4)
-                    {
-                        m_ppuDataBuffer = m_bus.ppuRead(memAddress);
-                    }
-                    else
-                    {
-                        uint16_t vramAddress = absoluteAddressToVRAMAddress(memAddress);
-                        uint16_t vramOffset = vramAddress - 0x2000;
-                        m_ppuDataBuffer = m_vram[vramOffset];
-                    }
-                }
-                else if(memAddress >= 0x3F00 && memAddress <= 0x3FFF)
-                {
-                    uint16_t palletteIndex = (memAddress - 0x3F00) % nPalletteSize;
-                    m_ppuDataBuffer = m_pallette[palletteIndex];
                     readBuffer = m_ppuDataBuffer;
                 }
                 
@@ -686,7 +780,7 @@ void PPUNES::cpuWrite(uint8_t port, uint8_t byte)
                 if(m_ppuWriteToggle == 0)
                 {
                     //ScrollX
-                    m_ppuTAddress |= byte >> 3;      // courseX;
+                    m_ppuTAddress |= byte >> 3;     // courseX;
                     m_fineX = byte & 0b00000111;    // fineX
                 }
                 else
@@ -717,51 +811,7 @@ void PPUNES::cpuWrite(uint8_t port, uint8_t byte)
             {
                 m_portRegisters[port] = byte;
                 
-                uint16_t memAddress = m_ppuAddress;
-                
-                // Mirror VRAM ranges
-                memAddress = (memAddress % 0x3FFF);
-                if(memAddress >= 0x3000 && memAddress <= 0x3EFF)
-                {
-                    memAddress -= 0x1000;
-                }
-                
-                if(memAddress >= 0 && memAddress <= 0x1FFF)
-                {
-                    // cart pattern table
-                    m_bus.ppuWrite(memAddress, byte);
-                }
-                else if(memAddress >= 0x2000 && memAddress <= 0x2FFF)
-                {
-                    // name table mirrors
-                    if(m_mirrorMode == VRAM_MIRROR_CART4)
-                    {
-                        m_bus.ppuWrite(memAddress, byte);
-                    }
-                    else
-                    {
-                        uint16_t vramAddress = absoluteAddressToVRAMAddress(memAddress);
-                        uint16_t vramOffset = vramAddress - 0x2000;
-                        m_vram[vramOffset] = byte;
-                    }
-                }
-                else if(memAddress >= 0x3F00 && memAddress <= 0x3FFF)
-                {
-                    uint16_t palletteIndex = (memAddress - 0x3F00) % nPalletteSize;
-                    m_pallette[palletteIndex] = byte;
-                    
-                    // $3F10/$3F14/$3F18/$3F1C <-Mirror-> $3F00/$3F04/$3F08/$3F0C - mirror writes to keep read simple
-                    if(palletteIndex == 0x0 || palletteIndex == 0x4 || palletteIndex == 0x8 || palletteIndex == 0xC)
-                    {
-                        palletteIndex += 0x10;
-                        m_pallette[palletteIndex] = byte;
-                    }
-                    else if(palletteIndex == 0x10 || palletteIndex == 0x14 || palletteIndex == 0x18 || palletteIndex == 0x1C)
-                    {
-                        palletteIndex -= 0x10;
-                        m_pallette[palletteIndex] = byte;
-                    }
-                }
+                ppuWriteAddress(m_ppuAddress, byte);
                 
                 if(TestFlag(CTRL_VRAM_ADDRESS_INC, PPUCTRL) == false)
                 {
