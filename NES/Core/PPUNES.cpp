@@ -481,7 +481,7 @@ void PPUNES::UpdateShiftRegisters()
             if(vramFetchCycle == 0)
             {
                 // load data into latches
-                uint16_t nametableAddress = 0x2000 + (m_ppuRenderAddress & 0b1111111111);
+                uint16_t nametableAddress = 0x2000 + (m_ppuRenderAddress & 0xFFF);
                 uint8_t tileIndex = ppuReadAddress(nametableAddress);
                 
                 uint16_t baseAddress = TestFlag(CTRL_BACKGROUND_TABLE_ADDR, PPUCTRL) ? 0x1000 : 0x0000;
@@ -492,10 +492,10 @@ void PPUNES::UpdateShiftRegisters()
                 uint16_t pattern0 = ppuReadAddress(tileAddress + 0 + fineY);
                 uint16_t pattern1 = ppuReadAddress(tileAddress + 8 + fineY);
                 
-                m_bgPatternShift0 >>= 8;
-                m_bgPatternShift1 >>= 8;
-                m_bgPatternShift0 = (pattern0 << 8) | (m_bgPatternShift0 & 0xFF);
-                m_bgPatternShift1 = (pattern1 << 8) | (m_bgPatternShift1 & 0xFF);
+                m_bgPatternShift0 &= 0xFF00;
+                m_bgPatternShift1 &= 0xFF00;
+                m_bgPatternShift0 |= pattern0;
+                m_bgPatternShift1 |= pattern1;
                 
                 vramIncHorz();
             }
@@ -538,19 +538,18 @@ void PPUNES::GenerateVideoPixel()
     bool bSpriteZero = false;
     
     // New background
+    static bool bNewBackgroundRendering = true;
+    if(bNewBackgroundRendering)
     {
-        // TODO finex
-        
-        uint8_t vramFetchCycle = m_scanlineDot % 8;
-        
-        uint8_t pixel0 = (m_bgPatternShift0 >> (7 - vramFetchCycle)) & 1;
-        uint8_t pixel1 = (m_bgPatternShift1 >> (7 - vramFetchCycle)) & 1;
+        uint8_t pixel0 = (m_bgPatternShift0 & (1 << (15 - m_fineX))) ? 1 : 0;
+        uint8_t pixel1 = (m_bgPatternShift1 & (1 << (15 - m_fineX))) ? 1 : 0;
         
         tilePalletteSelect = (pixel1 << 1) | pixel0;
+        
+        m_bgPatternShift0 <<= 1;
+        m_bgPatternShift1 <<= 1;
     }
-    
-    // Background
-    if(1)
+    else
     {
         // nametable byte
         // attribute table byte
@@ -870,7 +869,8 @@ void PPUNES::cpuWrite(uint8_t port, uint8_t byte)
                 // +++----------------- fine Y scroll
                 
                 // add nametable select to ppu address
-                m_ppuAddress |= (byte & 0x3) << 10;
+                m_ppuTAddress &= ~(0x3 << 10);
+                m_ppuTAddress |= uint16_t((byte & 0x3)) << 10;
 
                 break;
             }
@@ -890,33 +890,45 @@ void PPUNES::cpuWrite(uint8_t port, uint8_t byte)
                 m_primaryOAM[spriteAddress] = byte;
                 break;
             }
-            case PPUSCROLL:
+            case PPUSCROLL: // 2005
+            {
                 m_portRegisters[port] = byte;
                 if(m_ppuWriteToggle == 0)
                 {
                     //ScrollX
-                    m_ppuTAddress |= byte >> 3;     // courseX;
-                    m_fineX = byte & 0b00000111;    // fineX
+                    m_ppuTAddress &= ~(uint16_t(0b11111));
+                    m_ppuTAddress |= uint16_t(byte) >> 3;     // courseX;
+                    m_fineX = byte & 0b00000111;                // fineX
                 }
                 else
                 {
                     //ScrollY
+                    m_ppuTAddress &= ~(uint16_t(0b11111000) << 2);
+                    m_ppuTAddress &= ~(uint16_t(0b00000111) << 12);
                     m_ppuTAddress |= (uint16_t(byte) & 0b11111000) << 2;     // courseY
                     m_ppuTAddress |= (uint16_t(byte) & 0b00000111) << 12;    // fineY
                 }
                 m_ppuWriteToggle = m_ppuWriteToggle == 0 ? 1 : 0;
                 break;
-            case PPUADDR:
+            }
+            case PPUADDR: // 2006
             {
+                // VRAM address
+                //     VH
+                // yyy NN YYYYY XXXXX
+                // ||| || ||||| +++++-- coarse X scroll
+                // ||| || +++++-------- coarse Y scroll
+                // ||| ++-------------- nametable select
+                // +++----------------- fine Y scroll
                 m_portRegisters[port] = byte;
                 if(m_ppuWriteToggle == 0)
                 {
-                    m_ppuTAddress = byte & 0b00111111;
+                    m_ppuTAddress = uint16_t(byte) & 0b00111111;
                     m_ppuTAddress <<= 8;
                 }
                 else
                 {
-                    m_ppuTAddress = (m_ppuTAddress & 0xFF00) | byte;
+                    m_ppuTAddress = (m_ppuTAddress & 0xFF00) | uint16_t(byte);
                     m_ppuAddress = m_ppuTAddress;
                     m_ppuRenderAddress = m_ppuAddress;
                 }
