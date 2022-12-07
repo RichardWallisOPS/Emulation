@@ -481,33 +481,57 @@ void PPUNES::UpdateShiftRegisters()
             if(vramFetchCycle == 0)
             {
                 // load data into latches
-                uint16_t nametableAddress = 0x2000 + (m_ppuRenderAddress & 0x0FFF);
-                uint8_t tileIndex = ppuReadAddress(nametableAddress);
+                // Pattern
+                {
+                    uint16_t nametableAddress = 0x2000 + (m_ppuRenderAddress & 0x0FFF);
+                    uint8_t tileIndex = ppuReadAddress(nametableAddress);
+                    
+                    uint16_t baseAddress = TestFlag(CTRL_BACKGROUND_TABLE_ADDR, PPUCTRL) ? 0x1000 : 0x0000;
+                    uint16_t tileAddress = baseAddress + (uint16_t(tileIndex) * 16);
+                    
+                    uint16_t fineY = ((m_ppuRenderAddress >> 12) & 7);
+                    
+                    uint16_t pattern0 = ppuReadAddress(tileAddress + 0 + fineY);
+                    uint16_t pattern1 = ppuReadAddress(tileAddress + 8 + fineY);
+                    
+                    m_bgPatternShift0 &= 0xFF00;
+                    m_bgPatternShift1 &= 0xFF00;
+                    m_bgPatternShift0 |= pattern0;
+                    m_bgPatternShift1 |= pattern1;
+                }
                 
-                uint16_t baseAddress = TestFlag(CTRL_BACKGROUND_TABLE_ADDR, PPUCTRL) ? 0x1000 : 0x0000;
-                uint16_t tileAddress = baseAddress + (uint16_t(tileIndex) * 16);
-                
-                uint16_t fineY = ((m_ppuRenderAddress >> 12) & 7);
-                
-                uint16_t pattern0 = ppuReadAddress(tileAddress + 0 + fineY);
-                uint16_t pattern1 = ppuReadAddress(tileAddress + 8 + fineY);
-                
-                m_bgPatternShift0 &= 0xFF00;
-                m_bgPatternShift1 &= 0xFF00;
-                m_bgPatternShift0 |= pattern0;
-                m_bgPatternShift1 |= pattern1;
-                
-                uint16_t attributeAddress = 0x23C0 | (m_ppuRenderAddress & 0x0C00) | ((m_ppuRenderAddress >> 4) & 0x38) | ((m_ppuRenderAddress >> 2) & 0x07);
-                uint8_t tileAttribute = ppuReadAddress(attributeAddress);
-                
-                m_bgPalletteShift0 <<= 2;
-                m_bgPalletteShift0 |= (tileAttribute >> 0) & 0x3;
-                m_bgPalletteShift0 <<= 2;
-                m_bgPalletteShift0 |= (tileAttribute >> 2) & 0x3;
-                m_bgPalletteShift0 <<= 2;
-                m_bgPalletteShift0 |= (tileAttribute >> 4) & 0x3;
-                m_bgPalletteShift0 <<= 2;
-                m_bgPalletteShift0 |= (tileAttribute >> 6) & 0x3;
+                // Attribute
+                {
+                    uint16_t attributeAddress = 0x23C0 | (m_ppuRenderAddress & 0x0C00) | ((m_ppuRenderAddress >> 4) & 0x38) | ((m_ppuRenderAddress >> 2) & 0x07);
+                    uint8_t tileAttribute = ppuReadAddress(attributeAddress);
+                    
+                    uint16_t coarseX = (m_ppuRenderAddress >> 0) & 31;
+                    uint16_t coarseY = (m_ppuRenderAddress >> 5) & 31;
+                    
+                    uint8_t attribQuadX = (coarseX / 16) % 2;
+                    uint8_t attribQuadY = (coarseY / 16) % 2;
+        
+                    if(attribQuadX == 0 && attribQuadY == 0)
+                    {
+                        tileAttribute = tileAttribute & 0x3;
+                    }
+                    else if(attribQuadX == 1 && attribQuadY == 0)
+                    {
+                        tileAttribute = (tileAttribute >> 2) & 0x3;
+                    }
+                    else if(attribQuadX == 0 && attribQuadY == 1)
+                    {
+                        tileAttribute = (tileAttribute >> 4) & 0x3;
+                    }
+                    else if(attribQuadX == 1 && attribQuadY == 1)
+                    {
+                        tileAttribute = (tileAttribute >> 6) & 0x3;
+                    }
+                    
+                    m_bgPalletteShift0 <<= 2;
+                    m_bgPalletteShift0 |= tileAttribute;
+
+                }
                 
                 vramIncHorz();
             }
@@ -561,12 +585,10 @@ void PPUNES::GenerateVideoPixel()
         m_bgPatternShift0 <<= 1;
         m_bgPatternShift1 <<= 1;
         
-        uint8_t attrib0 = (m_bgPalletteShift0 & (1 << (14 - m_fineX))) ? 1 : 0;
-        uint8_t attrib1 = (m_bgPalletteShift0 & (1 << (15 - m_fineX))) ? 1 : 0;
+        uint8_t attrib0 = (m_bgPalletteShift0 & (1 << 2)) ? 1 : 0;
+        uint8_t attrib1 = (m_bgPalletteShift0 & (1 << 3)) ? 1 : 0;
         
         tileAttributePalletteSelect = (attrib1 << 1) | attrib0;
-        
-        m_bgPalletteShift0 <<= 2;
     }
     else
     {
@@ -581,7 +603,6 @@ void PPUNES::GenerateVideoPixel()
         // |||++- Pixel value from tile data
         // |++--- Palette number from attribute table or OAM
         // +----- Background/Sprite select
-                
         uint16_t baseAddress = 0x0000;
         if(TestFlag(CTRL_BACKGROUND_TABLE_ADDR, PPUCTRL))
         {
