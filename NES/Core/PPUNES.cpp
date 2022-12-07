@@ -481,7 +481,7 @@ void PPUNES::UpdateShiftRegisters()
             if(vramFetchCycle == 0)
             {
                 // load data into latches
-                uint16_t nametableAddress = 0x2000 + (m_ppuRenderAddress & 0xFFF);
+                uint16_t nametableAddress = 0x2000 + (m_ppuRenderAddress & 0x0FFF);
                 uint8_t tileIndex = ppuReadAddress(nametableAddress);
                 
                 uint16_t baseAddress = TestFlag(CTRL_BACKGROUND_TABLE_ADDR, PPUCTRL) ? 0x1000 : 0x0000;
@@ -496,6 +496,18 @@ void PPUNES::UpdateShiftRegisters()
                 m_bgPatternShift1 &= 0xFF00;
                 m_bgPatternShift0 |= pattern0;
                 m_bgPatternShift1 |= pattern1;
+                
+                uint16_t attributeAddress = 0x23C0 | (m_ppuRenderAddress & 0x0C00) | ((m_ppuRenderAddress >> 4) & 0x38) | ((m_ppuRenderAddress >> 2) & 0x07);
+                uint8_t tileAttribute = ppuReadAddress(attributeAddress);
+                
+                m_bgPalletteShift0 <<= 2;
+                m_bgPalletteShift0 |= (tileAttribute >> 0) & 0x3;
+                m_bgPalletteShift0 <<= 2;
+                m_bgPalletteShift0 |= (tileAttribute >> 2) & 0x3;
+                m_bgPalletteShift0 <<= 2;
+                m_bgPalletteShift0 |= (tileAttribute >> 4) & 0x3;
+                m_bgPalletteShift0 <<= 2;
+                m_bgPalletteShift0 |= (tileAttribute >> 6) & 0x3;
                 
                 vramIncHorz();
             }
@@ -548,6 +560,13 @@ void PPUNES::GenerateVideoPixel()
         
         m_bgPatternShift0 <<= 1;
         m_bgPatternShift1 <<= 1;
+        
+        uint8_t attrib0 = (m_bgPalletteShift0 & (1 << (14 - m_fineX))) ? 1 : 0;
+        uint8_t attrib1 = (m_bgPalletteShift0 & (1 << (15 - m_fineX))) ? 1 : 0;
+        
+        tileAttributePalletteSelect = (attrib1 << 1) | attrib0;
+        
+        m_bgPalletteShift0 <<= 2;
     }
     else
     {
