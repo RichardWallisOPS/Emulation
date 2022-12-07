@@ -302,7 +302,10 @@ uint8_t PPUNES::ppuReadAddress(uint16_t address)
         {
             uint16_t vramAddress = absoluteAddressToVRAMAddress(address);
             uint16_t vramOffset = vramAddress - 0x2000;
-            data = m_vram[vramOffset];
+            if(vramOffset <= nVRamSize)
+            {
+                data = m_vram[vramOffset];
+            }
         }
     }
     else if(address >= 0x3F00 && address <= 0x3FFF)
@@ -339,7 +342,10 @@ void PPUNES::ppuWriteAddress(uint16_t address, uint8_t byte)
         {
             uint16_t vramAddress = absoluteAddressToVRAMAddress(address);
             uint16_t vramOffset = vramAddress - 0x2000;
-            m_vram[vramOffset] = byte;
+            if(vramOffset <= nVRamSize)
+            {
+                m_vram[vramOffset] = byte;
+            }
         }
     }
     else if(address >= 0x3F00 && address <= 0x3FFF)
@@ -376,9 +382,9 @@ void PPUNES::vramIncHorz()
     uint16_t coarseY =      (m_ppuRenderAddress >> 5) & 31;
     uint16_t nametable =    (m_ppuRenderAddress >> 10) & 3;
     uint16_t fineY =        (m_ppuRenderAddress >> 12) & 7;
-    
+        
     // update coarse for next tile fetch
-    if(coarseX <= 31)
+    if(coarseX < 31)
     {
         ++coarseX;
     }
@@ -387,7 +393,7 @@ void PPUNES::vramIncHorz()
         coarseX = 0;
         nametable ^= 1;
     }
-    
+
     // put back together
     m_ppuRenderAddress =  (coarseX & 31) << 0;
     m_ppuRenderAddress |= (coarseY & 31) << 5;
@@ -469,6 +475,7 @@ void PPUNES::vramVertCopy()
 
 void PPUNES::UpdateShiftRegisters()
 {
+    // TODO sprites
     // background - scanline 261 is prefetch only - norender
     if( ((m_scanline >= 0 && m_scanline <= 239) || m_scanline == 261) &&
         (m_scanlineDot > 0))
@@ -500,37 +507,31 @@ void PPUNES::UpdateShiftRegisters()
                     m_bgPatternShift1 |= pattern1;
                 }
                 
-                // Attribute
+                // Attribute TODO fix me
+                if(0)
                 {
                     uint16_t attributeAddress = 0x23C0 | (m_ppuRenderAddress & 0x0C00) | ((m_ppuRenderAddress >> 4) & 0x38) | ((m_ppuRenderAddress >> 2) & 0x07);
                     uint8_t tileAttribute = ppuReadAddress(attributeAddress);
-                    
+
                     uint16_t coarseX = (m_ppuRenderAddress >> 0) & 31;
                     uint16_t coarseY = (m_ppuRenderAddress >> 5) & 31;
-                    
-                    uint8_t attribQuadX = (coarseX / 16) % 2;
-                    uint8_t attribQuadY = (coarseY / 16) % 2;
-        
-                    if(attribQuadX == 0 && attribQuadY == 0)
-                    {
-                        tileAttribute = tileAttribute & 0x3;
-                    }
-                    else if(attribQuadX == 1 && attribQuadY == 0)
-                    {
-                        tileAttribute = (tileAttribute >> 2) & 0x3;
-                    }
-                    else if(attribQuadX == 0 && attribQuadY == 1)
-                    {
-                        tileAttribute = (tileAttribute >> 4) & 0x3;
-                    }
-                    else if(attribQuadX == 1 && attribQuadY == 1)
-                    {
-                        tileAttribute = (tileAttribute >> 6) & 0x3;
-                    }
-                    
-                    m_bgPalletteShift0 <<= 2;
-                    m_bgPalletteShift0 |= tileAttribute;
 
+                    uint8_t attribQuadX = coarseX % 2;
+                    uint8_t attribQuadY = coarseY % 2;
+
+                    if(attribQuadX == 0 && attribQuadY == 0)
+                        tileAttribute = tileAttribute & 0x3;
+                    else if(attribQuadX == 1 && attribQuadY == 0)
+                        tileAttribute = (tileAttribute >> 2) & 0x3;
+                    else if(attribQuadX == 0 && attribQuadY == 1)
+                        tileAttribute = (tileAttribute >> 4) & 0x3;
+                    else if(attribQuadX == 1 && attribQuadY == 1)
+                        tileAttribute = (tileAttribute >> 6) & 0x3;
+
+                    m_bgPalletteShift0 <<= 1;
+                    m_bgPalletteShift0 |= tileAttribute & 1;
+                    m_bgPalletteShift1 <<= 1;
+                    m_bgPalletteShift1 |= (tileAttribute & 2) >> 1;
                 }
                 
                 vramIncHorz();
@@ -551,15 +552,10 @@ void PPUNES::UpdateShiftRegisters()
             vramVertCopy();
         }
     }
-
-    //sprites
 }
 
 void PPUNES::GenerateVideoPixel()
 {
-    // HACK some test output
-    // TODO Implement the sprite and background properly with shift registers
-    
     uint16_t y = m_scanline;
     uint16_t x = m_scanlineDot - 1;
     
@@ -585,8 +581,8 @@ void PPUNES::GenerateVideoPixel()
         m_bgPatternShift0 <<= 1;
         m_bgPatternShift1 <<= 1;
         
-        uint8_t attrib0 = (m_bgPalletteShift0 & (1 << 2)) ? 1 : 0;
-        uint8_t attrib1 = (m_bgPalletteShift0 & (1 << 3)) ? 1 : 0;
+        uint8_t attrib0 = (m_bgPalletteShift0 & (1 << (7 - m_fineX))) ? 1 : 0;
+        uint8_t attrib1 = (m_bgPalletteShift1 & (1 << (7 - m_fineX))) ? 1 : 0;
         
         tileAttributePalletteSelect = (attrib1 << 1) | attrib0;
     }
