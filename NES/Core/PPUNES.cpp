@@ -271,7 +271,7 @@ void PPUNES::SpriteEvaluation()
         // TODO remove this!!!
         if(m_scanlineDot == 256)
         {
-            memcpy(m_renderOAM, m_secondaryOAM, 32);
+            memcpy(m_renderOAM, m_secondaryOAM, sizeof(m_secondaryOAM));
         }
     }
 }
@@ -507,8 +507,7 @@ void PPUNES::UpdateShiftRegisters()
                     m_bgPatternShift1 |= pattern1;
                 }
                 
-                // Attribute TODO fix me
-                if(0)
+                // Attribute
                 {
                     uint16_t attributeAddress = 0x23C0 | (m_ppuRenderAddress & 0x0C00) | ((m_ppuRenderAddress >> 4) & 0x38) | ((m_ppuRenderAddress >> 2) & 0x07);
                     uint8_t tileAttribute = ppuReadAddress(attributeAddress);
@@ -516,22 +515,24 @@ void PPUNES::UpdateShiftRegisters()
                     uint16_t coarseX = (m_ppuRenderAddress >> 0) & 31;
                     uint16_t coarseY = (m_ppuRenderAddress >> 5) & 31;
 
-                    uint8_t attribQuadX = coarseX % 2;
+                    uint8_t attribQuadX = coarseX & 2;
                     uint8_t attribQuadY = coarseY % 2;
+                    
+                    uint8_t attributeBits = 0;
 
                     if(attribQuadX == 0 && attribQuadY == 0)
-                        tileAttribute = tileAttribute & 0x3;
+                        attributeBits = tileAttribute & 0x3;
                     else if(attribQuadX == 1 && attribQuadY == 0)
-                        tileAttribute = (tileAttribute >> 2) & 0x3;
+                        attributeBits = (tileAttribute >> 2) & 0x3;
                     else if(attribQuadX == 0 && attribQuadY == 1)
-                        tileAttribute = (tileAttribute >> 4) & 0x3;
+                        attributeBits = (tileAttribute >> 4) & 0x3;
                     else if(attribQuadX == 1 && attribQuadY == 1)
-                        tileAttribute = (tileAttribute >> 6) & 0x3;
+                        attributeBits = (tileAttribute >> 6) & 0x3;
 
                     m_bgPalletteShift0 <<= 1;
-                    m_bgPalletteShift0 |= tileAttribute & 1;
+                    m_bgPalletteShift0 |= attributeBits & 1;
                     m_bgPalletteShift1 <<= 1;
-                    m_bgPalletteShift1 |= (tileAttribute & 2) >> 1;
+                    m_bgPalletteShift1 |= (attributeBits & 2) >> 1;
                 }
                 
                 vramIncHorz();
@@ -580,10 +581,10 @@ void PPUNES::GenerateVideoPixel()
         
         m_bgPatternShift0 <<= 1;
         m_bgPatternShift1 <<= 1;
-        
-        uint8_t attrib0 = (m_bgPalletteShift0 & (1 << (7 - m_fineX))) ? 1 : 0;
-        uint8_t attrib1 = (m_bgPalletteShift1 & (1 << (7 - m_fineX))) ? 1 : 0;
-        
+
+        uint8_t attrib0 = (m_bgPalletteShift0 & (1 << (8 - m_fineX))) ? 1 : 0;
+        uint8_t attrib1 = (m_bgPalletteShift1 & (1 << (8 - m_fineX))) ? 1 : 0;
+
         tileAttributePalletteSelect = (attrib1 << 1) | attrib0;
     }
     else
@@ -707,16 +708,7 @@ void PPUNES::GenerateVideoPixel()
                 
                 if(spritePalletteSelect != 0)
                 {
-                    // TODO rework sprite zero - note the delay of horz of 2 - see info
-                    if(idx == 0)
-                    {
-                        uint32_t* infoRender = (uint32_t*)&m_renderOAM[0];
-                        uint32_t* infoOEM = (uint32_t*)&m_primaryOAM[0];
-                        if(*infoOEM == *infoRender)
-                        {
-                            bSpriteZero = true;
-                        }
-                    }
+                    bSpriteZero = idx == 0;
                     break;
                 }
             }

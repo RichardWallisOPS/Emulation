@@ -108,8 +108,8 @@ private:
     // Background pattern shift registers
     uint16_t m_bgPatternShift0;
     uint16_t m_bgPatternShift1;
-    uint8_t m_bgPalletteShift0;
-    uint8_t m_bgPalletteShift1;
+    uint16_t m_bgPalletteShift0;
+    uint16_t m_bgPalletteShift1;
     
     // Emulation
     uint64_t m_tickCount;
