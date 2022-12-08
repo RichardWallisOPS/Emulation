@@ -487,20 +487,25 @@ void PPUNES::UpdateShiftRegisters()
             // Try doing all this at once, if it doesn't work then follow the vram fetch cycles
             if(vramFetchCycle == 0)
             {
+                uint16_t coarseX =      (m_ppuRenderAddress >> 0) & 31;(void)coarseX;
+                uint16_t coarseY =      (m_ppuRenderAddress >> 5) & 31;(void)coarseY;
+                uint16_t nametable =    (m_ppuRenderAddress >> 10) & 3;(void)nametable;
+                uint16_t fineY =        (m_ppuRenderAddress >> 12) & 7;(void)fineY;
+
                 // load data into latches
                 // Pattern
                 {
                     uint16_t nametableAddress = 0x2000 + (m_ppuRenderAddress & 0x0FFF);
                     uint8_t tileIndex = ppuReadAddress(nametableAddress);
                     
+                    // Flag per frame or scanline, this is per tile line fetch?
                     uint16_t baseAddress = TestFlag(CTRL_BACKGROUND_TABLE_ADDR, PPUCTRL) ? 0x1000 : 0x0000;
                     uint16_t tileAddress = baseAddress + (uint16_t(tileIndex) * 16);
+                                        
+                    uint16_t pattern0 = ppuReadAddress(tileAddress + fineY + 0);
+                    uint16_t pattern1 = ppuReadAddress(tileAddress + fineY + 8);
                     
-                    uint16_t fineY = ((m_ppuRenderAddress >> 12) & 7);
-                    
-                    uint16_t pattern0 = ppuReadAddress(tileAddress + 0 + fineY);
-                    uint16_t pattern1 = ppuReadAddress(tileAddress + 8 + fineY);
-                    
+                    // clear low bits and set next 8 bit pattern
                     m_bgPatternShift0 &= 0xFF00;
                     m_bgPatternShift1 &= 0xFF00;
                     m_bgPatternShift0 |= pattern0;
@@ -511,12 +516,9 @@ void PPUNES::UpdateShiftRegisters()
                 {
                     uint16_t attributeAddress = 0x23C0 | (m_ppuRenderAddress & 0x0C00) | ((m_ppuRenderAddress >> 4) & 0x38) | ((m_ppuRenderAddress >> 2) & 0x07);
                     uint8_t tileAttribute = ppuReadAddress(attributeAddress);
-
-                    uint16_t coarseX = (m_ppuRenderAddress >> 0) & 31;
-                    uint16_t coarseY = (m_ppuRenderAddress >> 5) & 31;
-
-                    uint8_t attribQuadX = coarseX & 2;
-                    uint8_t attribQuadY = coarseY % 2;
+                    
+                    uint8_t attribQuadX = (coarseX / 2) % 2;
+                    uint8_t attribQuadY = (coarseY / 2) % 2;
                     
                     uint8_t attributeBits = 0;
 
@@ -529,10 +531,13 @@ void PPUNES::UpdateShiftRegisters()
                     else if(attribQuadX == 1 && attribQuadY == 1)
                         attributeBits = (tileAttribute >> 6) & 0x3;
 
-                    m_bgPalletteShift0 <<= 1;
-                    m_bgPalletteShift0 |= attributeBits & 1;
-                    m_bgPalletteShift1 <<= 1;
-                    m_bgPalletteShift1 |= (attributeBits & 2) >> 1;
+                    for(int i = 0;i < 8;++i)    // TODO fix this - got to be wrong
+                    {
+                        m_bgPalletteShift0 <<= 1;
+                        m_bgPalletteShift0 |= attributeBits & 1;
+                        m_bgPalletteShift1 <<= 1;
+                        m_bgPalletteShift1 |= (attributeBits & 2) >> 1;
+                    }
                 }
                 
                 vramIncHorz();
@@ -570,9 +575,7 @@ void PPUNES::GenerateVideoPixel()
     
     bool bSpriteZero = false;
     
-    // New background
-    static bool bNewBackgroundRendering = true;
-    if(bNewBackgroundRendering)
+    // Background
     {
         uint8_t pixel0 = (m_bgPatternShift0 & (1 << (15 - m_fineX))) ? 1 : 0;
         uint8_t pixel1 = (m_bgPatternShift1 & (1 << (15 - m_fineX))) ? 1 : 0;
@@ -587,77 +590,8 @@ void PPUNES::GenerateVideoPixel()
 
         tileAttributePalletteSelect = (attrib1 << 1) | attrib0;
     }
-    else
-    {
-        // nametable byte
-        // attribute table byte
-        // pattern table low
-        // pattern table high
-        
-        // pallette
-        // 43210
-        // |||||
-        // |||++- Pixel value from tile data
-        // |++--- Palette number from attribute table or OAM
-        // +----- Background/Sprite select
-        uint16_t baseAddress = 0x0000;
-        if(TestFlag(CTRL_BACKGROUND_TABLE_ADDR, PPUCTRL))
-        {
-            baseAddress = 0x1000;
-        }
 
-        uint16_t tileY = y / 8;
-        uint16_t tileX = x / 8;
-        uint16_t nametableIndex = tileY * 32 + tileX;
-        uint8_t tileIndex = m_vram[nametableIndex];
-        
-        uint16_t tileAddress = baseAddress + (uint16_t(tileIndex) * 16);
-        
-        uint16_t pY = y % 8;
-        uint16_t pX = x % 8;
-        
-        uint8_t plane0 = m_bus.ppuRead(tileAddress + pY);
-        uint8_t plane1 = m_bus.ppuRead(tileAddress + pY + 8);
-        
-        uint8_t pixel0 = (plane0 >> (7 - pX)) & 1;
-        uint8_t pixel1 = (plane1 >> (7 - pX)) & 1;
-
-        tilePalletteSelect = pixel0 | (pixel1 << 1);
-        
-        uint8_t attributeX = x / 32;
-        uint8_t attributeY = y / 32;
-        uint8_t attributeIndex = attributeY * 8 + attributeX;
-        uint8_t attribute =  m_vram[0 + 0x3C0 + attributeIndex];
-        
-        uint8_t attribQuadX = (x / 16) % 2;
-        uint8_t attribQuadY = (y / 16) % 2;
-        
-        // attrib
-        // 7654 3210
-        // |||| ||++- Color bits 3-2 for top left quadrant of this byte
-        // |||| ++--- Color bits 3-2 for top right quadrant of this byte
-        // ||++------ Color bits 3-2 for bottom left quadrant of this byte
-        // ++-------- Color bits 3-2 for bottom right quadrant of this byte
-                
-        if(attribQuadX == 0 && attribQuadY == 0)
-        {
-            tileAttributePalletteSelect = attribute & 0x3;
-        }
-        else if(attribQuadX == 1 && attribQuadY == 0)
-        {
-            tileAttributePalletteSelect = (attribute >> 2) & 0x3;
-        }
-        else if(attribQuadX == 0 && attribQuadY == 1)
-        {
-            tileAttributePalletteSelect = (attribute >> 4) & 0x3;
-        }
-        else if(attribQuadX == 1 && attribQuadY == 1)
-        {
-            tileAttributePalletteSelect = (attribute >> 6) & 0x3;
-        }
-    }
-    
-    // Sprite
+    // Sprite - TODO change to shift registers
     {
         uint16_t spriteBaseAddress = 0x0000;
         if(TestFlag(CTRL_SPRITE_TABLE_ADDR, PPUCTRL))
@@ -715,9 +649,9 @@ void PPUNES::GenerateVideoPixel()
         }
     }
     
+    // Multiplexer logic
     uint8_t backgroundSelect = (0 << 4) + (tileAttributePalletteSelect << 2) + (tilePalletteSelect << 0);
     uint8_t spriteSelect = (1 << 4) + (spriteAttributePalletteSelect << 2) + (spritePalletteSelect << 0);
-    
     uint8_t finalPalletteSelect = 0x00;
     
     if(tilePalletteSelect == 0 && spritePalletteSelect != 0)
