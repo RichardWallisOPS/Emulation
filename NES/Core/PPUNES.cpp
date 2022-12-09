@@ -736,20 +736,20 @@ uint8_t PPUNES::cpuRead(uint8_t port)
     {
         switch(port)
         {
-            case PPUCTRL:
+            case PPUCTRL:   // 2000
                 break;
-            case PPUMASK:
+            case PPUMASK:   // 2001
                 break;
-            case PPUSTATUS:
+            case PPUSTATUS: // 2002
             {
                 data = m_portLatch = m_status;
                 ClearFlag(STATUS_VBLANK, m_status);
                 m_ppuWriteToggle = 0;
                 break;
             }
-            case OAMADDR:
+            case OAMADDR:   // 2003
                 break;
-            case OAMDATA:
+            case OAMDATA:   // 2004
             {
                 if(m_scanlineDot >= 1 && m_scanlineDot <= 64)
                 {
@@ -762,11 +762,11 @@ uint8_t PPUNES::cpuRead(uint8_t port)
                 }
                 break;
             }
-            case PPUSCROLL:
+            case PPUSCROLL: // 2005
                 break;
-            case PPUADDR:
+            case PPUADDR:   // 2006
                 break;
-            case PPUDATA:
+            case PPUDATA:   // 2007
             {
                 // return value is last read
                 data = m_portLatch = m_ppuDataBuffer;
@@ -803,7 +803,7 @@ void PPUNES::cpuWrite(uint8_t port, uint8_t byte)
         
         switch(port)
         {
-            case PPUCTRL:
+            case PPUCTRL:   // 2000
             {
                 // 7  bit  0
                 // ---- ----
@@ -822,13 +822,14 @@ void PPUNES::cpuWrite(uint8_t port, uint8_t byte)
                 // +--------- Generate an NMI at the start of the
                 //            vertical blanking interval (0: off; 1: on)
                 
-                uint8_t oldStatus = m_ctrl;
+                bool bWasGenVblank = TestFlag(CTRL_GEN_VBLANK_NMI, m_ctrl);
+                
                 m_ctrl = byte;
 
                 // if in vblank and NMI request toggled from 0 - 1 gen the NMI now
                 if(TestFlag(STATUS_VBLANK, m_status))
                 {
-                    if((oldStatus & CTRL_GEN_VBLANK_NMI) == 0 && (byte & CTRL_GEN_VBLANK_NMI) != 0)
+                    if(bWasGenVblank == false && TestFlag(CTRL_GEN_VBLANK_NMI, m_ctrl))
                     {
                         m_bus.SignalNMI(true);
                     }
@@ -847,15 +848,15 @@ void PPUNES::cpuWrite(uint8_t port, uint8_t byte)
 
                 break;
             }
-            case PPUMASK:
+            case PPUMASK:   // 2001
                 break;
-            case PPUSTATUS:
+            case PPUSTATUS: // 2002
                 // read only
                 break;
-            case OAMADDR:
+            case OAMADDR:   // 2003
                 m_oamAddress = byte;
                 break;
-            case OAMDATA:
+            case OAMDATA:   // 2004
             {
                 uint8_t spriteAddress = m_oamAddress++;
                 m_primaryOAM[spriteAddress] = byte;
@@ -867,7 +868,7 @@ void PPUNES::cpuWrite(uint8_t port, uint8_t byte)
                 {
                     //ScrollX
                     m_ppuTAddress &= ~(uint16_t(0b11111));
-                    m_ppuTAddress |= uint16_t(byte) >> 3;     // courseX;
+                    m_ppuTAddress |= uint16_t(byte) >> 3;       // courseX;
                     m_fineX = byte & 0b00000111;                // fineX
                 }
                 else
@@ -904,7 +905,7 @@ void PPUNES::cpuWrite(uint8_t port, uint8_t byte)
                 m_ppuWriteToggle = m_ppuWriteToggle == 0 ? 1 : 0;
                 break;
             }
-            case PPUDATA:
+            case PPUDATA:   // 2007
             {
                 ppuWriteAddress(m_ppuAddress, byte);
 
