@@ -61,6 +61,7 @@ PPUNES::PPUNES(IOBus& bus)
 , m_status(0)
 , m_oamAddress(0)
 , m_portLatch(0)
+, m_ppuDataBuffer(0)
 , m_tickCount(0)
 , m_scanline(0)
 , m_scanlineDot(0)
@@ -119,6 +120,7 @@ void PPUNES::PowerOn()
     m_status = 0;
     m_oamAddress = 0;
     m_portLatch = 0;
+    m_ppuDataBuffer = 0;
     m_tickCount = 0;
     m_scanline = 0;
     m_scanlineDot = 0;
@@ -146,6 +148,7 @@ void PPUNES::Reset()
     m_status = 0;
     m_oamAddress = 0;
     m_portLatch = 0;
+    m_ppuDataBuffer = 0;
     m_tickCount = 0;
     m_scanline = 0;
     m_scanlineDot = 0;
@@ -751,13 +754,12 @@ uint8_t PPUNES::cpuRead(uint8_t port)
                 if(m_scanlineDot >= 1 && m_scanlineDot <= 64)
                 {
                     // during init of sprite evaluation
-                    m_portLatch = 0XFF;
+                    data = m_portLatch = 0XFF;
                 }
                 else
                 {
-                    m_portLatch = m_primaryOAM[m_oamAddress];
+                    data = m_portLatch = m_primaryOAM[m_oamAddress];
                 }
-                data = m_portLatch;
                 break;
             }
             case PPUSCROLL:
@@ -767,12 +769,15 @@ uint8_t PPUNES::cpuRead(uint8_t port)
             case PPUDATA:
             {
                 // return value is last read
-                m_portLatch = ppuReadAddress(m_ppuAddress);
+                data = m_portLatch = m_ppuDataBuffer;
+                
+                //next read will get this
+                m_ppuDataBuffer = ppuReadAddress(m_ppuAddress);
                 
                 // pallette info is returned right away
                 if(m_ppuAddress >= 0x3F00 && m_ppuAddress <= 0x3FFF)
                 {
-                    data = m_portLatch;
+                    data = m_portLatch = m_ppuDataBuffer;
                 }
                 
                 if(TestFlag(CTRL_VRAM_ADDRESS_INC, m_ctrl) == false)

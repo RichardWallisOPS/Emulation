@@ -100,6 +100,7 @@ private:
     uint8_t m_status;
     uint8_t m_oamAddress;
     uint8_t m_portLatch;                            // data bus between CPU and GPU
+    uint8_t m_ppuDataBuffer;
     
     // Internal Registers
     uint16_t m_ppuAddress;
