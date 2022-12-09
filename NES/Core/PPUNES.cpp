@@ -208,7 +208,10 @@ void PPUNES::Tick()
         }
         else if(m_scanlineDot >= 65 && m_scanlineDot <= 256)
         {
-            SpriteEvaluation();
+            if(TestFlag(MASK_SPRITE_SHOW, m_mask))
+            {
+                SpriteEvaluation();
+            }
         }
         else if(m_scanlineDot >= 257 && m_scanlineDot <= 320)
         {
@@ -224,10 +227,13 @@ void PPUNES::Tick()
         }
     }
     
-    if( ((m_scanline >= 0 && m_scanline <= 239) || m_scanline == 261) &&
-        (m_scanlineDot > 0))
+    if(TestFlag(MASK_BACKGROUND_SHOW, m_mask))
     {
-        UpdateShiftRegisters();
+        if( ((m_scanline >= 0 && m_scanline <= 239) || m_scanline == 261) &&
+            (m_scanlineDot > 0))
+        {
+            UpdateShiftRegisters();
+        }
     }
 
     // update next dot positon and scanline
