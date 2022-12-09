@@ -10,6 +10,7 @@
 
 // The console we are emulating
 SystemNES g_NESConsole;
+BOOL g_showDebugInfo = NO;
 
 @implementation EmulationMetalView
 
@@ -71,6 +72,10 @@ SystemNES g_NESConsole;
     else if(event.keyCode == 49) // space
     {
         g_NESConsole.ToggleDebug();
+    }
+    else if(event.keyCode == 36) // enter
+    {
+        g_showDebugInfo = !g_showDebugInfo;
     }
 }
 
@@ -248,7 +253,10 @@ Vertex const g_quadVerts[] = {  {{-1.f,-1.f,0.f,1.f},   {0.f,1.f}},
         g_NESConsole.Tick();
     }
     
-    //g_NESConsole.WritePPUMetaData();
+    if(g_showDebugInfo)
+    {
+        g_NESConsole.WritePPUMetaData();
+    }
     
     if(self.emulationOutputData.storageMode == MTLStorageModeManaged)
     {
