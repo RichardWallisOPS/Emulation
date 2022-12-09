@@ -22,12 +22,9 @@
 
 enum FlagControl : uint8_t
 {
+    // [bit 1 | bit 0]  - 0 = $2000; 1 = $2400; 2 = $2800; 3 = $2C00 = 0x2000 + (0x0400 * (CTRL & mask))
     CTRL_NAMETABLE_ADDRESS_BIT0 = 1 << 0,
     CTRL_NAMETABLE_ADDRESS_BIT1 = 1 << 1,
-    
-    // [bit 1 | bit 0]  - 0 = $2000; 1 = $2400; 2 = $2800; 3 = $2C00 = 0x2000 + (0x0400 * (CTRL & mask))
-    CTRL_NAMETABLE_ADDRESS_MASK = CTRL_NAMETABLE_ADDRESS_BIT0 | CTRL_NAMETABLE_ADDRESS_BIT1,
-    
     CTRL_VRAM_ADDRESS_INC       = 1 << 2,   // 0 = add 1, 1 = add 32, per CPU read, write PPUDATA
     CTRL_SPRITE_TABLE_ADDR      = 1 << 3,   // 0 = 0x0000, 1 = 0x1000
     CTRL_BACKGROUND_TABLE_ADDR  = 1 << 4,   // 0 = 0x0000, 1 = 0x1000
@@ -38,7 +35,14 @@ enum FlagControl : uint8_t
 
 enum FlagMask : uint8_t
 {
-    // TODO
+    MASK_GREYSCALE          = 1 << 0,
+    MASK_BACKGROUND_L8      = 1 << 1,
+    MASK_SPRITE_L8          = 1 << 2,
+    MASK_BACKGROUND_SHOW    = 1 << 3,
+    MASK_SPRITE_SHOW        = 1 << 4,
+    MASK_EMPHASIZE_RED      = 1 << 5,
+    MASK_EMPHASIZE_GREEN    = 1 << 6,
+    MASK_EMPHASIZE_BLUE     = 1 << 7
 };
 
 enum FlagStatus : uint8_t
@@ -58,6 +62,7 @@ PPUNES::PPUNES(IOBus& bus)
 , m_mirrorMode(VRAM_MIRROR_H)
 , m_secondaryOAMWrite(0)
 , m_ctrl(0)
+, m_mask(0)
 , m_status(0)
 , m_oamAddress(0)
 , m_portLatch(0)
@@ -117,6 +122,7 @@ void PPUNES::PowerOn()
 {
     m_secondaryOAMWrite = 0;
     m_ctrl = 0;
+    m_mask = 0;
     m_status = 0;
     m_oamAddress = 0;
     m_portLatch = 0;
@@ -139,12 +145,14 @@ void PPUNES::PowerOn()
     memset(m_vram, 0x00, nVRamSize);
     memset(m_primaryOAM, 0xFF, sizeof(m_primaryOAM));
     memset(m_secondaryOAM, 0xFF, sizeof(m_secondaryOAM));
+    memset(m_renderOAM, 0xFF, sizeof(m_renderOAM));
 }
 
 void PPUNES::Reset()
 {
     m_secondaryOAMWrite = 0;
     m_ctrl = 0;
+    m_mask = 0;
     m_status = 0;
     m_oamAddress = 0;
     m_portLatch = 0;
@@ -167,11 +175,12 @@ void PPUNES::Reset()
     memset(m_vram, 0x00, nVRamSize);
     memset(m_primaryOAM, 0xFF, sizeof(m_primaryOAM));
     memset(m_secondaryOAM, 0xFF, sizeof(m_secondaryOAM));
+    memset(m_renderOAM, 0xFF, sizeof(m_renderOAM));
 }
 
 void PPUNES::Tick()
 {
-    // vblank set
+    // VBlank set
     if(m_scanline == 241 && m_scanlineDot == 1)
     {
         SetFlag(STATUS_VBLANK, m_status);
@@ -850,6 +859,19 @@ void PPUNES::cpuWrite(uint8_t port, uint8_t byte)
                 break;
             }
             case PPUMASK:   // 2001
+                // 7  bit  0
+                // ---- ----
+                // BGRs bMmG
+                // |||| ||||
+                // |||| |||+- Greyscale (0: normal color, 1: produce a greyscale display)
+                // |||| ||+-- 1: Show background in leftmost 8 pixels of screen, 0: Hide
+                // |||| |+--- 1: Show sprites in leftmost 8 pixels of screen, 0: Hide
+                // |||| +---- 1: Show background
+                // |||+------ 1: Show sprites
+                // ||+------- Emphasize red (green on PAL/Dendy)
+                // |+-------- Emphasize green (red on PAL/Dendy)
+                // +--------- Emphasize blue
+                m_mask = byte;
                 break;
             case PPUSTATUS: // 2002
                 // read only
@@ -901,7 +923,7 @@ void PPUNES::cpuWrite(uint8_t port, uint8_t byte)
                 {
                     m_ppuTAddress = (m_ppuTAddress & 0xFF00) | uint16_t(byte);
                     m_ppuAddress = m_ppuTAddress;
-                    m_ppuRenderAddress = m_ppuAddress;
+                    m_ppuRenderAddress = m_ppuTAddress;
                 }
                 m_ppuWriteToggle = m_ppuWriteToggle == 0 ? 1 : 0;
                 break;

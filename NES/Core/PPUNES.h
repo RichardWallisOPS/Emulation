@@ -97,6 +97,7 @@ private:
     
     // Registers - CPU accessible
     uint8_t m_ctrl;
+    uint8_t m_mask;
     uint8_t m_status;
     uint8_t m_oamAddress;
     uint8_t m_portLatch;                            // data bus between CPU and GPU
