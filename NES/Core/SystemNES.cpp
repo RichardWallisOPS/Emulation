@@ -193,12 +193,11 @@ void SystemNES::Tick()
         }
 
         // DMA handling
-        // TODO check tick count matches
         if(m_DMAMode != DMA_OFF)
         {
             if(m_DMAMode == DMA_READ)
             {
-                m_dmaData = this->cpuRead(m_dmaAddress++);
+                m_dmaData = this->cpuRead(m_dmaAddress);
                 m_DMAMode = DMA_WRITE;
             }
             else if(m_DMAMode == DMA_WRITE)
@@ -207,6 +206,7 @@ void SystemNES::Tick()
                 if((m_dmaAddress & 0xFF) != 0xFF)
                 {
                     m_DMAMode = DMA_READ;
+                    ++m_dmaAddress;
                 }
                 else
                 {
@@ -236,17 +236,17 @@ uint8_t SystemNES::cpuRead(uint16_t address)
         // controller latches
         if(address == 0x4016)
         {
-            uint8_t bResult = m_controllerLatch1 & 1;
+            uint8_t result = m_controllerLatch1 & 1;
             m_controllerLatch1 >>= 1;
             m_controllerLatch1 |= 1 << 7;
-            return bResult;
+            return result;
         }
         else if(address == 0x4017)
         {
-            uint8_t bResult = m_controllerLatch2 & 1;
+            uint8_t result = m_controllerLatch2 & 1;
             m_controllerLatch2 >>= 1;
             m_controllerLatch2 |= 1 << 7;
-            return bResult;
+            return result;
         }
         
         // APU and IO registers
@@ -278,7 +278,7 @@ void SystemNES::cpuWrite(uint16_t address, uint8_t byte)
     else if(address >= 0x4000 && address <= 0x401F)
     {
         uint16_t memAddress = address - 0x4000;
-         m_apuRegisters[memAddress] = byte;
+        m_apuRegisters[memAddress] = byte;
          
         if(address == 0x4014)
         {
@@ -331,7 +331,22 @@ void SystemNES::SetCPUProgramCounter(uint16_t pc)
     m_cpu.SetPC(pc);
 }
 
-void SystemNES::WritePPUMetaData(uint32_t* pData)
+void SystemNES::WritePPUMetaData()
 {
-    m_ppu.WritePatternTables(pData);
+    m_ppu.WritePatternTables();
+}
+
+void SystemNES::IncDebugScanLine(int16_t inc)
+{
+    m_ppu.IncDebugScanLine(inc);
+}
+
+void SystemNES::IncDebugDot(int16_t inc)
+{
+    m_ppu.IncDebugDot(inc);
+}
+
+void SystemNES::ToggleDebug()
+{
+    m_ppu.ToggleDebug();
 }

@@ -52,6 +52,26 @@ SystemNES g_NESConsole;
     {
         g_NESConsole.SetControllerButtonState(1, Controller_Up, true);
     }
+    else if(event.keyCode == 126)   // up
+    {
+        g_NESConsole.IncDebugScanLine(-1);
+    }
+    else if(event.keyCode == 125) // down
+    {
+        g_NESConsole.IncDebugScanLine(1);
+    }
+    else if(event.keyCode == 124) // right
+    {
+        g_NESConsole.IncDebugDot(1);
+    }
+    else if(event.keyCode == 123) // left
+    {
+        g_NESConsole.IncDebugDot(-1);
+    }
+    else if(event.keyCode == 49) // space
+    {
+        g_NESConsole.ToggleDebug();
+    }
 }
 
 - (void) keyUp:(NSEvent *)event
@@ -228,7 +248,7 @@ Vertex const g_quadVerts[] = {  {{-1.f,-1.f,0.f,1.f},   {0.f,1.f}},
         g_NESConsole.Tick();
     }
     
-    //g_NESConsole.WritePPUMetaData((uint32_t*)self.emulationOutputData.contents);
+    //g_NESConsole.WritePPUMetaData();
     
     if(self.emulationOutputData.storageMode == MTLStorageModeManaged)
     {

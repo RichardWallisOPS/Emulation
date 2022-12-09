@@ -49,17 +49,20 @@ public:
     uint8_t cpuRead(uint8_t port);
     void cpuWrite(uint8_t port, uint8_t byte);
     
+    // Expects a 256x240 RGBA data pointer
     void SetVideoOutputDataPtr(uint32_t* pVideoOutData);
     
     // Debug
-    // Expects a 256x240 RGBA data pointer
-    void WritePatternTables(uint32_t* pOutputData);
+    void WritePatternTables();
+    void IncDebugScanLine(int16_t inc) {m_debugScanLine += inc;}
+    void IncDebugDot(int16_t inc)      {m_debugDot += inc;}
+    void ToggleDebug()                 {m_debugScanLine = m_debugScanLine != -1 ? -1 : 120; m_debugDot = m_debugDot != -1 ? -1 : 128;}
     
 private:
 
-    void SetFlag(uint8_t flag, PortRegisterID ppuRegister);
-    void ClearFlag(uint8_t flag, PortRegisterID ppuRegister);
-    bool TestFlag(uint8_t flag, PortRegisterID ppuRegister);
+    void SetFlag(uint8_t flag, uint8_t& ppuRegister);
+    void ClearFlag(uint8_t flag, uint8_t& ppuRegister);
+    bool TestFlag(uint8_t flag, uint8_t& ppuRegister);
     
     uint16_t absoluteAddressToVRAMAddress(uint16_t address);
     uint32_t GetPixelColour(uint32_t palletteIndex);
@@ -93,9 +96,10 @@ private:
     uint8_t m_renderOAM[32];                        //TODO remove this!!!
     
     // Registers - CPU accessible
-    uint8_t m_portRegisters[PortRegister_Count];    // Communications with the CPU
+    uint8_t m_ctrl;
+    uint8_t m_status;
+    uint8_t m_oamAddress;
     uint8_t m_portLatch;                            // data bus between CPU and GPU
-    uint8_t m_ppuDataBuffer;                        // PPU read return this buffer
     
     // Internal Registers
     uint16_t m_ppuAddress;
@@ -118,6 +122,9 @@ private:
     
     // Output
     uint32_t* m_pVideoOutput;
+    
+    int16_t m_debugScanLine;
+    int16_t m_debugDot;
 };
 
 #endif /* PPUNES_h */

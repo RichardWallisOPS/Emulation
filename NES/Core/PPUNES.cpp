@@ -57,8 +57,10 @@ PPUNES::PPUNES(IOBus& bus)
 : m_bus(bus)
 , m_mirrorMode(VRAM_MIRROR_H)
 , m_secondaryOAMWrite(0)
+, m_ctrl(0)
+, m_status(0)
+, m_oamAddress(0)
 , m_portLatch(0)
-, m_ppuDataBuffer(0)
 , m_tickCount(0)
 , m_scanline(0)
 , m_scanlineDot(0)
@@ -72,9 +74,10 @@ PPUNES::PPUNES(IOBus& bus)
 , m_bgPalletteShift0(0)
 , m_bgPalletteShift1(0)
 , m_pVideoOutput(nullptr)
+, m_debugScanLine(-1)
+, m_debugDot(-1)
 {
     memset(m_vram, 0x00, nVRamSize);
-    memset(m_portRegisters, 0x00, PortRegister_Count);
     memset(m_primaryOAM, 0xFF, sizeof(m_primaryOAM));
     memset(m_secondaryOAM, 0xFF, sizeof(m_secondaryOAM));
 }
@@ -94,29 +97,28 @@ void PPUNES::SetMirrorMode(MirrorMode mode)
     m_mirrorMode = mode;
 }
 
-void PPUNES::SetFlag(uint8_t flag, PortRegisterID ppuRegister)
+void PPUNES::SetFlag(uint8_t flag, uint8_t& ppuRegister)
 {
-    uint8_t& ppuReg = m_portRegisters[ppuRegister];
-    ppuReg |= flag;
+    ppuRegister |= flag;
 }
 
-void PPUNES::ClearFlag(uint8_t flag, PortRegisterID ppuRegister)
+void PPUNES::ClearFlag(uint8_t flag, uint8_t& ppuRegister)
 {
-    uint8_t& ppuReg = m_portRegisters[ppuRegister];
-    ppuReg &= ~flag;
+    ppuRegister &= ~flag;
 }
 
-bool PPUNES::TestFlag(uint8_t flag, PortRegisterID ppuRegister)
+bool PPUNES::TestFlag(uint8_t flag, uint8_t& ppuRegister)
 {
-    uint8_t& ppuReg = m_portRegisters[ppuRegister];
-    return (ppuReg & flag) != 0;
+    return (ppuRegister & flag) != 0;
 }
 
 void PPUNES::PowerOn()
 {
     m_secondaryOAMWrite = 0;
+    m_ctrl = 0;
+    m_status = 0;
+    m_oamAddress = 0;
     m_portLatch = 0;
-    m_ppuDataBuffer = 0;
     m_tickCount = 0;
     m_scanline = 0;
     m_scanlineDot = 0;
@@ -133,7 +135,6 @@ void PPUNES::PowerOn()
     m_bgPalletteShift1 = 0;
     
     memset(m_vram, 0x00, nVRamSize);
-    memset(m_portRegisters, 0x00, PortRegister_Count);
     memset(m_primaryOAM, 0xFF, sizeof(m_primaryOAM));
     memset(m_secondaryOAM, 0xFF, sizeof(m_secondaryOAM));
 }
@@ -141,8 +142,10 @@ void PPUNES::PowerOn()
 void PPUNES::Reset()
 {
     m_secondaryOAMWrite = 0;
+    m_ctrl = 0;
+    m_status = 0;
+    m_oamAddress = 0;
     m_portLatch = 0;
-    m_ppuDataBuffer = 0;
     m_tickCount = 0;
     m_scanline = 0;
     m_scanlineDot = 0;
@@ -159,7 +162,6 @@ void PPUNES::Reset()
     m_bgPalletteShift1 = 0;
     
     memset(m_vram, 0x00, nVRamSize);
-    memset(m_portRegisters, 0x00, PortRegister_Count);
     memset(m_primaryOAM, 0xFF, sizeof(m_primaryOAM));
     memset(m_secondaryOAM, 0xFF, sizeof(m_secondaryOAM));
 }
@@ -169,9 +171,9 @@ void PPUNES::Tick()
     // vblank set
     if(m_scanline == 241 && m_scanlineDot == 1)
     {
-        SetFlag(STATUS_VBLANK, PPUSTATUS);
+        SetFlag(STATUS_VBLANK, m_status);
         
-        if(TestFlag(CTRL_GEN_VBLANK_NMI, PPUCTRL))
+        if(TestFlag(CTRL_GEN_VBLANK_NMI, m_ctrl))
         {
             m_bus.SignalNMI(true);
         }
@@ -180,9 +182,9 @@ void PPUNES::Tick()
     // clear vblank etc ready for next frame
     if(m_scanline == 261 && m_scanlineDot == 1)
     {
-        ClearFlag(STATUS_VBLANK, PPUSTATUS);
-        ClearFlag(STATUS_SPRITE0_HIT, PPUSTATUS);
-        ClearFlag(STATUS_SPRITE_OVERFLOW, PPUSTATUS);
+        ClearFlag(STATUS_VBLANK, m_status);
+        ClearFlag(STATUS_SPRITE0_HIT, m_status);
+        ClearFlag(STATUS_SPRITE_OVERFLOW, m_status);
     }
     
     // Main update draw, 0-239 is the visible scan lines, 261 is the pre-render line
@@ -198,7 +200,7 @@ void PPUNES::Tick()
         }
         else if(m_scanlineDot >= 257 && m_scanlineDot <= 320)
         {
-            m_portRegisters[OAMADDR] = 0;
+            m_oamAddress = 0;
             m_secondaryOAMWrite = 0;
             // TODO sprie fetch
         }
@@ -251,7 +253,7 @@ void PPUNES::SpriteEvaluation()
     {
         if(m_scanlineDot % 2 == 0)
         {
-            uint8_t& spriteIndex = m_portRegisters[OAMADDR];
+            uint8_t& spriteIndex = m_oamAddress;
             uint8_t spriteTop = m_primaryOAM[spriteIndex];
             uint8_t spriteBottom = spriteTop + 8;
             
@@ -487,10 +489,10 @@ void PPUNES::UpdateShiftRegisters()
             // Try doing all this at once, if it doesn't work then follow the vram fetch cycles
             if(vramFetchCycle == 0)
             {
-                uint16_t coarseX =      (m_ppuRenderAddress >> 0) & 31;(void)coarseX;
-                uint16_t coarseY =      (m_ppuRenderAddress >> 5) & 31;(void)coarseY;
-                uint16_t nametable =    (m_ppuRenderAddress >> 10) & 3;(void)nametable;
-                uint16_t fineY =        (m_ppuRenderAddress >> 12) & 7;(void)fineY;
+                uint16_t coarseX =      (m_ppuRenderAddress >> 0) & 31;
+                uint16_t coarseY =      (m_ppuRenderAddress >> 5) & 31;
+                //uint16_t nametable =    (m_ppuRenderAddress >> 10) & 3;
+                uint16_t fineY =        (m_ppuRenderAddress >> 12) & 7;
 
                 // load data into latches
                 // Pattern
@@ -499,7 +501,7 @@ void PPUNES::UpdateShiftRegisters()
                     uint8_t tileIndex = ppuReadAddress(nametableAddress);
                     
                     // Flag per frame or scanline, this is per tile line fetch?
-                    uint16_t baseAddress = TestFlag(CTRL_BACKGROUND_TABLE_ADDR, PPUCTRL) ? 0x1000 : 0x0000;
+                    uint16_t baseAddress = TestFlag(CTRL_BACKGROUND_TABLE_ADDR, m_ctrl) ? 0x1000 : 0x0000;
                     uint16_t tileAddress = baseAddress + (uint16_t(tileIndex) * 16);
                                         
                     uint16_t pattern0 = ppuReadAddress(tileAddress + fineY + 0);
@@ -523,13 +525,17 @@ void PPUNES::UpdateShiftRegisters()
                     uint8_t attributeBits = 0;
 
                     if(attribQuadX == 0 && attribQuadY == 0)
-                        attributeBits = tileAttribute & 0x3;
+                        attributeBits = (tileAttribute >> 0 ) & 0x3;
                     else if(attribQuadX == 1 && attribQuadY == 0)
                         attributeBits = (tileAttribute >> 2) & 0x3;
                     else if(attribQuadX == 0 && attribQuadY == 1)
                         attributeBits = (tileAttribute >> 4) & 0x3;
                     else if(attribQuadX == 1 && attribQuadY == 1)
                         attributeBits = (tileAttribute >> 6) & 0x3;
+#if DEBUG
+                    else
+                        *(volatile char*)(0) = 'P' | 'P' | 'U';
+#endif
 
                     for(int i = 0;i < 8;++i)    // TODO fix this - got to be wrong
                     {
@@ -594,7 +600,7 @@ void PPUNES::GenerateVideoPixel()
     // Sprite - TODO change to shift registers
     {
         uint16_t spriteBaseAddress = 0x0000;
-        if(TestFlag(CTRL_SPRITE_TABLE_ADDR, PPUCTRL))
+        if(TestFlag(CTRL_SPRITE_TABLE_ADDR, m_ctrl))
         {
             spriteBaseAddress = 0x1000;
         }
@@ -666,7 +672,7 @@ void PPUNES::GenerateVideoPixel()
     {
         if(bSpriteZero)
         {
-            SetFlag(STATUS_SPRITE0_HIT, PPUSTATUS);
+            SetFlag(STATUS_SPRITE0_HIT, m_status);
         }
         
         if(spritePriority)
@@ -682,6 +688,14 @@ void PPUNES::GenerateVideoPixel()
     uint8_t palletteIndex = m_pallette[finalPalletteSelect];
     if(m_pVideoOutput != nullptr)
     {
+        if(y == m_debugScanLine)
+        {
+            palletteIndex = 0;
+        }
+        if(x == m_debugDot)
+        {
+            palletteIndex = 0;
+        }
         m_pVideoOutput[y * 256 + x] = GetPixelColour(palletteIndex);
     }
 }
@@ -714,61 +728,54 @@ uint16_t PPUNES::absoluteAddressToVRAMAddress(uint16_t address)
 
 uint8_t PPUNES::cpuRead(uint8_t port)
 {
-    uint8_t data = 0;
+    uint8_t data = m_portLatch;
     if(port < PortRegister_Count)
     {
         switch(port)
         {
             case PPUCTRL:
-                data = m_portLatch;
                 break;
             case PPUMASK:
-                data = m_portLatch;
                 break;
             case PPUSTATUS:
             {
-                data = m_portLatch = m_portRegisters[port];
-                ClearFlag(STATUS_VBLANK, PPUSTATUS);
+                data = m_portLatch = m_status;
+                ClearFlag(STATUS_VBLANK, m_status);
                 m_ppuWriteToggle = 0;
                 break;
             }
             case OAMADDR:
-                data = m_portLatch;
                 break;
             case OAMDATA:
             {
-                uint8_t spriteAddress = m_portRegisters[OAMADDR];
                 if(m_scanlineDot >= 1 && m_scanlineDot <= 64)
                 {
                     // during init of sprite evaluation
-                    data = 0XFF;
+                    m_portLatch = 0XFF;
                 }
                 else
                 {
-                    data = m_primaryOAM[spriteAddress];
+                    m_portLatch = m_primaryOAM[m_oamAddress];
                 }
-                m_portRegisters[port] = m_portLatch = data;
+                data = m_portLatch;
                 break;
             }
             case PPUSCROLL:
-                data = m_portLatch;
                 break;
             case PPUADDR:
-                data = m_portLatch;
                 break;
             case PPUDATA:
             {
                 // return value is last read
-                uint8_t readBuffer = m_ppuDataBuffer;
-                m_ppuDataBuffer = ppuReadAddress(m_ppuAddress);
+                m_portLatch = ppuReadAddress(m_ppuAddress);
                 
                 // pallette info is returned right away
                 if(m_ppuAddress >= 0x3F00 && m_ppuAddress <= 0x3FFF)
                 {
-                    readBuffer = m_ppuDataBuffer;
+                    data = m_portLatch;
                 }
                 
-                if(TestFlag(CTRL_VRAM_ADDRESS_INC, PPUCTRL) == false)
+                if(TestFlag(CTRL_VRAM_ADDRESS_INC, m_ctrl) == false)
                 {
                     m_ppuAddress += 1;
                 }
@@ -776,9 +783,6 @@ uint8_t PPUNES::cpuRead(uint8_t port)
                 {
                     m_ppuAddress += 32;
                 }
-                
-                m_portRegisters[port] = m_portLatch = m_ppuDataBuffer;
-                data = readBuffer;
                 break;
             }
         }
@@ -790,8 +794,8 @@ void PPUNES::cpuWrite(uint8_t port, uint8_t byte)
 {
     if(port < PortRegister_Count)
     {
-        uint8_t oldByte =  m_portRegisters[port];
         m_portLatch = byte;
+        
         switch(port)
         {
             case PPUCTRL:
@@ -812,12 +816,14 @@ void PPUNES::cpuWrite(uint8_t port, uint8_t byte)
                 // |          (0: read backdrop from EXT pins; 1: output color on EXT pins)
                 // +--------- Generate an NMI at the start of the
                 //            vertical blanking interval (0: off; 1: on)
-                m_portRegisters[port] = byte;
+                
+                uint8_t oldStatus = m_ctrl;
+                m_ctrl = byte;
 
                 // if in vblank and NMI request toggled from 0 - 1 gen the NMI now
-                if(TestFlag(STATUS_VBLANK, PPUSTATUS))
+                if(TestFlag(STATUS_VBLANK, m_status))
                 {
-                    if((oldByte & CTRL_GEN_VBLANK_NMI) == 0 && (byte & CTRL_GEN_VBLANK_NMI) != 0)
+                    if((oldStatus & CTRL_GEN_VBLANK_NMI) == 0 && (byte & CTRL_GEN_VBLANK_NMI) != 0)
                     {
                         m_bus.SignalNMI(true);
                     }
@@ -837,24 +843,21 @@ void PPUNES::cpuWrite(uint8_t port, uint8_t byte)
                 break;
             }
             case PPUMASK:
-                m_portRegisters[port] = byte;
                 break;
             case PPUSTATUS:
                 // read only
                 break;
             case OAMADDR:
-                m_portRegisters[port] = byte;
+                m_oamAddress = byte;
                 break;
             case OAMDATA:
             {
-                m_portRegisters[port] = byte;
-                uint8_t spriteAddress = m_portRegisters[OAMADDR]++;
+                uint8_t spriteAddress = m_oamAddress++;
                 m_primaryOAM[spriteAddress] = byte;
                 break;
             }
             case PPUSCROLL: // 2005
             {
-                m_portRegisters[port] = byte;
                 if(m_ppuWriteToggle == 0)
                 {
                     //ScrollX
@@ -882,7 +885,6 @@ void PPUNES::cpuWrite(uint8_t port, uint8_t byte)
                 // ||| || +++++-------- coarse Y scroll
                 // ||| ++-------------- nametable select
                 // +++----------------- fine Y scroll
-                m_portRegisters[port] = byte;
                 if(m_ppuWriteToggle == 0)
                 {
                     m_ppuTAddress = uint16_t(byte) & 0b00111111;
@@ -899,11 +901,9 @@ void PPUNES::cpuWrite(uint8_t port, uint8_t byte)
             }
             case PPUDATA:
             {
-                m_portRegisters[port] = byte;
-                
                 ppuWriteAddress(m_ppuAddress, byte);
-                
-                if(TestFlag(CTRL_VRAM_ADDRESS_INC, PPUCTRL) == false)
+
+                if(TestFlag(CTRL_VRAM_ADDRESS_INC, m_ctrl) == false)
                 {
                     m_ppuAddress += 1;
                 }
@@ -934,7 +934,7 @@ uint32_t PPUNES::GetPixelColour(uint32_t palletteIndex)
     return (0xFF << 24) + (r << 16) + (g << 8) + (b << 0);
 }
 
-void PPUNES::WritePatternTables(uint32_t* pOutputData)
+void PPUNES::WritePatternTables()
 {
 //    DCBA98 76543210
 //    ---------------
@@ -976,6 +976,9 @@ void PPUNES::WritePatternTables(uint32_t* pOutputData)
         }
     };
     
-    fnDrawPattenTable(pOutputData, 0, 0, 0x0000);
-    fnDrawPattenTable(pOutputData, 128, 0, 0x1000);
+    if(m_pVideoOutput != nullptr)
+    {
+        fnDrawPattenTable(m_pVideoOutput, 0, 0, 0x0000);
+        fnDrawPattenTable(m_pVideoOutput, 128, 0, 0x1000);
+    }
 }
