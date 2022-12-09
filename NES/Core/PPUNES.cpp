@@ -540,12 +540,10 @@ void PPUNES::UpdateShiftRegisters()
                         *(volatile char*)(0) = 'P' | 'P' | 'U';
 #endif
 
-                    for(int i = 0;i < 8;++i)    // TODO fix this - got to be wrong
+                    for(uint8_t i = 0;i < 8;++i)
                     {
-                        m_bgPalletteShift0 <<= 1;
-                        m_bgPalletteShift0 |= attributeBits & 1;
-                        m_bgPalletteShift1 <<= 1;
-                        m_bgPalletteShift1 |= (attributeBits & 2) >> 1;
+                        m_bgPalletteShift0 |= ((attributeBits & 1) >> 0) << i;
+                        m_bgPalletteShift1 |= ((attributeBits & 2) >> 1) << i;
                     }
                 }
                 
@@ -594,8 +592,11 @@ void PPUNES::GenerateVideoPixel()
         m_bgPatternShift0 <<= 1;
         m_bgPatternShift1 <<= 1;
 
-        uint8_t attrib0 = (m_bgPalletteShift0 & (1 << (8 - m_fineX))) ? 1 : 0;
-        uint8_t attrib1 = (m_bgPalletteShift1 & (1 << (8 - m_fineX))) ? 1 : 0;
+        uint8_t attrib0 = (m_bgPalletteShift0 & (1 << (15 - m_fineX))) ? 1 : 0;
+        uint8_t attrib1 = (m_bgPalletteShift1 & (1 << (15 - m_fineX))) ? 1 : 0;
+        
+        m_bgPalletteShift0 <<= 1;
+        m_bgPalletteShift1 <<= 1;
 
         tileAttributePalletteSelect = (attrib1 << 1) | attrib0;
     }
