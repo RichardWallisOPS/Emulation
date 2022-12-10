@@ -500,6 +500,12 @@ void PPUNES::UpdateShiftRegisters()
         if(m_scanlineDot <= 256 || (m_scanlineDot >= 321 && m_scanlineDot <= 336))
         {
             uint8_t vramFetchCycle = m_scanlineDot % 8;
+            
+            // Shift for a dot tick during tile pattern and attribute fetch phases
+            m_bgPatternShift0 <<= 1;
+            m_bgPatternShift1 <<= 1;
+            m_bgPalletteShift0 <<= 1;
+            m_bgPalletteShift1 <<= 1;
 
             // Try doing all this at once, if it doesn't work then follow the vram fetch cycles
             if(vramFetchCycle == 0)
@@ -600,16 +606,10 @@ void PPUNES::GenerateVideoPixel()
         uint8_t pixel1 = (m_bgPatternShift1 & (1 << (15 - m_fineX))) ? 1 : 0;
         
         tilePalletteSelect = (pixel1 << 1) | pixel0;
-        
-        m_bgPatternShift0 <<= 1;
-        m_bgPatternShift1 <<= 1;
 
         uint8_t attrib0 = (m_bgPalletteShift0 & (1 << (15 - m_fineX))) ? 1 : 0;
         uint8_t attrib1 = (m_bgPalletteShift1 & (1 << (15 - m_fineX))) ? 1 : 0;
         
-        m_bgPalletteShift0 <<= 1;
-        m_bgPalletteShift1 <<= 1;
-
         tileAttributePalletteSelect = (attrib1 << 1) | attrib0;
     }
 
