@@ -256,10 +256,9 @@ void PPUNES::ClearSecondaryOEM()
 {
     if(m_scanlineDot >= 1 && m_scanlineDot <= 64)
     {
-        // clearing secondary OEM 32 bytes 32 reads / 32 writes 0xFF
-        if(m_scanlineDot % 2 == 0)
+        if(m_scanlineDot == 64)
         {
-            m_secondaryOAM[(m_scanlineDot - 1) / 2] = 0xFF;
+            memset(m_secondaryOAM, 0xFF, sizeof(m_secondaryOAM));
         }
     }
 }
@@ -271,19 +270,19 @@ void PPUNES::SpriteEvaluation()
     {
         if(m_scanlineDot % 2 == 0)
         {
-            uint8_t& spriteIndex = m_oamAddress;
-            uint8_t spriteTop = m_primaryOAM[spriteIndex];
-            uint8_t spriteBottom = spriteTop + 8;
+            uint8_t spriteTop = m_primaryOAM[m_oamAddress];
+            uint8_t spriteBottom = spriteTop + 7;
             
-            if(m_scanline >= spriteTop && m_scanline <= spriteBottom && m_secondaryOAMWrite < 32)
+            if(m_scanline >= spriteTop && m_scanline <= spriteBottom && m_secondaryOAMWrite < 40)
             {
-                m_secondaryOAM[m_secondaryOAMWrite++] = m_primaryOAM[spriteIndex + 0];
-                m_secondaryOAM[m_secondaryOAMWrite++] = m_primaryOAM[spriteIndex + 1];
-                m_secondaryOAM[m_secondaryOAMWrite++] = m_primaryOAM[spriteIndex + 2];
-                m_secondaryOAM[m_secondaryOAMWrite++] = m_primaryOAM[spriteIndex + 3];
+                m_secondaryOAM[m_secondaryOAMWrite++] = m_primaryOAM[m_oamAddress + 0];
+                m_secondaryOAM[m_secondaryOAMWrite++] = m_primaryOAM[m_oamAddress + 1];
+                m_secondaryOAM[m_secondaryOAMWrite++] = m_primaryOAM[m_oamAddress + 2];
+                m_secondaryOAM[m_secondaryOAMWrite++] = m_primaryOAM[m_oamAddress + 3];
+                m_secondaryOAM[m_secondaryOAMWrite++] = m_oamAddress / 4;
             }
-
-            spriteIndex += 4;
+            
+            m_oamAddress += 4;
             
             // TODO other steps for overflow etc
         }
@@ -624,18 +623,18 @@ void PPUNES::GenerateVideoPixel()
             spriteBaseAddress = 0x1000;
         }
         
-        for(uint8_t idx = 0;idx < 32;idx += 4)
+        for(uint8_t idx = 0;idx < 40;idx += 5)
         {
-            uint8_t yPos = m_renderOAM[idx + 0];
-            uint8_t xPos = m_renderOAM[idx + 3];
-            
+            uint8_t yPos            = m_renderOAM[idx + 0];
+            uint8_t spriteTileId    = m_renderOAM[idx + 1];
+            uint8_t spriteAttribute = m_renderOAM[idx + 2];
+            uint8_t xPos            = m_renderOAM[idx + 3];
+            uint8_t spriteIndex     = m_renderOAM[idx + 4];
+
             yPos += 1;  // Is this right?
             
             if(yPos != 0xFF && x >= xPos && x < xPos + 8 && y >= yPos && y < yPos + 8)
             {
-                uint8_t spriteTileId = m_renderOAM[idx + 1];
-                uint8_t spriteAttribute = m_renderOAM[idx + 2];
-                
                 spriteAttributePalletteSelect = spriteAttribute & 0x3;
                 
                 spritePriority = (spriteAttribute & (1 << 5)) != 0 ? 0 : 1;
@@ -667,7 +666,7 @@ void PPUNES::GenerateVideoPixel()
                 
                 if(spritePalletteSelect != 0)
                 {
-                    bSpriteZero = idx == 0;
+                    bSpriteZero = spriteIndex == 0 ? 1 : 0;
                     break;
                 }
             }

@@ -91,9 +91,9 @@ private:
     
     // OAM RAM
     uint8_t m_primaryOAM[256];                      // object attribute ram
-    uint8_t m_secondaryOAM[32];                     // current scan line sprites
+    uint8_t m_secondaryOAM[40];                     // current scanline sprites
     uint8_t m_secondaryOAMWrite;
-    uint8_t m_renderOAM[32];                        //TODO remove this!!!
+    uint8_t m_renderOAM[40];                        //TODO remove this!!!
     
     // Registers - CPU accessible
     uint8_t m_ctrl;
