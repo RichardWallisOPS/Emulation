@@ -280,7 +280,7 @@ void PPUNES::SpriteEvaluation()
             uint8_t spriteTop = m_primaryOAM[m_oamAddress];
             uint8_t spriteBottom = spriteTop + 7;
             
-            if(m_scanline + 1 >= spriteTop && m_scanline + 1 <= spriteBottom)
+            if(m_scanline >= spriteTop && m_scanline <= spriteBottom)
             {
                 if(m_secondaryOAMWrite < 32)
                 {
@@ -340,11 +340,11 @@ void PPUNES::SpriteFetch()
                 }
                 
                 uint16_t spriteTileAddress = spriteBaseAddress + (uint16_t(spriteTileId) * 16);
-                uint16_t spriteAddress = spriteTileAddress + m_scanline + 1 - yPos;
+                uint16_t spriteAddress = spriteTileAddress + m_scanline - yPos;
                 
                 if(bFlipV)
                 {
-                    spriteAddress = spriteTileAddress + (7 - (m_scanline + 1 - yPos));
+                    spriteAddress = spriteTileAddress + (7 - (m_scanline - yPos));
                 }
                 
                 uint8_t spritePlane0 = m_bus.ppuRead(spriteAddress);
