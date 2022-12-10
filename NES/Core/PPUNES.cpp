@@ -586,11 +586,14 @@ void PPUNES::UpdateShiftRegisters()
             {
                 --sprite.m_counter;
             }
-            else
+            
+            if(sprite.m_counter == 0)
             {
                 uint8_t pixel0 = (sprite.m_patternShift0 & (1 << 7)) >> 7;
                 uint8_t pixel1 = (sprite.m_patternShift1 & (1 << 7)) >> 7;
+                
                 sprite.m_patternLatch = (pixel1 << 1) | pixel0;
+                
                 sprite.m_patternShift0 <<= 1;
                 sprite.m_patternShift1 <<= 1;
             }
