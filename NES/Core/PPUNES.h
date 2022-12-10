@@ -54,10 +54,7 @@ public:
     
     // Debug
     void WritePatternTables();
-    void IncDebugScanLine(int16_t inc) {m_debugScanLine += inc;}
-    void IncDebugDot(int16_t inc)      {m_debugDot += inc;}
-    void ToggleDebug()                 {m_debugScanLine = m_debugScanLine != -1 ? -1 : 120; m_debugDot = m_debugDot != -1 ? -1 : 128;}
-    
+
 private:
 
     void SetFlag(uint8_t flag, uint8_t& ppuRegister);
@@ -106,7 +103,6 @@ private:
     // Internal Registers
     uint16_t m_ppuAddress;
     uint16_t m_ppuTAddress;
-    uint16_t m_ppuRenderAddress;
     uint8_t m_ppuWriteToggle;
     uint8_t m_ppuData;
     uint8_t m_fineX;
@@ -124,9 +120,6 @@ private:
     
     // Output
     uint32_t* m_pVideoOutput;
-    
-    int16_t m_debugScanLine;
-    int16_t m_debugDot;
 };
 
 #endif /* PPUNES_h */

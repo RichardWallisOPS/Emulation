@@ -80,8 +80,6 @@ PPUNES::PPUNES(IOBus& bus)
 , m_bgPalletteShift0(0)
 , m_bgPalletteShift1(0)
 , m_pVideoOutput(nullptr)
-, m_debugScanLine(-1)
-, m_debugDot(-1)
 {
     memset(m_vram, 0x00, nVRamSize);
     memset(m_primaryOAM, 0xFF, sizeof(m_primaryOAM));
@@ -397,10 +395,10 @@ void PPUNES::ppuWriteAddress(uint16_t address, uint8_t byte)
 void PPUNES::vramIncHorz()
 {
     // break apart
-    uint16_t coarseX =      (m_ppuRenderAddress >> 0) & 31;
-    uint16_t coarseY =      (m_ppuRenderAddress >> 5) & 31;
-    uint16_t nametable =    (m_ppuRenderAddress >> 10) & 3;
-    uint16_t fineY =        (m_ppuRenderAddress >> 12) & 7;
+    uint16_t coarseX =      (m_ppuAddress >> 0) & 31;
+    uint16_t coarseY =      (m_ppuAddress >> 5) & 31;
+    uint16_t nametable =    (m_ppuAddress >> 10) & 3;
+    uint16_t fineY =        (m_ppuAddress >> 12) & 7;
         
     // update coarse for next tile fetch
     if(coarseX < 31)
@@ -414,19 +412,19 @@ void PPUNES::vramIncHorz()
     }
 
     // put back together
-    m_ppuRenderAddress =  (coarseX & 31) << 0;
-    m_ppuRenderAddress |= (coarseY & 31) << 5;
-    m_ppuRenderAddress |= (nametable & 3) << 10;
-    m_ppuRenderAddress |= (fineY & 7) << 12;
+    m_ppuAddress =  (coarseX & 31) << 0;
+    m_ppuAddress |= (coarseY & 31) << 5;
+    m_ppuAddress |= (nametable & 3) << 10;
+    m_ppuAddress |= (fineY & 7) << 12;
 }
 
 void PPUNES::vramIncVert()
 {
     // break apart
-    uint16_t coarseX =      (m_ppuRenderAddress >> 0) & 31;
-    uint16_t coarseY =      (m_ppuRenderAddress >> 5) & 31;
-    uint16_t nametable =    (m_ppuRenderAddress >> 10) & 3;
-    uint16_t fineY =        (m_ppuRenderAddress >> 12) & 7;
+    uint16_t coarseX =      (m_ppuAddress >> 0) & 31;
+    uint16_t coarseY =      (m_ppuAddress >> 5) & 31;
+    uint16_t nametable =    (m_ppuAddress >> 10) & 3;
+    uint16_t fineY =        (m_ppuAddress >> 12) & 7;
     
     // update coarse for next tile fetch
     if(fineY < 7)
@@ -452,44 +450,44 @@ void PPUNES::vramIncVert()
     }
     
     // put back together
-    m_ppuRenderAddress =  (coarseX & 31) << 0;
-    m_ppuRenderAddress |= (coarseY & 31) << 5;
-    m_ppuRenderAddress |= (nametable & 3) << 10;
-    m_ppuRenderAddress |= (fineY & 7) << 12;
+    m_ppuAddress =  (coarseX & 31) << 0;
+    m_ppuAddress |= (coarseY & 31) << 5;
+    m_ppuAddress |= (nametable & 3) << 10;
+    m_ppuAddress |= (fineY & 7) << 12;
 }
 
 void PPUNES::vramHorzCopy()
 {
     // break apart - some parts from Temp Address
     uint16_t coarseX =      (m_ppuTAddress >> 0) & 31;
-    uint16_t coarseY =      (m_ppuRenderAddress >> 5) & 31;
+    uint16_t coarseY =      (m_ppuAddress >> 5) & 31;
     uint16_t nametableX =   (m_ppuTAddress >> 10) & 1;
-    uint16_t nametableY =   (m_ppuRenderAddress >> 11) & 1;
-    uint16_t fineY =        (m_ppuRenderAddress >> 12) & 7;
+    uint16_t nametableY =   (m_ppuAddress >> 11) & 1;
+    uint16_t fineY =        (m_ppuAddress >> 12) & 7;
     
     // put back together
-    m_ppuRenderAddress =  (coarseX & 31) << 0;
-    m_ppuRenderAddress |= (coarseY & 31) << 5;
-    m_ppuRenderAddress |= (nametableX & 1) << 10;
-    m_ppuRenderAddress |= (nametableY & 1) << 11;
-    m_ppuRenderAddress |= (fineY & 7) << 12;
+    m_ppuAddress =  (coarseX & 31) << 0;
+    m_ppuAddress |= (coarseY & 31) << 5;
+    m_ppuAddress |= (nametableX & 1) << 10;
+    m_ppuAddress |= (nametableY & 1) << 11;
+    m_ppuAddress |= (fineY & 7) << 12;
 }
 
 void PPUNES::vramVertCopy()
 {
     // break apart - some parts from Temp Address
-    uint16_t coarseX =      (m_ppuRenderAddress >> 0) & 31;
+    uint16_t coarseX =      (m_ppuAddress >> 0) & 31;
     uint16_t coarseY =      (m_ppuTAddress >> 5) & 31;
-    uint16_t nametableX =   (m_ppuRenderAddress >> 10) & 1;
+    uint16_t nametableX =   (m_ppuAddress >> 10) & 1;
     uint16_t nametableY =   (m_ppuTAddress >> 11) & 1;
     uint16_t fineY =        (m_ppuTAddress >> 12) & 7;
     
     // put back together
-    m_ppuRenderAddress =  (coarseX & 31) << 0;
-    m_ppuRenderAddress |= (coarseY & 31) << 5;
-    m_ppuRenderAddress |= (nametableX & 1) << 10;
-    m_ppuRenderAddress |= (nametableY & 1) << 11;
-    m_ppuRenderAddress |= (fineY & 7) << 12;
+    m_ppuAddress =  (coarseX & 31) << 0;
+    m_ppuAddress |= (coarseY & 31) << 5;
+    m_ppuAddress |= (nametableX & 1) << 10;
+    m_ppuAddress |= (nametableY & 1) << 11;
+    m_ppuAddress |= (fineY & 7) << 12;
 }
 
 void PPUNES::UpdateShiftRegisters()
@@ -506,15 +504,15 @@ void PPUNES::UpdateShiftRegisters()
             // Try doing all this at once, if it doesn't work then follow the vram fetch cycles
             if(vramFetchCycle == 0)
             {
-                uint16_t coarseX =      (m_ppuRenderAddress >> 0) & 31;
-                uint16_t coarseY =      (m_ppuRenderAddress >> 5) & 31;
-                //uint16_t nametable =    (m_ppuRenderAddress >> 10) & 3;
-                uint16_t fineY =        (m_ppuRenderAddress >> 12) & 7;
+                uint16_t coarseX =      (m_ppuAddress >> 0) & 31;
+                uint16_t coarseY =      (m_ppuAddress >> 5) & 31;
+                //uint16_t nametable =    (m_ppuAddress >> 10) & 3;
+                uint16_t fineY =        (m_ppuAddress >> 12) & 7;
 
                 // load data into latches
                 // Pattern
                 {
-                    uint16_t nametableAddress = 0x2000 + (m_ppuRenderAddress & 0x0FFF);
+                    uint16_t nametableAddress = 0x2000 + (m_ppuAddress & 0x0FFF);
                     uint8_t tileIndex = ppuReadAddress(nametableAddress);
                     
                     // Flag per frame or scanline, this is per tile line fetch?
@@ -533,7 +531,7 @@ void PPUNES::UpdateShiftRegisters()
                 
                 // Attribute
                 {
-                    uint16_t attributeAddress = 0x23C0 | (m_ppuRenderAddress & 0x0C00) | ((m_ppuRenderAddress >> 4) & 0x38) | ((m_ppuRenderAddress >> 2) & 0x07);
+                    uint16_t attributeAddress = 0x23C0 | (m_ppuAddress & 0x0C00) | ((m_ppuAddress >> 4) & 0x38) | ((m_ppuAddress >> 2) & 0x07);
                     uint8_t tileAttribute = ppuReadAddress(attributeAddress);
                     
                     uint8_t attribQuadX = (coarseX / 2) % 2;
@@ -706,14 +704,6 @@ void PPUNES::GenerateVideoPixel()
     uint8_t palletteIndex = m_pallette[finalPalletteSelect];
     if(m_pVideoOutput != nullptr)
     {
-        if(y == m_debugScanLine)
-        {
-            palletteIndex = 0;
-        }
-        if(x == m_debugDot)
-        {
-            palletteIndex = 0;
-        }
         m_pVideoOutput[y * 256 + x] = GetPixelColour(palletteIndex);
     }
 }
@@ -928,7 +918,6 @@ void PPUNES::cpuWrite(uint8_t port, uint8_t byte)
                 {
                     m_ppuTAddress = (m_ppuTAddress & 0xFF00) | uint16_t(byte);
                     m_ppuAddress = m_ppuTAddress;
-                    m_ppuRenderAddress = m_ppuTAddress;
                 }
                 m_ppuWriteToggle = m_ppuWriteToggle == 0 ? 1 : 0;
                 break;

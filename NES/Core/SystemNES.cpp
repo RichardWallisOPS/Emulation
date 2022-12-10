@@ -335,18 +335,3 @@ void SystemNES::WritePPUMetaData()
 {
     m_ppu.WritePatternTables();
 }
-
-void SystemNES::IncDebugScanLine(int16_t inc)
-{
-    m_ppu.IncDebugScanLine(inc);
-}
-
-void SystemNES::IncDebugDot(int16_t inc)
-{
-    m_ppu.IncDebugDot(inc);
-}
-
-void SystemNES::ToggleDebug()
-{
-    m_ppu.ToggleDebug();
-}
