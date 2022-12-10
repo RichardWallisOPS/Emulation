@@ -65,8 +65,9 @@ private:
     uint32_t GetPixelColour(uint32_t palletteIndex);
     
     void UpdateShiftRegisters();
-    void ClearSecondaryOEM();
+    void ClearSecondaryOAM();
     void SpriteEvaluation();
+    void SpriteFetch();
     void GenerateVideoPixel();
     
     uint8_t ppuReadAddress(uint16_t address);
@@ -88,9 +89,9 @@ private:
     
     // OAM RAM
     uint8_t m_primaryOAM[256];                      // object attribute ram
-    uint8_t m_secondaryOAM[40];                     // current scanline sprites
+    uint8_t m_secondaryOAM[32];                     // current scanline sprites
     uint8_t m_secondaryOAMWrite;
-    uint8_t m_renderOAM[40];                        //TODO remove this!!!
+    uint8_t m_spriteZero;
     
     // Registers - CPU accessible
     uint8_t m_ctrl;
@@ -112,6 +113,17 @@ private:
     uint16_t m_bgPatternShift1;
     uint16_t m_bgPalletteShift0;
     uint16_t m_bgPalletteShift1;
+    
+    // Sprite shift registers
+    struct ScanlineSprite
+    {
+        uint8_t m_patternLatch;
+        uint8_t m_patternShift0;
+        uint8_t m_patternShift1;
+        uint8_t m_attribute;
+        uint8_t m_counter;
+        uint8_t m_spriteZero;
+    }m_scanlineSprites[8];
     
     // Emulation
     uint64_t m_tickCount;

@@ -61,6 +61,7 @@ PPUNES::PPUNES(IOBus& bus)
 : m_bus(bus)
 , m_mirrorMode(VRAM_MIRROR_H)
 , m_secondaryOAMWrite(0)
+, m_spriteZero(0xFF)
 , m_ctrl(0)
 , m_mask(0)
 , m_status(0)
@@ -119,6 +120,7 @@ bool PPUNES::TestFlag(uint8_t flag, uint8_t& ppuRegister)
 void PPUNES::PowerOn()
 {
     m_secondaryOAMWrite = 0;
+    m_spriteZero = 0xFF;
     m_ctrl = 0;
     m_mask = 0;
     m_status = 0;
@@ -143,12 +145,12 @@ void PPUNES::PowerOn()
     memset(m_vram, 0x00, nVRamSize);
     memset(m_primaryOAM, 0xFF, sizeof(m_primaryOAM));
     memset(m_secondaryOAM, 0xFF, sizeof(m_secondaryOAM));
-    memset(m_renderOAM, 0xFF, sizeof(m_renderOAM));
 }
 
 void PPUNES::Reset()
 {
     m_secondaryOAMWrite = 0;
+    m_spriteZero = 0xFF;
     m_ctrl = 0;
     m_mask = 0;
     m_status = 0;
@@ -173,7 +175,6 @@ void PPUNES::Reset()
     memset(m_vram, 0x00, nVRamSize);
     memset(m_primaryOAM, 0xFF, sizeof(m_primaryOAM));
     memset(m_secondaryOAM, 0xFF, sizeof(m_secondaryOAM));
-    memset(m_renderOAM, 0xFF, sizeof(m_renderOAM));
 }
 
 void PPUNES::Tick()
@@ -202,7 +203,7 @@ void PPUNES::Tick()
     {
         if(m_scanlineDot >= 1 && m_scanlineDot <= 64)
         {
-            ClearSecondaryOEM();
+            ClearSecondaryOAM();
         }
         else if(m_scanlineDot >= 65 && m_scanlineDot <= 256)
         {
@@ -213,9 +214,15 @@ void PPUNES::Tick()
         }
         else if(m_scanlineDot >= 257 && m_scanlineDot <= 320)
         {
-            m_oamAddress = 0;
-            m_secondaryOAMWrite = 0;
-            // TODO sprie fetch
+            SpriteFetch();
+
+            // TODO check these
+            if(m_scanlineDot == 320)
+            {
+                m_secondaryOAMWrite = 0;
+                m_oamAddress = 0;
+                m_spriteZero = 0xFF;
+            }
         }
         
         // Output current pixel
@@ -250,12 +257,13 @@ void PPUNES::Tick()
     }
 }
 
-void PPUNES::ClearSecondaryOEM()
+void PPUNES::ClearSecondaryOAM()
 {
     if(m_scanlineDot >= 1 && m_scanlineDot <= 64)
     {
         if(m_scanlineDot == 64)
         {
+            m_spriteZero = 0xFF;
             memset(m_secondaryOAM, 0xFF, sizeof(m_secondaryOAM));
         }
     }
@@ -263,7 +271,8 @@ void PPUNES::ClearSecondaryOEM()
 
 void PPUNES::SpriteEvaluation()
 {
-    // odd data read even data write
+    // Odd data read even data write
+    // TODO: this is only for 8x8 sprites
     if(m_scanlineDot >= 65 && m_scanlineDot <= 256)
     {
         if(m_scanlineDot % 2 == 0)
@@ -271,24 +280,98 @@ void PPUNES::SpriteEvaluation()
             uint8_t spriteTop = m_primaryOAM[m_oamAddress];
             uint8_t spriteBottom = spriteTop + 7;
             
-            if(m_scanline >= spriteTop && m_scanline <= spriteBottom && m_secondaryOAMWrite < 40)
+            if(m_scanline + 1 >= spriteTop && m_scanline + 1 <= spriteBottom)
             {
-                m_secondaryOAM[m_secondaryOAMWrite++] = m_primaryOAM[m_oamAddress + 0];
-                m_secondaryOAM[m_secondaryOAMWrite++] = m_primaryOAM[m_oamAddress + 1];
-                m_secondaryOAM[m_secondaryOAMWrite++] = m_primaryOAM[m_oamAddress + 2];
-                m_secondaryOAM[m_secondaryOAMWrite++] = m_primaryOAM[m_oamAddress + 3];
-                m_secondaryOAM[m_secondaryOAMWrite++] = m_oamAddress / 4;
+                if(m_secondaryOAMWrite < 32)
+                {
+                    m_secondaryOAM[m_secondaryOAMWrite + 0] = m_primaryOAM[m_oamAddress + 0];
+                    m_secondaryOAM[m_secondaryOAMWrite + 1] = m_primaryOAM[m_oamAddress + 1];
+                    m_secondaryOAM[m_secondaryOAMWrite + 2] = m_primaryOAM[m_oamAddress + 2];
+                    m_secondaryOAM[m_secondaryOAMWrite + 3] = m_primaryOAM[m_oamAddress + 3];
+                    
+                    m_secondaryOAMWrite += 4;
+                    
+                    if(m_oamAddress == 0)
+                    {
+                        m_spriteZero = 1;
+                    }
+                }
+                else
+                {
+                    SetFlag(STATUS_SPRITE_OVERFLOW, m_status);
+                }
             }
             
             m_oamAddress += 4;
-            
-            // TODO other steps for overflow etc
         }
-        
-        // TODO remove this!!!
-        if(m_scanlineDot == 256)
+    }
+}
+
+void PPUNES::SpriteFetch()
+{
+    if(m_scanlineDot >= 257 && m_scanlineDot <= 320)
+    {
+        if((m_scanlineDot - 257) % 8 == 0)
         {
-            memcpy(m_renderOAM, m_secondaryOAM, sizeof(m_secondaryOAM));
+            uint8_t spriteIndex = ((m_scanlineDot - 257) / 8) % 8;
+            ScanlineSprite& sprite = m_scanlineSprites[spriteIndex];
+            
+            sprite.m_patternLatch = 0;
+            sprite.m_patternShift0 = 0;
+            sprite.m_patternShift1 = 0;
+            sprite.m_attribute = 0;
+            sprite.m_counter = 0;
+            sprite.m_spriteZero = 0;
+            
+            if(spriteIndex < m_secondaryOAMWrite / 4)
+            {
+                uint8_t yPos            = m_secondaryOAM[spriteIndex * 4 + 0];
+                uint8_t spriteTileId    = m_secondaryOAM[spriteIndex * 4 + 1];
+                uint8_t spriteAttribute = m_secondaryOAM[spriteIndex * 4 + 2];
+                uint8_t xPos            = m_secondaryOAM[spriteIndex * 4 + 3];
+                
+                bool bFlipH = (spriteAttribute & (1 << 6)) != 0;
+                bool bFlipV = (spriteAttribute & (1 << 7)) != 0;
+                
+                uint16_t spriteBaseAddress = 0x0000;
+                if(TestFlag(CTRL_SPRITE_TABLE_ADDR, m_ctrl))
+                {
+                    spriteBaseAddress = 0x1000;
+                }
+                
+                uint16_t spriteTileAddress = spriteBaseAddress + (uint16_t(spriteTileId) * 16);
+                uint16_t spriteAddress = spriteTileAddress + m_scanline + 1 - yPos;
+                
+                if(bFlipV)
+                {
+                    spriteAddress = spriteTileAddress + (7 - (m_scanline + 1 - yPos));
+                }
+                
+                uint8_t spritePlane0 = m_bus.ppuRead(spriteAddress);
+                uint8_t spritePlane1 = m_bus.ppuRead(spriteAddress + 8);
+                
+                if(bFlipH)
+                {
+                    auto flipBits = [&](uint8_t& byte)
+                    {
+                        uint8_t src = byte;
+                        byte = 0;
+                        for(uint8_t b = 0;b < 8;++b)
+                        {
+                            byte |= (((src & 1 << (7 - b))) ? 1 : 0) << b;
+                        }
+                    };
+                    flipBits(spritePlane0);
+                    flipBits(spritePlane1);
+                }
+                
+                sprite.m_patternLatch = 0;
+                sprite.m_patternShift0 = spritePlane0;
+                sprite.m_patternShift1 = spritePlane1;
+                sprite.m_attribute = spriteAttribute;
+                sprite.m_counter = xPos;
+                sprite.m_spriteZero =  spriteIndex == 0 && m_spriteZero == 1 ? 1 : 0;
+            }
         }
     }
 }
@@ -492,7 +575,29 @@ void PPUNES::vramVertCopy()
 
 void PPUNES::UpdateShiftRegisters()
 {
-    // TODO sprites
+    // sprites
+    if( (m_scanline >= 0 && m_scanline <= 239)  && (m_scanlineDot > 0 && m_scanlineDot <= 256))
+    {
+        for(uint8_t spriteIndex = 0;spriteIndex < 8;++spriteIndex)
+        {
+            ScanlineSprite& sprite = m_scanlineSprites[spriteIndex];
+            
+            if(sprite.m_counter > 0)
+            {
+                --sprite.m_counter;
+            }
+            else
+            {
+                uint8_t pixel0 = (sprite.m_patternShift0 & (1 << 7)) >> 7;
+                uint8_t pixel1 = (sprite.m_patternShift1 & (1 << 7)) >> 7;
+                sprite.m_patternLatch = (pixel1 << 1) | pixel0;
+                sprite.m_patternShift0 <<= 1;
+                sprite.m_patternShift1 <<= 1;
+            }
+        }
+    }
+    
+    
     // background - scanline 261 is prefetch only - norender
     if( ((m_scanline >= 0 && m_scanline <= 239) || m_scanline == 261) &&
         (m_scanlineDot > 0))
@@ -587,9 +692,6 @@ void PPUNES::UpdateShiftRegisters()
 
 void PPUNES::GenerateVideoPixel()
 {
-    uint16_t y = m_scanline;
-    uint16_t x = m_scanlineDot - 1;
-    
     uint8_t tilePalletteSelect = 0x00;
     uint8_t tileAttributePalletteSelect = 0x00;
         
@@ -612,65 +714,25 @@ void PPUNES::GenerateVideoPixel()
         
         tileAttributePalletteSelect = (attrib1 << 1) | attrib0;
     }
-
-    // Sprite - TODO change to shift registers
+    
+    // Sprite
     {
-        uint16_t spriteBaseAddress = 0x0000;
-        if(TestFlag(CTRL_SPRITE_TABLE_ADDR, m_ctrl))
+        for(uint8_t spriteIndex = 0;spriteIndex < 8;++spriteIndex)
         {
-            spriteBaseAddress = 0x1000;
-        }
-        
-        for(uint8_t idx = 0;idx < 40;idx += 5)
-        {
-            uint8_t yPos            = m_renderOAM[idx + 0];
-            uint8_t spriteTileId    = m_renderOAM[idx + 1];
-            uint8_t spriteAttribute = m_renderOAM[idx + 2];
-            uint8_t xPos            = m_renderOAM[idx + 3];
-            uint8_t spriteIndex     = m_renderOAM[idx + 4];
-
-            yPos += 1;  // Is this right?
+            ScanlineSprite& sprite = m_scanlineSprites[spriteIndex];
             
-            if(yPos != 0xFF && x >= xPos && x < xPos + 8 && y >= yPos && y < yPos + 8)
+            if(sprite.m_patternLatch != 0)
             {
-                spriteAttributePalletteSelect = spriteAttribute & 0x3;
+                spritePriority = (sprite.m_attribute & (1 << 5)) != 0 ? 0 : 1;
+                spriteAttributePalletteSelect = sprite.m_attribute & 0x3;
+                spritePalletteSelect = sprite.m_patternLatch;
+                bSpriteZero = sprite.m_spriteZero;
                 
-                spritePriority = (spriteAttribute & (1 << 5)) != 0 ? 0 : 1;
-                                    
-                bool bFlipH = (spriteAttribute & (1 << 6)) != 0;
-                bool bFlipV = (spriteAttribute & (1 << 7)) != 0;
-            
-                uint16_t spriteTileAddress = spriteBaseAddress + (uint16_t(spriteTileId) * 16);
-
-                uint16_t spriteAddress = spriteTileAddress + m_scanline - yPos;
-                if(bFlipV)
-                {
-                    spriteAddress = spriteTileAddress + (7 - (m_scanline - yPos));
-                }
-                
-                uint8_t spritePlane0 = m_bus.ppuRead(spriteAddress);
-                uint8_t spritePlane1 = m_bus.ppuRead(spriteAddress + 8);
-                
-                uint8_t spriteShift = 7 - (x - xPos);
-                if(bFlipH)
-                {
-                    spriteShift = x - xPos;
-                }
-                
-                uint8_t spritePixel0 = (spritePlane0 >> spriteShift) & 1;
-                uint8_t spritePixel1 = (spritePlane1 >> spriteShift) & 1;
-                
-                spritePalletteSelect = spritePixel0 | (spritePixel1 << 1);
-                
-                if(spritePalletteSelect != 0)
-                {
-                    bSpriteZero = spriteIndex == 0 ? 1 : 0;
-                    break;
-                }
+                break;
             }
         }
     }
-    
+
     // Multiplexer logic
     uint8_t backgroundSelect = (0 << 4) + (tileAttributePalletteSelect << 2) + (tilePalletteSelect << 0);
     uint8_t spriteSelect = (1 << 4) + (spriteAttributePalletteSelect << 2) + (spritePalletteSelect << 0);
@@ -702,8 +764,12 @@ void PPUNES::GenerateVideoPixel()
     }
     
     uint8_t palletteIndex = m_pallette[finalPalletteSelect];
+    
     if(m_pVideoOutput != nullptr)
     {
+        uint16_t y = m_scanline;
+        uint16_t x = m_scanlineDot - 1;
+  
         m_pVideoOutput[y * 256 + x] = GetPixelColour(palletteIndex);
     }
 }
@@ -826,6 +892,13 @@ void PPUNES::cpuWrite(uint8_t port, uint8_t byte)
                 // |          (0: read backdrop from EXT pins; 1: output color on EXT pins)
                 // +--------- Generate an NMI at the start of the
                 //            vertical blanking interval (0: off; 1: on)
+#if DEBUG
+                // TODO Implement 8 x 16
+                if(TestFlag(CTRL_SPRITE_SIZE, byte))
+                {
+                    *(volatile char*)(0) = 8 | 1 | 6;
+                }
+#endif
                 
                 bool bWasGenVblank = TestFlag(CTRL_GEN_VBLANK_NMI, m_ctrl);
                 
