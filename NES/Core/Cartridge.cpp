@@ -17,6 +17,7 @@ Cartridge::Cartridge(uint8_t mapperID, uint8_t const* pPakData, uint8_t nPakPrgC
 , m_nCharacterSize(0)
 {
     // TODO handle mapper ID - this is currently only for mapper 0
+    memset(m_cartVRAM, 0x00, sizeof(m_cartVRAM));
     if(m_nMapperID == 0)
     {
         m_nProgramSize = (16384 * (uint32_t)nPakPrgCount);
@@ -67,7 +68,7 @@ uint8_t Cartridge::cpuRead(uint16_t address)
             return m_pPrg[cartAddress];
         }
     }
-    return 0;
+    return 0x00;
 }
     
 void Cartridge::cpuWrite(uint16_t address, uint8_t byte)
@@ -77,25 +78,37 @@ void Cartridge::cpuWrite(uint16_t address, uint8_t byte)
         if(address >= 0x8000 && address <= 0xFFFF)
         {
             // mapper 0 logic - rom
-            //uint32_t cartAddress = (address - 0x8000) % m_nProgramSize;
-            //m_pPrg[cartAddress] = byte;
         }
     }
 }
 
 uint8_t Cartridge::ppuRead(uint16_t address)
 {
-    if(m_pChr != nullptr)
+    if(address>= 0 && address <= 0x1FFF)
     {
-        return m_pChr[address];
+        if(m_pChr != nullptr)
+        {
+            uint32_t cartAddress = address % m_nCharacterSize;
+            return m_pChr[cartAddress];
+        }
+    }
+    else if(address >= 0x2000 && address <= 0x3EFF)
+    {
+        uint32_t cartAddress = (address - 0x2000) % 4096;
+        return m_cartVRAM[cartAddress];
     }
     return address & 0xFF; // open bus low byte return
 }
 
 void Cartridge::ppuWrite(uint16_t address, uint8_t byte)
 {
-    if(m_pChr != nullptr)
+    if(address>= 0 && address <= 0x1FFF)
     {
-        // TODO
+        // cart rom
+    }
+    else if(address >= 0x2000 && address <= 0x3EFF)
+    {
+        uint32_t cartAddress = (address - 0x2000) % 4096;
+        m_cartVRAM[cartAddress] = byte;
     }
 }

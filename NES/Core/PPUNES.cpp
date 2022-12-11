@@ -391,20 +391,20 @@ uint8_t PPUNES::ppuReadAddress(uint16_t address)
         // cart pattern table
         data = m_bus.ppuRead(address);
     }
-    else if(address >= 0x2000 && address <= 0x2FFF)
+    else if(address >= 0x2000 && address <= 0x3EFF)
     {
         // name table mirrors
+        uint16_t vRamAddress = absoluteAddressToVRAMAddress(address);
         if(m_mirrorMode == VRAM_MIRROR_CART4)
         {
-            data = m_bus.ppuRead(address);
+            data = m_bus.ppuRead(vRamAddress);
         }
         else
         {
-            uint16_t vramAddress = absoluteAddressToVRAMAddress(address);
-            uint16_t vramOffset = vramAddress - 0x2000;
-            if(vramOffset <= nVRamSize)
+            uint16_t vRamOffset = vRamAddress - 0x2000;
+            if(vRamOffset < nVRamSize)
             {
-                data = m_vram[vramOffset];
+                data = m_vram[vRamOffset];
             }
 #if DEBUG
             else
@@ -437,20 +437,20 @@ void PPUNES::ppuWriteAddress(uint16_t address, uint8_t byte)
         // cart pattern table
         m_bus.ppuWrite(address, byte);
     }
-    else if(address >= 0x2000 && address <= 0x2FFF)
+    else if(address >= 0x2000 && address <= 0x3EFF)
     {
         // name table mirrors
+        uint16_t vRamAddress = absoluteAddressToVRAMAddress(address);
         if(m_mirrorMode == VRAM_MIRROR_CART4)
         {
-            m_bus.ppuWrite(address, byte);
+            m_bus.ppuWrite(vRamAddress, byte);
         }
         else
         {
-            uint16_t vramAddress = absoluteAddressToVRAMAddress(address);
-            uint16_t vramOffset = vramAddress - 0x2000;
-            if(vramOffset <= nVRamSize)
+            uint16_t vRamOffset = vRamAddress - 0x2000;
+            if(vRamOffset < nVRamSize)
             {
-                m_vram[vramOffset] = byte;
+                m_vram[vRamOffset] = byte;
             }
 #if DEBUG
             else
@@ -791,6 +791,11 @@ void PPUNES::GenerateVideoPixel()
 
 uint16_t PPUNES::absoluteAddressToVRAMAddress(uint16_t address)
 {
+    if(address >= 0x3000 && address <= 0x3EFF)
+    {
+        address -= 0x1000;
+    }
+    
     if(address >= 0x2000 && address <= 0x2FFF)
     {
         if(m_mirrorMode == VRAM_MIRROR_H)
@@ -814,6 +819,11 @@ uint16_t PPUNES::absoluteAddressToVRAMAddress(uint16_t address)
             {
                 address -= 0x0800;
             }
+        }
+        else if(m_mirrorMode == VRAM_MIRROR_CART4)
+        {
+            // no mirroring all exist on cart ram
+            // does the cart handle the 0x3000 to 0x3EFF mirror?
         }
     }
     return address;

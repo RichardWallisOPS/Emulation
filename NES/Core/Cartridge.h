@@ -30,6 +30,8 @@ private:
     uint8_t* m_pChr;
     uint32_t m_nProgramSize;
     uint32_t m_nCharacterSize;
+    
+    uint8_t m_cartVRAM[4096];   // TODO - make this generic or only when required?
 };
 
 #endif /* Cartridge_h */
