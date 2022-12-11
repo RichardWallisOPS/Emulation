@@ -1075,6 +1075,7 @@ void PPUNES::WritePatternTables()
     // Grey scaleoutput
     auto fnDrawPattenTable = [&](uint32_t* pOutputData, uint32_t xOffset, uint32_t yOffset, uint16_t baseAddress)
     {
+        uint32_t outputColours[4] = {0xFF000000, 0xFF555555, 0xFFAAAAAA, 0xFFFFFFFF};
         for(uint32_t tileX = 0;tileX < 16;++tileX)
         {
             for(uint32_t tileY = 0;tileY < 16;++tileY)
@@ -1091,10 +1092,10 @@ void PPUNES::WritePatternTables()
                         uint8_t pixel0 = (plane0 >> (7 - pX)) & 1;
                         uint8_t pixel1 = (plane1 >> (7 - pX)) & 1;
 
-                        uint8_t pixelColourLUT = 1 << 6 | pixel0 | (pixel1 << 1);
+                        uint8_t pixelColourLUT = pixel0 | (pixel1 << 1);
                         uint32_t pixelIndex = ((yOffset * 256) + xOffset) + (((tileY * 8) + pY) * 256) + ((tileX * 8) + pX);
 
-                        pOutputData[pixelIndex] = GetPixelColour(pixelColourLUT);
+                        pOutputData[pixelIndex] = outputColours[pixelColourLUT];
                     }
                 }
             }
