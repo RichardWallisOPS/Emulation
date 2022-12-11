@@ -370,7 +370,7 @@ void PPUNES::SpriteFetch()
                 sprite.m_patternShift1 = spritePlane1;
                 sprite.m_attribute = spriteAttribute;
                 sprite.m_counter = xPos;
-                sprite.m_spriteZero =  spriteIndex == 0 && m_spriteZero == 1 ? 1 : 0;
+                sprite.m_spriteZero = spriteIndex == 0 && m_spriteZero == 1 ? 1 : 0;
             }
         }
     }
@@ -406,6 +406,12 @@ uint8_t PPUNES::ppuReadAddress(uint16_t address)
             {
                 data = m_vram[vramOffset];
             }
+#if DEBUG
+            else
+            {
+                 *(volatile char*)(0) = 'V' | 'R' | 'A' | 'M';
+            }
+#endif
         }
     }
     else if(address >= 0x3F00 && address <= 0x3FFF)
@@ -446,6 +452,12 @@ void PPUNES::ppuWriteAddress(uint16_t address, uint8_t byte)
             {
                 m_vram[vramOffset] = byte;
             }
+#if DEBUG
+            else
+            {
+                 *(volatile char*)(0) = 'V' | 'R' | 'A' | 'M';
+            }
+#endif
         }
     }
     else if(address >= 0x3F00 && address <= 0x3FFF)
@@ -784,6 +796,10 @@ uint16_t PPUNES::absoluteAddressToVRAMAddress(uint16_t address)
         if(m_mirrorMode == VRAM_MIRROR_H)
         {
             if(address >= 0x2400 && address <= 0x27FF)
+            {
+                address -= 0x0400;
+            }
+            else if(address >= 0x2800 && address <= 0x2BFF)
             {
                 address -= 0x0400;
             }
