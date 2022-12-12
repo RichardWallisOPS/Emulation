@@ -198,10 +198,11 @@ void PPUNES::Tick()
         ClearFlag(STATUS_SPRITE_OVERFLOW, m_status);
     }
     
-    if(m_scanline == 0 && m_scanlineDot == 0 && TestFlag(MASK_BACKGROUND_SHOW, m_mask))
-    {
-        m_ppuAddress = m_ppuTAddress;
-    }
+    // Conflicting info - is this required
+//    if(m_scanline == 0 && m_scanlineDot == 0 && TestFlag(MASK_BACKGROUND_SHOW, m_mask))
+//    {
+//        m_ppuAddress = m_ppuTAddress;
+//    }
     
     // Main update draw, 0-239 is the visible scan lines, 261 is the pre-render line
     if(m_scanline >= 0 && m_scanline <= 239)
@@ -886,16 +887,13 @@ uint8_t PPUNES::cpuRead(uint8_t port)
                     m_ppuDataBuffer = ppuReadAddress(m_ppuAddress - 0x1000);    // Weird
                 }
                 
-                if(!TestFlag(MASK_BACKGROUND_SHOW, m_mask))
+                if(TestFlag(CTRL_VRAM_ADDRESS_INC, m_ctrl) == false)
                 {
-                    if(TestFlag(CTRL_VRAM_ADDRESS_INC, m_ctrl) == false)
-                    {
-                        m_ppuAddress += 1;
-                    }
-                    else
-                    {
-                        m_ppuAddress += 32;
-                    }
+                    m_ppuAddress += 1;
+                }
+                else
+                {
+                    m_ppuAddress += 32;
                 }
                 break;
             }
@@ -1038,16 +1036,13 @@ void PPUNES::cpuWrite(uint8_t port, uint8_t byte)
             {
                 ppuWriteAddress(m_ppuAddress, byte);
 
-                if(!TestFlag(MASK_BACKGROUND_SHOW, m_mask))
+                if(TestFlag(CTRL_VRAM_ADDRESS_INC, m_ctrl) == false)
                 {
-                    if(TestFlag(CTRL_VRAM_ADDRESS_INC, m_ctrl) == false)
-                    {
-                        m_ppuAddress += 1;
-                    }
-                    else
-                    {
-                        m_ppuAddress += 32;
-                    }
+                    m_ppuAddress += 1;
+                }
+                else
+                {
+                    m_ppuAddress += 32;
                 }
                 break;
             }
