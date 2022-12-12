@@ -53,7 +53,7 @@ public:
     void SetVideoOutputDataPtr(uint32_t* pVideoOutData);
     
     // Debug
-    void WritePatternTables();
+    void WritePPUMetaData();
 
 private:
 

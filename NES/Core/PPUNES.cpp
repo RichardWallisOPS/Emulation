@@ -198,6 +198,11 @@ void PPUNES::Tick()
         ClearFlag(STATUS_SPRITE_OVERFLOW, m_status);
     }
     
+    if(m_scanline == 0 && m_scanlineDot == 0 && TestFlag(MASK_BACKGROUND_SHOW, m_mask))
+    {
+        m_ppuAddress = m_ppuTAddress;
+    }
+    
     // Main update draw, 0-239 is the visible scan lines, 261 is the pre-render line
     if(m_scanline >= 0 && m_scanline <= 239)
     {
@@ -878,15 +883,19 @@ uint8_t PPUNES::cpuRead(uint8_t port)
                 if(m_ppuAddress >= 0x3F00 && m_ppuAddress <= 0x3FFF)
                 {
                     data = m_portLatch = m_ppuDataBuffer;
+                    m_ppuDataBuffer = ppuReadAddress(m_ppuAddress - 0x1000);    // Weird
                 }
                 
-                if(TestFlag(CTRL_VRAM_ADDRESS_INC, m_ctrl) == false)
+                if(!TestFlag(MASK_BACKGROUND_SHOW, m_mask))
                 {
-                    m_ppuAddress += 1;
-                }
-                else
-                {
-                    m_ppuAddress += 32;
+                    if(TestFlag(CTRL_VRAM_ADDRESS_INC, m_ctrl) == false)
+                    {
+                        m_ppuAddress += 1;
+                    }
+                    else
+                    {
+                        m_ppuAddress += 32;
+                    }
                 }
                 break;
             }
@@ -1013,12 +1022,13 @@ void PPUNES::cpuWrite(uint8_t port, uint8_t byte)
                 // +++----------------- fine Y scroll
                 if(m_ppuWriteToggle == 0)
                 {
-                    m_ppuTAddress = uint16_t(byte) & 0b00111111;
-                    m_ppuTAddress <<= 8;
+                    m_ppuTAddress &= ~(uint16_t(0xFF00));
+                    m_ppuTAddress |= (uint16_t(byte) << 8) & 0x3F00;
                 }
                 else
                 {
-                    m_ppuTAddress = (m_ppuTAddress & 0xFF00) | uint16_t(byte);
+                    m_ppuTAddress &= (uint16_t(0xFF00));
+                    m_ppuTAddress |= uint16_t(byte);
                     m_ppuAddress = m_ppuTAddress;
                 }
                 m_ppuWriteToggle = m_ppuWriteToggle == 0 ? 1 : 0;
@@ -1028,13 +1038,16 @@ void PPUNES::cpuWrite(uint8_t port, uint8_t byte)
             {
                 ppuWriteAddress(m_ppuAddress, byte);
 
-                if(TestFlag(CTRL_VRAM_ADDRESS_INC, m_ctrl) == false)
+                if(!TestFlag(MASK_BACKGROUND_SHOW, m_mask))
                 {
-                    m_ppuAddress += 1;
-                }
-                else
-                {
-                    m_ppuAddress += 32;
+                    if(TestFlag(CTRL_VRAM_ADDRESS_INC, m_ctrl) == false)
+                    {
+                        m_ppuAddress += 1;
+                    }
+                    else
+                    {
+                        m_ppuAddress += 32;
+                    }
                 }
                 break;
             }
@@ -1059,7 +1072,7 @@ uint32_t PPUNES::GetPixelColour(uint32_t palletteIndex)
     return (0xFF << 24) + (r << 16) + (g << 8) + (b << 0);
 }
 
-void PPUNES::WritePatternTables()
+void PPUNES::WritePPUMetaData()
 {
 //    DCBA98 76543210
 //    ---------------
@@ -1106,5 +1119,34 @@ void PPUNES::WritePatternTables()
     {
         fnDrawPattenTable(m_pVideoOutput, 0, 0, 0x0000);
         fnDrawPattenTable(m_pVideoOutput, 128, 0, 0x1000);
+    }
+    const uint32_t NameTableElementSize = 2;
+    
+    auto fnDrawNameTable = [&](uint32_t* pOutputData, uint32_t xOffset, uint32_t yOffset, uint16_t baseAddress)
+    {
+        for(uint32_t tileX = 0;tileX < 32;++tileX)
+        {
+            for(uint32_t tileY = 0;tileY < 30;++tileY)
+            {
+                uint16_t vramAddress = absoluteAddressToVRAMAddress((baseAddress + (tileY * 32 + tileX)));
+                uint16_t vramOffset = vramAddress - 0x2000;
+                uint8_t index = m_vram[vramOffset];
+                uint32_t pixelColor = 0xFF000000 + (index << 16);
+                
+                for(uint32_t pX = 0;pX < NameTableElementSize;++pX)
+                {
+                    for(uint32_t pY = 0;pY < NameTableElementSize;++pY)
+                    {
+                        uint32_t pixelIndex = ((yOffset * 256) + xOffset) + (((tileY * NameTableElementSize) + pX) * 256) + ((tileX * NameTableElementSize) + pY);
+                        pOutputData[pixelIndex] = pixelColor;
+                    }
+                }
+            }
+        }
+    };
+    if(m_pVideoOutput != nullptr)
+    {
+        fnDrawNameTable(m_pVideoOutput, 0, 128, 0x2000);
+        fnDrawNameTable(m_pVideoOutput, NameTableElementSize * 32, 128, 0x2400);
     }
 }

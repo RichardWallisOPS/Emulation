@@ -32,6 +32,7 @@ private:
     uint32_t m_nCharacterSize;
     
     uint8_t m_cartVRAM[4096];   // TODO - make this generic or only when required?
+    uint8_t m_cartCHRRAM[8192]; // Allow homebrew
 };
 
 #endif /* Cartridge_h */

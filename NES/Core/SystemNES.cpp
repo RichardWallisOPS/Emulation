@@ -333,5 +333,5 @@ void SystemNES::SetCPUProgramCounter(uint16_t pc)
 
 void SystemNES::WritePPUMetaData()
 {
-    m_ppu.WritePatternTables();
+    m_ppu.WritePPUMetaData();
 }
