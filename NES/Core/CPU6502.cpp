@@ -721,16 +721,6 @@ void CPU6502::SBC(uint8_t Tn)
     m_dataBus = ~m_dataBus;
     ADC(Tn);
     m_dataBus = ~m_dataBus;
-//    uint8_t u8Carry = (m_flags & Flag_Carry) != 0 ? 1 : 0;
-//    int16_t s16Result =  int16_t(m_a) - int16_t(m_dataBus) - int16_t(u8Carry);
-//    int16_t s8_16Result = int16_t(int8_t(m_a)) - int16_t(int8_t(m_dataBus)) - int16_t(int8_t(u8Carry));
-//
-//    m_a = m_a - m_dataBus - u8Carry;
-//
-//    ConditionalSetFlag(Flag_Zero, m_a == 0);
-//    ConditionalSetFlag(Flag_Carry, s16Result < 0);
-//    ConditionalSetFlag(Flag_Negative, (m_a & (1 << 7)) != 0);
-//    ConditionalSetFlag(Flag_Overflow, s8_16Result > 127 || s8_16Result < -128);
 }
 
 void CPU6502::AND(uint8_t Tn)
@@ -1238,6 +1228,7 @@ bool CPU6502::Store_indY(uint8_t Tn)
 void CPU6502::PHP(uint8_t Tn)
 {
     m_dataBus = m_flags;
+    m_dataBus |= Flag_Unused;
 }
 
 void CPU6502::PHA(uint8_t Tn)
@@ -1249,6 +1240,7 @@ void CPU6502::PLP(uint8_t Tn)
 {
     m_flags = m_dataBus;
     ClearFlag(Flag_Break);
+    ClearFlag(Flag_Unused);
 }
 
 void CPU6502::PLA(uint8_t Tn)

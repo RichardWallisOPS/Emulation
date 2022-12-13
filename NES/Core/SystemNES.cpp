@@ -193,7 +193,8 @@ void SystemNES::Tick()
         }
 
         // DMA handling
-        if(m_DMAMode != DMA_OFF)
+        //if(m_DMAMode != DMA_OFF)  // alternating tick
+        while(m_DMAMode != DMA_OFF) // all at once
         {
             if(m_DMAMode == DMA_READ)
             {
@@ -326,11 +327,6 @@ void SystemNES::SetVideoOutputDataPtr(uint32_t* pVideoOutData)
 }
 
 // Debug
-void SystemNES::SetCPUProgramCounter(uint16_t pc)
-{
-    m_cpu.SetPC(pc);
-}
-
 void SystemNES::WritePPUMetaData()
 {
     m_ppu.WritePPUMetaData();

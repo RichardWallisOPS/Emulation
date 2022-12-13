@@ -220,13 +220,13 @@ void PPUNES::Tick()
         }
         else if(m_scanlineDot >= 257 && m_scanlineDot <= 320)
         {
+            m_oamAddress = 0;
             SpriteFetch();
 
             // TODO check these
             if(m_scanlineDot == 320)
             {
                 m_secondaryOAMWrite = 0;
-                m_oamAddress = 0;
                 m_spriteZero = 0xFF;
             }
         }
@@ -848,7 +848,7 @@ uint8_t PPUNES::cpuRead(uint8_t port)
                 break;
             case PPUSTATUS: // 2002
             {
-                data = m_portLatch = m_status;
+                data = m_portLatch = (m_status & 0b11100000) | (m_portLatch & 0b00011111);
                 ClearFlag(STATUS_VBLANK, m_status);
                 m_ppuWriteToggle = 0;
                 break;
@@ -1125,7 +1125,7 @@ void PPUNES::WritePPUMetaData()
             {
                 uint16_t vramAddress = absoluteAddressToVRAMAddress((baseAddress + (tileY * 32 + tileX)));
                 uint16_t vramOffset = vramAddress - 0x2000;
-                uint8_t index = m_vram[vramOffset];
+                uint8_t index = m_vram[vramOffset] * 2;
                 uint32_t pixelColor = 0xFF000000 + (index << 16);
                 
                 for(uint32_t pX = 0;pX < NameTableElementSize;++pX)

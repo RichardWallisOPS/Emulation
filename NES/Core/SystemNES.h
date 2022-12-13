@@ -63,7 +63,6 @@ public:
     void SetControllerButtonState(uint8_t port, ControllerButton Button, bool bSet);
     
     // Debug
-    void SetCPUProgramCounter(uint16_t pc);
     void WritePPUMetaData();
     
 private:
