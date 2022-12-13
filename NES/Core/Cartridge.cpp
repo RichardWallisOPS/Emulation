@@ -17,7 +17,6 @@ Cartridge::Cartridge(uint8_t mapperID, uint8_t const* pPakData, uint8_t nPakPrgC
 , m_pPakData(nullptr)
 {
     memset(m_cartVRAM, 0x00, sizeof(m_cartVRAM));
-    memset(m_cartCHRRAM, 0x00, sizeof(m_cartCHRRAM));
     
     uint32_t nProgramSize = (16384 * (uint32_t)nPakPrgCount);
     uint32_t nCharacterSize = (8192 * (uint32_t)nPakChrCount);
@@ -86,10 +85,6 @@ uint8_t Cartridge::ppuRead(uint16_t address)
         {
             return m_pMapper->ppuRead(address);
         }
-        else
-        {
-            return m_cartCHRRAM[address];
-        }
     }
     else if(address >= 0x2000 && address <= 0x3EFF)
     {
@@ -103,7 +98,10 @@ void Cartridge::ppuWrite(uint16_t address, uint8_t byte)
 {
     if(address>= 0 && address <= 0x1FFF)
     {
-        m_cartCHRRAM[address] = byte;
+        if(m_pMapper != nullptr)
+        {
+            m_pMapper->ppuWrite(address, byte);
+        }
     }
     else if(address >= 0x2000 && address <= 0x3EFF)
     {

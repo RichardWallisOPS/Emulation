@@ -16,8 +16,8 @@ public:
     Mapper(uint8_t* pPrg, uint32_t nProgramSize, uint8_t* pChr, uint32_t nCharacterSize)
     : m_pPrg(pPrg)
     , m_pChr(pChr)
-    , m_nProgramSize(nProgramSize)
-    , m_nCharacterSize(nCharacterSize)
+    , m_nProgramROMSize(nProgramSize)
+    , m_nCharacterROMSize(nCharacterSize)
     {}
     
     virtual ~Mapper() {}
@@ -26,8 +26,8 @@ protected:
 
     uint8_t* m_pPrg;
     uint8_t* m_pChr;
-    uint32_t m_nProgramSize;
-    uint32_t m_nCharacterSize;
+    uint32_t m_nProgramROMSize;
+    uint32_t m_nCharacterROMSize;
 };
 
 class Cartridge : public IOBus
@@ -47,8 +47,7 @@ private:
     Mapper* m_pMapper;
     uint8_t* m_pPakData;
         
-    uint8_t m_cartVRAM[4096];   // TODO - make this generic or only when required?
-    uint8_t m_cartCHRRAM[8192]; // Allow homebrew
+    uint8_t m_cartVRAM[4096];
 };
 
 #endif /* Cartridge_h */
