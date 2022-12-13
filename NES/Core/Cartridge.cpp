@@ -7,80 +7,71 @@
 
 #include "Cartridge.h"
 #include <string>
+#include "Mappers/CartMapper_0.h"
 
 Cartridge::Cartridge(uint8_t mapperID, uint8_t const* pPakData, uint8_t nPakPrgCount, uint8_t nPakChrCount)
-: m_nMapperID(mapperID)
+: m_pMapper(nullptr)
 , m_pPakData(nullptr)
-, m_pPrg(nullptr)
-, m_pChr(nullptr)
-, m_nProgramSize(0)
-, m_nCharacterSize(0)
 {
     memset(m_cartVRAM, 0x00, sizeof(m_cartVRAM));
     memset(m_cartCHRRAM, 0x00, sizeof(m_cartCHRRAM));
     
-    // TODO handle mapper ID - this is currently only for mapper 0
-    if(m_nMapperID == 0)
+    uint32_t nProgramSize = (16384 * (uint32_t)nPakPrgCount);
+    uint32_t nCharacterSize = (8192 * (uint32_t)nPakChrCount);
+    
+    const uint32_t nCartDataSize = nProgramSize + nCharacterSize;
+        
+    m_pPakData = new uint8_t[nCartDataSize];
+    memcpy(m_pPakData, pPakData, nCartDataSize);
+    
+    uint8_t* pPrg = m_pPakData + 0;
+    uint8_t* pChr = m_pPakData + nProgramSize;
+    
+    // TODO: a better way, mapper factory
+    if(mapperID == 0)
     {
-        m_nProgramSize = (16384 * (uint32_t)nPakPrgCount);
-        m_nCharacterSize = (8192 * (uint32_t)nPakChrCount);
-        
-        const uint32_t nCartDataSize = m_nProgramSize + m_nCharacterSize;
-        
-        m_pPakData = new uint8_t[nCartDataSize];
-        m_pPrg = m_pPakData + 0;
-        m_pChr = m_pPakData + m_nProgramSize;
-        
-        memcpy(m_pPakData, pPakData, nCartDataSize);
+        m_pMapper = new CartMapper_0(pPrg, nProgramSize, pChr, nCharacterSize);
+    }
+    else if(mapperID == 2)
+    {
+        m_pMapper = new CartMapper_2(pPrg, nProgramSize, pChr, nCharacterSize);
     }
 }
 
 Cartridge::~Cartridge()
 {
+    if(m_pMapper != nullptr)
+    {
+        delete m_pMapper;
+        m_pMapper = nullptr;
+    }
+    
     if(m_pPakData != nullptr)
     {
         delete [] m_pPakData;
         m_pPakData = nullptr;
     }
-    
-    m_pPrg = nullptr;
-    m_pChr = nullptr;
-    m_nProgramSize = 0;
-    m_nCharacterSize = 0;
 }
 
 bool Cartridge::IsValid() const
 {
-    // TODO
-    return m_pPakData != nullptr;
+    return m_pMapper != nullptr;
 }
 
 uint8_t Cartridge::cpuRead(uint16_t address)
 {
-    if(m_pPrg != nullptr)
+    if(m_pMapper != nullptr)
     {
-        if(address >= 0x4020 && address <= 0x7FFF)
-        {
-            //
-        }
-        else if(address >= 0x8000 && address <= 0xFFFF)
-        {
-            // mapper 0 logic
-            uint32_t cartAddress = (address - 0x8000) % m_nProgramSize;
-            return m_pPrg[cartAddress];
-        }
+        return m_pMapper->cpuRead(address);
     }
     return 0x00;
 }
     
 void Cartridge::cpuWrite(uint16_t address, uint8_t byte)
 {
-    if(m_pPrg != nullptr)
+    if(m_pMapper != nullptr)
     {
-        if(address >= 0x8000 && address <= 0xFFFF)
-        {
-            // mapper 0 logic - rom
-        }
+        return m_pMapper->cpuWrite(address, byte);
     }
 }
 
@@ -88,10 +79,9 @@ uint8_t Cartridge::ppuRead(uint16_t address)
 {
     if(address>= 0 && address <= 0x1FFF)
     {
-        if(m_pChr != nullptr && m_nCharacterSize > 0)
+        if(m_pMapper != nullptr)
         {
-            uint32_t cartAddress = address % m_nCharacterSize;
-            return m_pChr[cartAddress];
+            return m_pMapper->ppuRead(address);
         }
         else
         {
