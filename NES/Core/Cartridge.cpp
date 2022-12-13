@@ -5,9 +5,12 @@
 //  Created by richardwallis on 15/11/2022.
 //
 
-#include "Cartridge.h"
 #include <string>
+
+#include "Cartridge.h"
+
 #include "Mappers/CartMapper_0.h"
+#include "Mappers/CartMapper_2.h"
 
 Cartridge::Cartridge(uint8_t mapperID, uint8_t const* pPakData, uint8_t nPakPrgCount, uint8_t nPakChrCount)
 : m_pMapper(nullptr)

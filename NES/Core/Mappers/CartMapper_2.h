@@ -1,12 +1,12 @@
 //
-//  CartMapper_0.h
+//  CartMapper_2.h
 //  NES
 //
 //  Created by Richard Wallis on 13/12/2022.
 //
 
-#ifndef CartMapper_0_h
-#define CartMapper_0_h
+#ifndef CartMapper_2_h
+#define CartMapper_2_h
 
 #include "Cartridge.h"
 
@@ -24,4 +24,4 @@ private:
     uint8_t m_bankSelect;
 };
 
-#endif /* CartMapper_0_h */
+#endif /* CartMapper_2_h */
