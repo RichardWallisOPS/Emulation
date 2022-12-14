@@ -35,9 +35,6 @@ public:
     void SignalNMI(bool bSignal);
     void SignalIRQ(bool bSignal);
     
-    // Debug
-    void SetPC(uint16_t pc);
-    
 private:
 
     void SetFlag(uint8_t flag);

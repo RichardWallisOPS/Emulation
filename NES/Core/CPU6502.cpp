@@ -141,11 +141,6 @@ void CPU6502::Reset()
     m_bSignalReset = true;
 }
 
-void CPU6502::SetPC(uint16_t pc)
-{
-    m_pc = pc;
-}
-
 uint8_t CPU6502::addressBusReadByte()
 {
     uint16_t address = uint16FromRegisterPair(m_addressBusH, m_addressBusL);
