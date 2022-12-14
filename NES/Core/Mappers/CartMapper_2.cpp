@@ -15,7 +15,7 @@ CartMapper_2::CartMapper_2(uint8_t* pPrg, uint32_t nProgramSize, uint8_t* pChr, 
 
 uint8_t CartMapper_2::cpuRead(uint16_t address)
 {
-    if(m_pPrg != nullptr&& m_nProgramROMSize > 0)
+    if(m_pPrg != nullptr && m_nProgramROMSize > 0)
     {
         const uint32_t bankSize = 0x4000; 
         

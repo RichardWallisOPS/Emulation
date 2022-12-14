@@ -278,13 +278,12 @@ void PPUNES::ClearSecondaryOAM()
 void PPUNES::SpriteEvaluation()
 {
     // Odd data read even data write
-    // TODO: this is only for 8x8 sprites
     if(m_scanlineDot >= 65 && m_scanlineDot <= 256)
     {
         if(m_scanlineDot % 2 == 0)
         {
             uint8_t spriteTop = m_primaryOAM[m_oamAddress];
-            uint8_t spriteBottom = spriteTop + 7;
+            uint8_t spriteBottom = spriteTop + (TestFlag(CTRL_SPRITE_SIZE, m_ctrl) ? 15 : 7);
             
             if(m_scanline >= spriteTop && m_scanline <= spriteBottom)
             {
@@ -339,13 +338,35 @@ void PPUNES::SpriteFetch()
                 bool bFlipH = (spriteAttribute & (1 << 6)) != 0;
                 bool bFlipV = (spriteAttribute & (1 << 7)) != 0;
                 
-                uint16_t spriteBaseAddress = 0x0000;
-                if(TestFlag(CTRL_SPRITE_TABLE_ADDR, m_ctrl))
+                uint16_t spriteTileAddress = 0;
+                if(TestFlag(CTRL_SPRITE_SIZE, m_ctrl))
                 {
-                    spriteBaseAddress = 0x1000;
+                    uint16_t top = (uint16_t(spriteTileId & 1) << 8) + uint16_t(spriteTileId ^ 1);
+                    uint16_t bottom = top + 16;
+                    
+                    if(bFlipV)
+                    {
+                        uint16_t swap = bottom;
+                        bottom = top;
+                        top = swap;
+                    }
+                    
+                    spriteTileAddress = top;
+                    if(yPos - m_scanline > 7)
+                    {
+                        spriteTileAddress = bottom;
+                    }
+                }
+                else
+                {
+                    uint16_t spriteBaseAddress = 0x0000;
+                    if(TestFlag(CTRL_SPRITE_TABLE_ADDR, m_ctrl))
+                    {
+                        spriteBaseAddress = 0x1000;
+                    }
+                    spriteTileAddress = spriteBaseAddress + (uint16_t(spriteTileId) * 16);
                 }
                 
-                uint16_t spriteTileAddress = spriteBaseAddress + (uint16_t(spriteTileId) * 16);
                 uint16_t spriteAddress = spriteTileAddress + m_scanline - yPos;
                 
                 if(bFlipV)
@@ -932,7 +953,8 @@ void PPUNES::cpuWrite(uint8_t port, uint8_t byte)
                 // TODO Implement 8 x 16
                 if(TestFlag(CTRL_SPRITE_SIZE, byte))
                 {
-                    *(volatile char*)(0) = 8 | 1 | 6;
+                    printf("Sprite 8x16 mode");
+                    //*(volatile char*)(0) = 8 | 1 | 6;
                 }
 #endif
                 
