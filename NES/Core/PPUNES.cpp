@@ -341,9 +341,21 @@ void PPUNES::SpriteFetch()
                 uint16_t spriteTileAddress = 0;
                 if(TestFlag(CTRL_SPRITE_SIZE, m_ctrl))
                 {
-                    uint16_t top = (uint16_t(spriteTileId & 1) << 8) + uint16_t(spriteTileId ^ 1);
+                    // 8 x 16 sprite size
+                    
+                    // LSB (i.e. odd/even) gives pattern table
+                    uint16_t spriteBaseAddress = 0x0000;
+                    if((spriteTileId & 1) != 0)
+                    {
+                        spriteBaseAddress = 0x1000;
+                    }
+                    
+                    // Bottom is next tile, add 16 bytes
+                    uint16_t top = spriteBaseAddress + (uint16_t(spriteTileId & 0b11111110) * 16);
                     uint16_t bottom = top + 16;
                     
+                    // If its flipped then bottom becomes top
+                    // Bit flipping is generic below for both 8 or 16 tall sprites
                     if(bFlipV)
                     {
                         uint16_t swap = bottom;
@@ -352,13 +364,17 @@ void PPUNES::SpriteFetch()
                     }
                     
                     spriteTileAddress = top;
-                    if(yPos - m_scanline > 7)
+                    
+                    // scanline is into the bottom part of the sprite
+                    if(m_scanline - yPos > 7)
                     {
                         spriteTileAddress = bottom;
+                        yPos += 8;
                     }
                 }
                 else
                 {
+                    // 8 x 8 sprite size
                     uint16_t spriteBaseAddress = 0x0000;
                     if(TestFlag(CTRL_SPRITE_TABLE_ADDR, m_ctrl))
                     {
@@ -367,15 +383,15 @@ void PPUNES::SpriteFetch()
                     spriteTileAddress = spriteBaseAddress + (uint16_t(spriteTileId) * 16);
                 }
                 
-                uint16_t spriteAddress = spriteTileAddress + m_scanline - yPos;
+                uint16_t spriteLineAddress = spriteTileAddress + m_scanline - yPos;
                 
                 if(bFlipV)
                 {
-                    spriteAddress = spriteTileAddress + (7 - (m_scanline - yPos));
+                    spriteLineAddress = spriteTileAddress + (7 - (m_scanline - yPos));
                 }
                 
-                uint8_t spritePlane0 = m_bus.ppuRead(spriteAddress);
-                uint8_t spritePlane1 = m_bus.ppuRead(spriteAddress + 8);
+                uint8_t spritePlane0 = m_bus.ppuRead(spriteLineAddress);
+                uint8_t spritePlane1 = m_bus.ppuRead(spriteLineAddress + 8);
                 
                 if(bFlipH)
                 {
@@ -949,15 +965,6 @@ void PPUNES::cpuWrite(uint8_t port, uint8_t byte)
                 // |          (0: read backdrop from EXT pins; 1: output color on EXT pins)
                 // +--------- Generate an NMI at the start of the
                 //            vertical blanking interval (0: off; 1: on)
-#if DEBUG
-                // TODO Implement 8 x 16
-                if(TestFlag(CTRL_SPRITE_SIZE, byte))
-                {
-                    printf("Sprite 8x16 mode");
-                    //*(volatile char*)(0) = 8 | 1 | 6;
-                }
-#endif
-                
                 bool bWasGenVblank = TestFlag(CTRL_GEN_VBLANK_NMI, m_ctrl);
                 
                 m_ctrl = byte;
