@@ -8,9 +8,7 @@
 #include <string>
 
 #include "Cartridge.h"
-
-#include "Mappers/CartMapper_0.h"
-#include "Mappers/CartMapper_2.h"
+#include "Mappers/CartMapperFactory.h"
 
 Cartridge::Cartridge(uint8_t mapperID, uint8_t const* pPakData, uint8_t nPakPrgCount, uint8_t nPakChrCount)
 : m_pMapper(nullptr)
@@ -29,15 +27,7 @@ Cartridge::Cartridge(uint8_t mapperID, uint8_t const* pPakData, uint8_t nPakPrgC
     uint8_t* pPrg = m_pPakData + 0;
     uint8_t* pChr = m_pPakData + nProgramSize;
     
-    // TODO: a better way, mapper factory
-    if(mapperID == 0)
-    {
-        m_pMapper = new CartMapper_0(pPrg, nProgramSize, pChr, nCharacterSize);
-    }
-    else if(mapperID == 2)
-    {
-        m_pMapper = new CartMapper_2(pPrg, nProgramSize, pChr, nCharacterSize);
-    }
+    m_pMapper = CartMapper::CreateMapper(mapperID, pPrg, nProgramSize, pChr, nCharacterSize);
 }
 
 Cartridge::~Cartridge()

@@ -38,10 +38,7 @@ public:
     
     bool IsValid() const;
     
-    virtual uint8_t cpuRead(uint16_t address) override;
-    virtual void cpuWrite(uint16_t address, uint8_t byte) override;
-    virtual uint8_t ppuRead(uint16_t address) override;
-    virtual void ppuWrite(uint16_t address, uint8_t byte) override;
+    BUS_HEADER_IMPL
     
 private:
     Mapper* m_pMapper;
