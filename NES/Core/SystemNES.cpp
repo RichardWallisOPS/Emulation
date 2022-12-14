@@ -65,22 +65,22 @@ void SystemNES::PowerOn()
 
 void SystemNES::Reset()
 {
-    m_cycleCount = 0;
-    m_dmaAddress = 0xFFFF;
-    m_DMAMode = DMA_OFF;
-    
-    m_ppu.Reset();
-    m_cpu.Reset();
-    
-    m_controller1 = 0;
-    m_controller2 = 0;
-    m_controllerLatch1 = 0;
-    m_controllerLatch2 = 0;
-    
-    // ram does not change on reset
-    
-    // TODO apu registers on reset
-    memset(m_apuRegisters, 0x00, nAPURegisterCount);
+//    m_cycleCount = 0;
+//    m_dmaAddress = 0xFFFF;
+//    m_DMAMode = DMA_OFF;
+//    
+//    m_ppu.Reset();
+//    m_cpu.Reset();
+//    
+//    m_controller1 = 0;
+//    m_controller2 = 0;
+//    m_controllerLatch1 = 0;
+//    m_controllerLatch2 = 0;
+//    
+//    // ram does not change on reset
+//    
+//    // TODO apu registers on reset
+//    memset(m_apuRegisters, 0x00, nAPURegisterCount);
     
     SignalReset(true);
 }

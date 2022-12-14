@@ -77,6 +77,10 @@ BOOL g_showDebugInfo = NO;
     {
         g_showDebugInfo = !g_showDebugInfo;
     }
+    else if(event.keyCode == 53) // esc
+    {
+         g_NESConsole.Reset();
+    }
 }
 
 - (void) keyUp:(NSEvent *)event
