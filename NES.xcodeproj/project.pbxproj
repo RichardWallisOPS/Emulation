@@ -15,6 +15,7 @@
 		A17210F829241DB60055A57A /* CPU6502.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A17210F629241DB60055A57A /* CPU6502.cpp */; };
 		A172110D292424E50055A57A /* PPUNES.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A172110B292424E50055A57A /* PPUNES.cpp */; };
 		A172111A292434130055A57A /* Cartridge.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A1721119292434130055A57A /* Cartridge.cpp */; };
+		A1733DB4294BBE9200D1B296 /* CartMapper_66.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A1733DB2294BBE9200D1B296 /* CartMapper_66.cpp */; };
 		A175D4C3294A019F0073E3D6 /* CartMapperFactory.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A175D4C2294A019F0073E3D6 /* CartMapperFactory.cpp */; };
 		A19FF263294B5BA800B4DCD1 /* CartMapper_1.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A19FF262294B5BA800B4DCD1 /* CartMapper_1.cpp */; };
 		A1D57EED1DDB715200CA09B7 /* AppDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = A1D57EEC1DDB715200CA09B7 /* AppDelegate.m */; };
@@ -42,6 +43,8 @@
 		A1721113292427240055A57A /* Cartridge.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Cartridge.h; sourceTree = "<group>"; };
 		A1721114292427380055A57A /* IOBus.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = IOBus.h; sourceTree = "<group>"; };
 		A1721119292434130055A57A /* Cartridge.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = Cartridge.cpp; sourceTree = "<group>"; };
+		A1733DB2294BBE9200D1B296 /* CartMapper_66.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = CartMapper_66.cpp; sourceTree = "<group>"; };
+		A1733DB3294BBE9200D1B296 /* CartMapper_66.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = CartMapper_66.h; sourceTree = "<group>"; };
 		A175D4C1294A01830073E3D6 /* CartMapperFactory.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = CartMapperFactory.h; sourceTree = "<group>"; };
 		A175D4C2294A019F0073E3D6 /* CartMapperFactory.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = CartMapperFactory.cpp; sourceTree = "<group>"; };
 		A19FF261294B5B8700B4DCD1 /* CartMapper_1.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = CartMapper_1.h; sourceTree = "<group>"; };
@@ -81,6 +84,8 @@
 				A19FF262294B5BA800B4DCD1 /* CartMapper_1.cpp */,
 				A1255BD92948D8140034E9F1 /* CartMapper_2.h */,
 				A1255BDA2948D82A0034E9F1 /* CartMapper_2.cpp */,
+				A1733DB3294BBE9200D1B296 /* CartMapper_66.h */,
+				A1733DB2294BBE9200D1B296 /* CartMapper_66.cpp */,
 			);
 			path = Mappers;
 			sourceTree = "<group>";
@@ -227,6 +232,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				A1ED07801DDBA72C00697B8C /* MetalRenderer.mm in Sources */,
+				A1733DB4294BBE9200D1B296 /* CartMapper_66.cpp in Sources */,
 				A1526480292A9DD60015068B /* CPU6502_InstructionDefTable.cpp in Sources */,
 				A19FF263294B5BA800B4DCD1 /* CartMapper_1.cpp in Sources */,
 				A1255BDB2948D82A0034E9F1 /* CartMapper_2.cpp in Sources */,
