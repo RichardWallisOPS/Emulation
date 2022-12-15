@@ -18,6 +18,12 @@ public:
     BUS_HEADER_IMPL
 private:
 
+    uint8_t m_shiftRegister;
+    uint8_t m_shiftCount;
+    uint8_t m_ctrl;
+    uint8_t m_chrBank0;
+    uint8_t m_chrBank1;
+    uint8_t m_prgBank;
 };
 
 
