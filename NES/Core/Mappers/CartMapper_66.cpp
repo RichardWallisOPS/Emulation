@@ -8,8 +8,8 @@
 
 #include "CartMapper_66.h"
 
-CartMapper_66::CartMapper_66(uint8_t* pPrg, uint32_t nProgramSize, uint8_t* pChr, uint32_t nCharacterSize)
-: Mapper(pPrg, nProgramSize, pChr, nCharacterSize)
+CartMapper_66::CartMapper_66(IOBus& bus, uint8_t* pPrg, uint32_t nProgramSize, uint8_t* pChr, uint32_t nCharacterSize)
+: Mapper(bus, pPrg, nProgramSize, pChr, nCharacterSize)
 , m_bankSelect(0)
 {}
 

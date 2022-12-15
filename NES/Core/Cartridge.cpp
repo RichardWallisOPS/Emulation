@@ -10,8 +10,9 @@
 #include "Cartridge.h"
 #include "Mappers/CartMapperFactory.h"
 
-Cartridge::Cartridge(uint8_t mapperID, uint8_t const* pPakData, uint8_t nPakPrgCount, uint8_t nPakChrCount)
-: m_pMapper(nullptr)
+Cartridge::Cartridge(IOBus& bus, uint8_t mapperID, MirrorMode mirrorMode, uint8_t const* pPakData, uint8_t nPakPrgCount, uint8_t nPakChrCount)
+: m_mirrorMode(mirrorMode)
+, m_pMapper(nullptr)
 , m_pPakData(nullptr)
 {
     memset(m_cartVRAM, 0x00, sizeof(m_cartVRAM));
@@ -26,8 +27,12 @@ Cartridge::Cartridge(uint8_t mapperID, uint8_t const* pPakData, uint8_t nPakPrgC
     
     uint8_t* pPrg = m_pPakData + 0;
     uint8_t* pChr = m_pPakData + nProgramSize;
+
+    // Mirror mode for cart wiring
+    bus.SetMirrorMode(mirrorMode);
     
-    m_pMapper = CartMapper::CreateMapper(mapperID, pPrg, nProgramSize, pChr, nCharacterSize);
+    // Mappers can do their own mirror modes
+    m_pMapper = CartMapper::CreateMapper(bus, mapperID, pPrg, nProgramSize, pChr, nCharacterSize);
 }
 
 Cartridge::~Cartridge()

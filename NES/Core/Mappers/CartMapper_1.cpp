@@ -7,8 +7,8 @@
 
 #include "CartMapper_1.h"
 
-CartMapper_1::CartMapper_1(uint8_t* pPrg, uint32_t nProgramSize, uint8_t* pChr, uint32_t nCharacterSize)
-: Mapper(pPrg, nProgramSize, pChr, nCharacterSize)
+CartMapper_1::CartMapper_1(IOBus& bus,uint8_t* pPrg, uint32_t nProgramSize, uint8_t* pChr, uint32_t nCharacterSize)
+: Mapper(bus, pPrg, nProgramSize, pChr, nCharacterSize)
 , m_shiftRegister(0)
 , m_shiftCount(0)
 , m_ctrl(0)

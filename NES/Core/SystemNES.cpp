@@ -135,14 +135,11 @@ bool SystemNES::InsertCartridge(void const* pData, uint32_t dataSize)
     }
     
     // VRAM Name table mirror mode
-    {
-        MirrorMode vramMirror = (pHeader->m_flags6 & 1) == 0 ? VRAM_MIRROR_H : VRAM_MIRROR_V;
-        vramMirror = (pHeader->m_flags6 & 1 << 3) != 0 ? VRAM_MIRROR_CART4 : vramMirror;
-        m_ppu.SetMirrorMode(vramMirror);
-    }
+    MirrorMode vramMirror = (pHeader->m_flags6 & 1) == 0 ? VRAM_MIRROR_H : VRAM_MIRROR_V;
+    vramMirror = (pHeader->m_flags6 & 1 << 3) != 0 ? VRAM_MIRROR_CART4 : vramMirror;
     
     uint8_t mapperID = (pHeader->m_flags7 & 0xF0) | ((pHeader->m_flags6 & 0xF0) >> 4);
-    m_pCart = new Cartridge(mapperID, pCartData, pHeader->m_prg16KChunks, pHeader->m_chr8KChunks);
+    m_pCart = new Cartridge(*this, mapperID, vramMirror, pCartData, pHeader->m_prg16KChunks, pHeader->m_chr8KChunks);
     
     return m_pCart != nullptr && m_pCart->IsValid();
 }
@@ -160,6 +157,11 @@ void SystemNES::SignalNMI(bool bSignal)
 void SystemNES::SignalIRQ(bool bSignal)
 {
     m_cpu.SignalIRQ(bSignal);
+}
+
+void SystemNES::SetMirrorMode(MirrorMode mode)
+{
+    m_ppu.SetMirrorMode(mode);
 }
 
 void SystemNES::SetControllerButtonState(uint8_t port, ControllerButton Button, bool bSet)

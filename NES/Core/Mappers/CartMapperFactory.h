@@ -12,7 +12,7 @@
 
 namespace CartMapper
 {
-    Mapper* CreateMapper(uint8_t mapperID, uint8_t* pPrg, uint32_t nProgramSize, uint8_t* pChr, uint32_t nCharacterSize);
+    Mapper* CreateMapper(IOBus& bus, uint8_t mapperID, uint8_t* pPrg, uint32_t nProgramSize, uint8_t* pChr, uint32_t nCharacterSize);
 };
 
 #endif /* CartMapperFactory_h */

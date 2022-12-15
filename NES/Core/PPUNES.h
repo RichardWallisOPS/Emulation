@@ -24,13 +24,6 @@ enum PortRegisterID :uint8_t
     PortRegister_Count
 };
 
-enum MirrorMode : uint8_t
-{
-    VRAM_MIRROR_H = 0,
-    VRAM_MIRROR_V,
-    VRAM_MIRROR_CART4
-};
-
 class PPUNES
 {
 public:
