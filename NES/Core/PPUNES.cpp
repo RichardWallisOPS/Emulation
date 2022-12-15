@@ -8,18 +8,6 @@
 #include <stdio.h>
 #include <string.h>
 
-// PPU memory map
-// Range        Size    Description
-// $0000-$0FFF 	$1000 	Pattern table 0 - cart
-// $1000-$1FFF 	$1000 	Pattern table 1 - cart
-// $2000-$23FF 	$0400 	Nametable 0
-// $2400-$27FF 	$0400 	Nametable 1
-// $2800-$2BFF 	$0400 	Nametable 2
-// $2C00-$2FFF 	$0400 	Nametable 3
-// $3000-$3EFF 	$0F00 	Mirrors of $2000-$2EFF
-// $3F00-$3F1F 	$0020 	Palette RAM indexes
-// $3F20-$3FFF 	$00E0 	Mirrors of $3F00-$3F1F
-
 enum FlagControl : uint8_t
 {
     // [bit 1 | bit 0]  - 0 = $2000; 1 = $2400; 2 = $2800; 3 = $2C00 = 0x2000 + (0x0400 * (CTRL & mask))

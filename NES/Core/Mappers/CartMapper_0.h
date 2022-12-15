@@ -20,7 +20,7 @@ public:
 private:
 
     // HOMEBREW ONLY
-    static const uint32_t nChrRAMSize = 8292;
+    static const uint32_t nChrRAMSize = 8192;
     uint8_t m_cartCHRRAM[nChrRAMSize];
 };
 

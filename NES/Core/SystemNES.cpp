@@ -4,17 +4,8 @@
 //
 //  Created by richardwallis on 15/11/2022.
 //
-
-// Implementation Notes:
-
 // All implementation info taken from https://www.nesdev.org/ with thanks.
-// 2A03 [CPU+APU+IO]; This implementation has CPU saparate with APU+IO inside the System
-// Cart is currently only mapper 0, todo make generic to allow other mapper implementations
-
-// PPU:
-// Rework pixel rendering to the correct technique to supoort scrolling etc
-// Fix sprite zero hit to a better test
-// More work on thing like render background on off etc, go through all the flags and operations
+//
 
 #include "SystemNES.h"
 #include <string>
@@ -133,6 +124,8 @@ bool SystemNES::InsertCartridge(void const* pData, uint32_t dataSize)
         // 512 byte trainer not handled
         return false;
     }
+    
+    // TODO let the cartridge handle the header info
     
     // VRAM Name table mirror mode
     MirrorMode vramMirror = (pHeader->m_flags6 & 1) == 0 ? VRAM_MIRROR_H : VRAM_MIRROR_V;

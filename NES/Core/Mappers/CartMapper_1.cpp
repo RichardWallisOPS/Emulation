@@ -19,6 +19,18 @@ CartMapper_1::CartMapper_1(IOBus& bus,uint8_t* pPrg, uint32_t nProgramSize, uint
 
 uint8_t CartMapper_1::cpuRead(uint16_t address)
 {
+    if(address >= 0x6000 && address <= 0x7fff)
+    {
+        // current 8k ram bank of max 32k
+    }
+    else if(address >= 0x8000 && address <= 0xBFFF)
+    {
+        //16 KB PRG ROM bank, either switchable or fixed to the first bank
+    }
+    else if(address >= 0xC000 && address <= 0xFFFF)
+    {
+        //16 KB PRG ROM bank, either fixed to the last bank or switchable
+    }
     return 0x00;
 }
     
@@ -50,6 +62,19 @@ void CartMapper_1::cpuWrite(uint16_t address, uint8_t byte)
                 if(address >= 0x8000 && address <= 0x9FFF)
                 {
                     m_ctrl = m_shiftRegister;
+                    
+                    // 0 = one screen - lower, 1 = one screen upper
+                    // 2 = vertical, 3 = horizontal
+                    uint8_t mirrorMode = m_ctrl & 0b11;
+                    if(mirrorMode == 2)
+                    {
+                        m_bus.SetMirrorMode(VRAM_MIRROR_V);
+                    }
+                    else if(mirrorMode == 3)
+                    {
+                        m_bus.SetMirrorMode(VRAM_MIRROR_H);
+                    }
+                    // TODO 0 / 1
                 }
                 else if(address >= 0xA000 && address <= 0xBFFF)
                 {
