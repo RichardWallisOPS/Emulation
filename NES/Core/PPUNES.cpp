@@ -196,6 +196,8 @@ void PPUNES::Tick()
         ClearFlag(STATUS_VBLANK, m_status);
         ClearFlag(STATUS_SPRITE0_HIT, m_status);
         ClearFlag(STATUS_SPRITE_OVERFLOW, m_status);
+
+        m_bus.SignalNMI(false);
     }
     
     // Conflicting info - is this required

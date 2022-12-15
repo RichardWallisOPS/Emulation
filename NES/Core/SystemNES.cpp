@@ -193,8 +193,7 @@ void SystemNES::Tick()
         }
 
         // DMA handling
-        //if(m_DMAMode != DMA_OFF)  // alternating tick
-        while(m_DMAMode != DMA_OFF) // all at once
+        if(m_DMAMode != DMA_OFF)  // alternating tick  //while(m_DMAMode != DMA_OFF) // or all at once
         {
             if(m_DMAMode == DMA_READ)
             {
