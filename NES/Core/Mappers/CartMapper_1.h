@@ -24,7 +24,9 @@ private:
     uint8_t m_chrBank0;
     uint8_t m_chrBank1;
     uint8_t m_prgBank;
+    
+    static const uint32_t nChrRAMSize = 8192;
+    uint8_t m_cartCHRRAM[nChrRAMSize];
 };
-
 
 #endif /* CartMapper_1_h */
