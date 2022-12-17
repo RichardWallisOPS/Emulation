@@ -208,7 +208,7 @@ Vertex const g_quadVerts[] = {  {{-1.f,-1.f,0.f,1.f},   {0.f,1.f}},
             {
                 NSString* path = arguments[1];
                 
-                NSLog(@"Inserting cart: %@", path);
+                printf("Inserting cart: %s\n", [path cStringUsingEncoding:NSUTF8StringEncoding]);
                 
                 NSURL* gamePakURL = [[NSURL alloc] initFileURLWithPath:path isDirectory:NO];
                 
@@ -219,10 +219,6 @@ Vertex const g_quadVerts[] = {  {{-1.f,-1.f,0.f,1.f},   {0.f,1.f}},
                 if(g_NESConsole.InsertCartridge(pakData.bytes, (uint32_t)pakData.length))
                 {
                     g_NESConsole.PowerOn();
-                }
-                else
-                {
-                    NSLog(@"Insert Cart Failed!!!");
                 }
             }
         }

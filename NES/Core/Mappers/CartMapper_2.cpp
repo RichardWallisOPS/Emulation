@@ -9,7 +9,7 @@
 
 CartMapper_2::CartMapper_2(IOBus& bus, uint8_t* pPrg, uint32_t nProgramSize, uint8_t* pChr, uint32_t nCharacterSize)
 : Mapper(bus, pPrg, nProgramSize, pChr, nCharacterSize)
-, m_bankSelect(0)
+, m_prgBankSelect(0)
 {}
 
 uint8_t CartMapper_2::cpuRead(uint16_t address)
@@ -20,7 +20,7 @@ uint8_t CartMapper_2::cpuRead(uint16_t address)
         
         if(address >= 0x8000 && address <= 0xBFFF)
         {
-            uint32_t cartBaseAddress = uint32_t(m_bankSelect) * bankSize;
+            uint32_t cartBaseAddress = uint32_t(m_prgBankSelect) * bankSize;
             uint32_t cartOffset = cartBaseAddress + address - 0x8000;
             return m_pPrg[cartOffset];
         }
@@ -36,7 +36,7 @@ uint8_t CartMapper_2::cpuRead(uint16_t address)
 
 void CartMapper_2::cpuWrite(uint16_t address, uint8_t byte)
 {
-    m_bankSelect = byte & 0b00001111;
+    m_prgBankSelect = byte & 0b00001111;
 }
 
 uint8_t CartMapper_2::ppuRead(uint16_t address)

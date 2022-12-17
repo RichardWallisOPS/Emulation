@@ -17,7 +17,7 @@ public:
     
     BUS_HEADER_IMPL
 private:
-    uint8_t m_bankSelect;
+    uint8_t m_prgBankSelect;
     
     static const uint32_t nChrRAMSize = 8192;
     uint8_t m_cartCHRRAM[nChrRAMSize];

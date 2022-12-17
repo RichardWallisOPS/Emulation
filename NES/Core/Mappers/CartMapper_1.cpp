@@ -107,6 +107,8 @@ void CartMapper_1::cpuWrite(uint16_t address, uint8_t byte)
             
             if(m_shiftCount >= 5)
             {
+                m_shiftRegister &= 0b11111;
+                
                 // once the last bit has been shifted in place
                 // the address controls the target register
                 if(address >= 0x8000 && address <= 0x9FFF)
