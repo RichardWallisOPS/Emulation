@@ -75,7 +75,7 @@ uint8_t CartMapper_1::cpuRead(uint16_t address)
             }
             else if(address >= 0xC000 && address <= 0xFFFF)
             {
-                uint32_t bankAddress = (m_nProgramROMSize - 0x4000) + (address - 0xC000);
+                uint32_t bankAddress = (m_nProgramSize - 0x4000) + (address - 0xC000);
                 return m_pPrg[bankAddress];
             }
         }

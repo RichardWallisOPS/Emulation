@@ -14,7 +14,7 @@ CartMapper_2::CartMapper_2(IOBus& bus, uint8_t* pPrg, uint32_t nProgramSize, uin
 
 uint8_t CartMapper_2::cpuRead(uint16_t address)
 {
-    if(m_pPrg != nullptr && m_nProgramROMSize > 0)
+    if(m_pPrg != nullptr && m_nProgramSize > 0)
     {
         const uint32_t bankSize = 0x4000; 
         
@@ -26,7 +26,7 @@ uint8_t CartMapper_2::cpuRead(uint16_t address)
         }
         else if(address >= 0xC000 && address <= 0xFFFF)
         {
-            uint32_t cartAddress = m_nProgramROMSize - bankSize;
+            uint32_t cartAddress = m_nProgramSize - bankSize;
             uint32_t cartOffset = cartAddress + address - 0xC000;
              return m_pPrg[cartOffset];
         }

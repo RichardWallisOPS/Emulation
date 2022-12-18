@@ -17,8 +17,8 @@ public:
     : m_bus(bus)
     , m_pPrg(pPrg)
     , m_pChr(pChr)
-    , m_nProgramROMSize(nProgramSize)
-    , m_nCharacterROMSize(nCharacterSize)
+    , m_nProgramSize(nProgramSize)
+    , m_nCharacterSize(nCharacterSize)
     {}
     
     virtual ~Mapper() {}
@@ -28,8 +28,8 @@ protected:
     IOBus&      m_bus;
     uint8_t*    m_pPrg;
     uint8_t*    m_pChr;
-    uint32_t    m_nProgramROMSize;
-    uint32_t    m_nCharacterROMSize;
+    uint32_t    m_nProgramSize;
+    uint32_t    m_nCharacterSize;
 };
 
 class Cartridge : public IOBus

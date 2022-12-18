@@ -37,9 +37,14 @@ Mapper* CartMapper::CreateMapper(IOBus& bus, uint8_t mapperID, uint8_t* pPrg, ui
     {
         pMapper = new CartMapper_66(bus, pPrg, nProgramSize, pChr, nCharacterSize);
     }
+    
+    if(pMapper != nullptr)
+    {
+        printf("Created cart mapper id = %d\n", mapperID);
+    }
     else
     {
-        printf("Cannot create Mapper ID = %d\n", mapperID);
+        printf("Cannot create cart mapper ID = %d\n", mapperID);
     }
     
     return pMapper;
