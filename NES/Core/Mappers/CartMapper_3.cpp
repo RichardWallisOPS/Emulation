@@ -18,7 +18,7 @@ uint8_t CartMapper_3::cpuRead(uint16_t address)
     {
         if(address >= 0x8000 && address <= 0xFFFF)
         {
-            uint32_t cartAddress = (address - 0x8000) & (m_nProgramSize - 1);
+            uint32_t cartAddress = address - 0x8000;
             return m_pPrg[cartAddress];
         }
     }
