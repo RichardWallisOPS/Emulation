@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		84907F3D20D902CD005E174C /* shaders.metal in Sources */ = {isa = PBXBuildFile; fileRef = 84907F3C20D902CD005E174C /* shaders.metal */; };
+		A120529E294F7B730030D93C /* CartMapper_4.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A120529C294F7B730030D93C /* CartMapper_4.cpp */; };
 		A1255BDB2948D82A0034E9F1 /* CartMapper_2.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A1255BDA2948D82A0034E9F1 /* CartMapper_2.cpp */; };
 		A1255BDE2948D85B0034E9F1 /* CartMapper_0.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A1255BDC2948D85B0034E9F1 /* CartMapper_0.cpp */; };
 		A1335F2B294E64840013B0DE /* CartMapper_3.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A1335F29294E64840013B0DE /* CartMapper_3.cpp */; };
@@ -29,6 +30,8 @@
 
 /* Begin PBXFileReference section */
 		84907F3C20D902CD005E174C /* shaders.metal */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.metal; path = shaders.metal; sourceTree = "<group>"; };
+		A120529C294F7B730030D93C /* CartMapper_4.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = CartMapper_4.cpp; sourceTree = "<group>"; };
+		A120529D294F7B730030D93C /* CartMapper_4.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = CartMapper_4.h; sourceTree = "<group>"; };
 		A1255BD92948D8140034E9F1 /* CartMapper_2.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = CartMapper_2.h; sourceTree = "<group>"; };
 		A1255BDA2948D82A0034E9F1 /* CartMapper_2.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = CartMapper_2.cpp; sourceTree = "<group>"; };
 		A1255BDC2948D85B0034E9F1 /* CartMapper_0.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = CartMapper_0.cpp; sourceTree = "<group>"; };
@@ -89,6 +92,8 @@
 				A1255BDA2948D82A0034E9F1 /* CartMapper_2.cpp */,
 				A1335F2A294E64840013B0DE /* CartMapper_3.h */,
 				A1335F29294E64840013B0DE /* CartMapper_3.cpp */,
+				A120529D294F7B730030D93C /* CartMapper_4.h */,
+				A120529C294F7B730030D93C /* CartMapper_4.cpp */,
 				A1733DB3294BBE9200D1B296 /* CartMapper_66.h */,
 				A1733DB2294BBE9200D1B296 /* CartMapper_66.cpp */,
 			);
@@ -247,6 +252,7 @@
 				A175D4C3294A019F0073E3D6 /* CartMapperFactory.cpp in Sources */,
 				A1D57EF01DDB715200CA09B7 /* main.m in Sources */,
 				A172111A292434130055A57A /* Cartridge.cpp in Sources */,
+				A120529E294F7B730030D93C /* CartMapper_4.cpp in Sources */,
 				84907F3D20D902CD005E174C /* shaders.metal in Sources */,
 				A17210F829241DB60055A57A /* CPU6502.cpp in Sources */,
 				A172110D292424E50055A57A /* PPUNES.cpp in Sources */,
