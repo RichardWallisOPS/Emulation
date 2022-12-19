@@ -17,13 +17,14 @@ CartMapper_1::CartMapper_1(IOBus& bus,uint8_t* pPrg, uint32_t nProgramSize, uint
 , m_prgBank(0)
 {
     m_prgBank = 0x06;
-    m_chrBank0 = 0xFF;
+    m_chrBank0 = 0x00;
     m_ctrl = 0b11111;
     
     // Using 8k CHR RAM
     if(nCharacterSize == 0)
     {
         m_pChr = m_cartCHRRAM;
+        m_nCharacterSize = nChrRAMSize;
     }
 }
 
@@ -45,7 +46,7 @@ uint8_t CartMapper_1::cpuRead(uint16_t address)
             // 32k at 0x8000 - ignore low bit of control
             if(address >= 0x8000 && address <= 0xFFFF)
             {
-                progBank = progBank & 0b01110;  // TODO: or >> 1 ?? untested
+                progBank = progBank >> 1; // TODO: Untested
                 uint32_t bankAddress = (progBank * 0x8000) + (address - 0x8000);
             
                 return m_pPrg[bankAddress];

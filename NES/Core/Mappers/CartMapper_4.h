@@ -22,6 +22,9 @@ private:
     uint8_t m_bankData;
     uint8_t m_mirror;
     uint8_t m_prgRamProtect;
+    
+    static const uint32_t nChrRAMSize = 8192;
+    uint8_t m_cartCHRRAM[nChrRAMSize];
 };
 
 #endif /* CartMapper_4_h */

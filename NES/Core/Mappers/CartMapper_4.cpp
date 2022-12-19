@@ -17,13 +17,36 @@ CartMapper_4::CartMapper_4(IOBus& bus, uint8_t* pPrg, uint32_t nProgramSize, uin
 
 uint8_t CartMapper_4::cpuRead(uint16_t address)
 {
-    // TODO
+    if(address >= 0x6000 && address <= 0x7FFF)
+    {
+        return m_cartCHRRAM[address - 0x6000];
+    }
+    else if(address >= 0x8000 && address <= 0x9FFF)
+    {
+        // CPU $8000-$9FFF (or $C000-$DFFF): 8 KB switchable PRG ROM bank
+    }
+    else if(address >= 0xA000 && address <= 0xBFFF)
+    {
+        // CPU $A000-$BFFF: 8 KB switchable PRG ROM bank
+    }
+    else if(address >= 0xC000 && address <= 0xDFFF)
+    {
+        //CPU $C000-$DFFF (or $8000-$9FFF): 8 KB PRG ROM bank, fixed to the second-last bank
+    }
+    else if(address >= 0xE000 && address <= 0xFFFF)
+    {
+        //CPU $E000-$FFFF: 8 KB PRG ROM bank, fixed to the last bank
+    }
     return 0;
 }
 
 void CartMapper_4::cpuWrite(uint16_t address, uint8_t byte)
 {
-    if(address >= 0x8000 && address <= 0x9FFF)
+    if(address >= 0x6000 && address <= 0x7FFF)
+    {
+        m_cartCHRRAM[address - 0x6000] = byte;
+    }
+    else if(address >= 0x8000 && address <= 0x9FFF)
     {
         // memory mapping
         if((address & 1) == 0)
