@@ -22,7 +22,11 @@ uint8_t CartMapper_0::cpuRead(uint16_t address)
 {
     if(m_pPrg != nullptr)
     {
-        if(address >= 0x8000 && address <= 0xFFFF)
+        if(address >= 0x6000 && address <= 0x7FFF)
+        {
+            return m_cartPRGRAM[address - 0x6000];
+        }
+        else if(address >= 0x8000 && address <= 0xFFFF)
         {
             uint32_t cartAddress = (address - 0x8000) & (m_nProgramSize - 1);
             return m_pPrg[cartAddress];
@@ -33,15 +37,18 @@ uint8_t CartMapper_0::cpuRead(uint16_t address)
 
 void CartMapper_0::cpuWrite(uint16_t address, uint8_t byte)
 {
-    // no registers to write to or no ram
+    if(address >= 0x6000 && address <= 0x7FFF)
+    {
+        m_cartPRGRAM[address - 0x6000] = byte;
+    }
 }
 
 uint8_t CartMapper_0::ppuRead(uint16_t address)
 {
-    return m_pChr[address % m_nCharacterSize];
+    return m_pChr[address & (m_nCharacterSize - 1)];
 }
 
 void CartMapper_0::ppuWrite(uint16_t address, uint8_t byte)
 {
-    m_pChr[address % m_nCharacterSize] = byte;
+    m_pChr[address & (m_nCharacterSize - 1)] = byte;
 }

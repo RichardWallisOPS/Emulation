@@ -1207,7 +1207,8 @@ bool CPU6502::Store_indY(uint8_t Tn)
     else if(Tn == 4)
     {
         m_baseAddressH = m_dataBus;
-        m_addressBusH = m_baseAddressH;
+        uint8_t carry = uint16_t(m_baseAddressL) + uint16_t(m_y) > 255 ? 1 : 0;
+        m_addressBusH = m_baseAddressH + carry;
         m_addressBusL = m_baseAddressL + m_y;
     }
     else if(Tn == 5)
@@ -1223,6 +1224,7 @@ bool CPU6502::Store_indY(uint8_t Tn)
 void CPU6502::PHP(uint8_t Tn)
 {
     m_dataBus = m_flags;
+    m_dataBus |= Flag_Break;
     m_dataBus |= Flag_Unused;
 }
 

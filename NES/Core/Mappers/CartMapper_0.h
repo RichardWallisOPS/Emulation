@@ -19,6 +19,9 @@ public:
     BUS_HEADER_IMPL
 private:
 
+    static const uint32_t nPrgRAMSize = 8192;
+    uint8_t m_cartPRGRAM[nPrgRAMSize];
+
     // HOMEBREW ONLY
     static const uint32_t nChrRAMSize = 8192;
     uint8_t m_cartCHRRAM[nChrRAMSize];
