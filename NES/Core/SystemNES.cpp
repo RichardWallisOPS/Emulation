@@ -248,7 +248,7 @@ uint8_t SystemNES::cpuRead(uint16_t address)
         uint16_t memAddress = address - 0x4000;
         return m_apuRegisters[memAddress];
     }
-    else if(address >= 0x4020 && address < 0xFFFF && m_pCart != nullptr)
+    else if(address >= 0x4020 && address <= 0xFFFF && m_pCart != nullptr)
     {
         // Cart with mapper+prg+chr data + interrupt vectors
         return m_pCart->cpuRead(address);
@@ -291,7 +291,7 @@ void SystemNES::cpuWrite(uint16_t address, uint8_t byte)
             }
         }
     }
-    else if(address >= 0x4020 && address < 0xFFFF && m_pCart != nullptr)
+    else if(address >= 0x4020 && address <= 0xFFFF && m_pCart != nullptr)
     {
         m_pCart->cpuWrite(address, byte);
     }

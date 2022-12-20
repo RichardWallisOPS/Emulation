@@ -1373,7 +1373,10 @@ bool CPU6502::BRK(uint8_t Tn)
     }
     else if(Tn == 4)
     {
-        GenericPushStack(m_flags);
+        uint8_t flags = m_flags;
+        flags |= Flag_Break;
+        flags |= Flag_Unused;
+        GenericPushStack(flags);
     }
     else if(Tn == 5)
     {
