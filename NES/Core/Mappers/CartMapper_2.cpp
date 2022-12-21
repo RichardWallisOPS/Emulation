@@ -28,7 +28,7 @@ uint8_t CartMapper_2::cpuRead(uint16_t address)
         {
             uint32_t cartAddress = m_nProgramSize - bankSize;
             uint32_t cartOffset = cartAddress + address - 0xC000;
-             return m_pPrg[cartOffset];
+            return m_pPrg[cartOffset];
         }
     }
     return 0x00;

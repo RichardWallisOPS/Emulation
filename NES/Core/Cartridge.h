@@ -43,7 +43,6 @@ public:
     BUS_HEADER_IMPL
     
 private:
-    MirrorMode  m_mirrorMode;
     Mapper*     m_pMapper;
     uint8_t*    m_pPakData;
         

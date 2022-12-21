@@ -23,6 +23,25 @@ private:
     uint8_t m_mirror;
     uint8_t m_prgRamProtect;
     
+    // 4x 8KB Program banks
+    uint8_t* m_prgBank0;
+    uint8_t* m_prgBank1;
+    uint8_t* m_prgBank2;
+    uint8_t* m_prgBank3;
+    
+    // 2x 2KB Character banks
+    uint8_t* m_chrBank0;
+    uint8_t* m_chrBank1;
+    
+    // 4x 1KB Character banks
+    uint8_t* m_chrBank2;
+    uint8_t* m_chrBank3;
+    uint8_t* m_chrBank4;
+    uint8_t* m_chrBank5;
+    
+    static const uint32_t nPrgRAMSize = 8192;
+    uint8_t m_cartPRGRAM[nPrgRAMSize];
+    
     static const uint32_t nChrRAMSize = 8192;
     uint8_t m_cartCHRRAM[nChrRAMSize];
 };

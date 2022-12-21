@@ -13,29 +13,52 @@ CartMapper_4::CartMapper_4(IOBus& bus, uint8_t* pPrg, uint32_t nProgramSize, uin
 , m_bankData(0)
 , m_mirror(0)
 , m_prgRamProtect(0)
-{}
+, m_prgBank0(nullptr)
+, m_prgBank1(nullptr)
+, m_prgBank2(nullptr)
+, m_prgBank3(nullptr)
+, m_chrBank0(nullptr)
+, m_chrBank1(nullptr)
+, m_chrBank2(nullptr)
+, m_chrBank3(nullptr)
+, m_chrBank4(nullptr)
+, m_chrBank5(nullptr)
+{
+    // Point the bank pointers somewhere useful for startup - especially the last prg bank for reset vectors
+    uint32_t lastBankAddress = m_nProgramSize - 0x2000;
+    m_prgBank0 = m_prgBank1 = m_prgBank2 = m_prgBank3 = &m_pPrg[lastBankAddress];
+    
+    if(nCharacterSize == 0)
+    {
+        *(volatile char*)(0) = 'M' | 'M' | 'C'; // CHRRAM is untested and there could be combinations of both CHR ROM and CHR RAM
+        m_pChr = m_cartCHRRAM;
+        m_nCharacterSize = nChrRAMSize;
+    }
+    
+    m_chrBank0 = m_chrBank1 = m_chrBank2 = m_chrBank3 = m_chrBank4 = m_chrBank5 = m_pChr;
+}
 
 uint8_t CartMapper_4::cpuRead(uint16_t address)
 {
     if(address >= 0x6000 && address <= 0x7FFF)
     {
-        return m_cartCHRRAM[address - 0x6000];
+        return m_cartPRGRAM[address - 0x6000];
     }
     else if(address >= 0x8000 && address <= 0x9FFF)
     {
-        // CPU $8000-$9FFF (or $C000-$DFFF): 8 KB switchable PRG ROM bank
+        return m_prgBank0[address - 0x8000];
     }
     else if(address >= 0xA000 && address <= 0xBFFF)
     {
-        // CPU $A000-$BFFF: 8 KB switchable PRG ROM bank
+        return m_prgBank1[address - 0xA000];
     }
     else if(address >= 0xC000 && address <= 0xDFFF)
     {
-        //CPU $C000-$DFFF (or $8000-$9FFF): 8 KB PRG ROM bank, fixed to the second-last bank
+        return m_prgBank2[address - 0xC000];
     }
     else if(address >= 0xE000 && address <= 0xFFFF)
     {
-        //CPU $E000-$FFFF: 8 KB PRG ROM bank, fixed to the last bank
+        return m_prgBank3[address - 0xE000];
     }
     return 0;
 }
@@ -44,7 +67,7 @@ void CartMapper_4::cpuWrite(uint16_t address, uint8_t byte)
 {
     if(address >= 0x6000 && address <= 0x7FFF)
     {
-        m_cartCHRRAM[address - 0x6000] = byte;
+        m_cartPRGRAM[address - 0x6000] = byte;
     }
     else if(address >= 0x8000 && address <= 0x9FFF)
     {
@@ -78,20 +101,66 @@ void CartMapper_4::cpuWrite(uint16_t address, uint8_t byte)
         }
         else
         {
-            // TODO ram protect
+            // TODO: ram protect
         }
     }
     
-    //scanline counting
+    //TODO: scanline counting
 }
 
 uint8_t CartMapper_4::ppuRead(uint16_t address)
 {
-    // TODO
+    if(address >= 0x0000 && address <= 0x07FF)
+    {
+        return m_chrBank0[address - 0x0000];
+    }
+    else if(address >= 0x0800 && address <= 0x0FFF)
+    {
+        return m_chrBank1[address - 0x0800];
+    }
+    else if(address >= 0x1000 && address <= 0x13FF)
+    {
+        return m_chrBank2[address - 0x1000];
+    }
+    else if(address >= 0x1400 && address <= 0x17FF)
+    {
+        return m_chrBank3[address - 0x1400];
+    }
+    else if(address >= 0x1800 && address <= 0x1BFF)
+    {
+        return m_chrBank4[address - 0x1800];
+    }
+    else if(address >= 0x1C00 && address <= 0x1FFF)
+    {
+        return m_chrBank5[address - 0x1C00];
+    }
     return 0;
 }
 
 void CartMapper_4::ppuWrite(uint16_t address, uint8_t byte)
 {
-    // TODO
+    if(address >= 0x0000 && address <= 0x07FF)
+    {
+        m_chrBank0[address - 0x0000] = byte;
+    }
+    else if(address >= 0x0800 && address <= 0x0FFF)
+    {
+        m_chrBank1[address - 0x0800] = byte;
+    }
+    else if(address >= 0x1000 && address <= 0x13FF)
+    {
+        m_chrBank2[address - 0x1000] = byte;
+    }
+    else if(address >= 0x1400 && address <= 0x17FF)
+    {
+        m_chrBank3[address - 0x1400] = byte;
+    }
+    else if(address >= 0x1800 && address <= 0x1BFF)
+    {
+        m_chrBank4[address - 0x1800] = byte;
+    }
+    else if(address >= 0x1C00 && address <= 0x1FFF)
+    {
+        m_chrBank5[address - 0x1C00] = byte;
+    }
 }
