@@ -14,6 +14,9 @@ SystemNES g_NESConsole;
 
 @implementation EmulationMetalView
 
+uint8_t keyboardPort = 0;
+uint8_t keyboardController[2] = {0 , 0};
+
 - (BOOL) acceptsFirstResponder
 {
     return YES;
@@ -23,35 +26,35 @@ SystemNES g_NESConsole;
 {
     if(event.keyCode == 26)
     {
-        g_NESConsole.SetControllerButtonState(0, SystemNES::Controller_Start, true);
+        keyboardController[keyboardPort] |= 1 << SystemNES::Controller_Start;
     }
     else if(event.keyCode == 22)
     {
-        g_NESConsole.SetControllerButtonState(0, SystemNES::Controller_Select, true);
+        keyboardController[keyboardPort] |= 1 << SystemNES::Controller_Select;
     }
     else if(event.keyCode == 31)
     {
-        g_NESConsole.SetControllerButtonState(0, SystemNES::Controller_B, true);
+        keyboardController[keyboardPort] |= 1 << SystemNES::Controller_B;
     }
     else if(event.keyCode == 35)
     {
-        g_NESConsole.SetControllerButtonState(0, SystemNES::Controller_A, true);
+        keyboardController[keyboardPort] |= 1 << SystemNES::Controller_A;
     }
     else if(event.keyCode == 2)
     {
-        g_NESConsole.SetControllerButtonState(0, SystemNES::Controller_Right, true);
+        keyboardController[keyboardPort] |= 1 << SystemNES::Controller_Right;
     }
     else if(event.keyCode == 0)
     {
-        g_NESConsole.SetControllerButtonState(0, SystemNES::Controller_Left, true);
+        keyboardController[keyboardPort] |= 1 << SystemNES::Controller_Left;
     }
     else if(event.keyCode == 1)
     {
-        g_NESConsole.SetControllerButtonState(0, SystemNES::Controller_Down, true);
+        keyboardController[keyboardPort] |= 1 << SystemNES::Controller_Down;
     }
     else if(event.keyCode == 13)
     {
-        g_NESConsole.SetControllerButtonState(0, SystemNES::Controller_Up, true);
+        keyboardController[keyboardPort] |= 1 << SystemNES::Controller_Up;
     }
     else if(event.keyCode == 126)   // up
     {
@@ -75,7 +78,9 @@ SystemNES g_NESConsole;
     }
     else if(event.keyCode == 36) // enter
     {
-
+        keyboardController[keyboardPort] = 0;
+        keyboardPort = (keyboardPort + 1) % 2;
+        keyboardController[keyboardPort] = 0;
     }
     else if(event.keyCode == 53) // esc
     {
@@ -87,35 +92,35 @@ SystemNES g_NESConsole;
 {
     if(event.keyCode == 26)
     {
-        g_NESConsole.SetControllerButtonState(0, SystemNES::Controller_Start, false);
+        keyboardController[keyboardPort] &= ~(1 << SystemNES::Controller_Start);
     }
     else if(event.keyCode == 22)
     {
-        g_NESConsole.SetControllerButtonState(0, SystemNES::Controller_Select, false);
+        keyboardController[keyboardPort] &= ~(1 << SystemNES::Controller_Select);
     }
     else if(event.keyCode == 31)
     {
-        g_NESConsole.SetControllerButtonState(0, SystemNES::Controller_B, false);
+        keyboardController[keyboardPort] &= ~(1 << SystemNES::Controller_B);
     }
     else if(event.keyCode == 35)
     {
-        g_NESConsole.SetControllerButtonState(0, SystemNES::Controller_A, false);
+        keyboardController[keyboardPort] &= ~(1 << SystemNES::Controller_A);
     }
     else if(event.keyCode == 2)
     {
-        g_NESConsole.SetControllerButtonState(0, SystemNES::Controller_Right, false);
+        keyboardController[keyboardPort] &= ~(1 << SystemNES::Controller_Right);
     }
     else if(event.keyCode == 0)
     {
-        g_NESConsole.SetControllerButtonState(0, SystemNES::Controller_Left, false);
+        keyboardController[keyboardPort] &= ~(1 << SystemNES::Controller_Left);
     }
     else if(event.keyCode == 1)
     {
-        g_NESConsole.SetControllerButtonState(0, SystemNES::Controller_Down, false);
+        keyboardController[keyboardPort] &= ~(1 << SystemNES::Controller_Down);
     }
     else if(event.keyCode == 13)
     {
-        g_NESConsole.SetControllerButtonState(0, SystemNES::Controller_Up, false);
+        keyboardController[keyboardPort] &= ~(1 << SystemNES::Controller_Up);
     }
 }
 
@@ -131,7 +136,7 @@ SystemNES g_NESConsole;
 @property (nonatomic,readwrite) id<MTLTexture> emulationOutput;
 
 @end
-                            
+
 
 @implementation MetalRenderer
 
@@ -229,57 +234,54 @@ Vertex const g_quadVerts[] = {  {{-1.f,-1.f,0.f,1.f},   {0.f,1.f}},
 
 - (void) drawInMTKView:(MTKView*)view
 {
+    // Input update
     {
         for(uint32_t port = 0;port < 2;++port)
         {
+            // Get controller
             uint32_t controllerBits = [PlayerControllerManager controllerBitsForNESController:port];
-            if(controllerBits & ControllerInfo_Valid)
-            {
-                g_NESConsole.SetControllerBits(port, controllerBits & ControllerInfo_DataMask_08);
-            }
+            
+            // Mask out info and merge with keyboard
+            uint8_t portBits = (controllerBits & ControllerInfo_DataMask_08) | keyboardController[port];
+            
+            // Set current controller instantious - upto game when it latches internally
+            g_NESConsole.SetControllerBits(port, portBits);
         }
     }
     
-    // 1) Not a good way of doing this - move this tick logic into a different thread
-    //  1.1) Maybe timed or maybe do the ticks as fast as possible?
-    // 2) After the set number of ticks, waits on a conditional variables until the frame has been consumed
-    //  2.1) This function signals the conditional variable for that thread to kick off again
-    //  2.2) This function just then copies the frame data into this texture separately
-    
-    // 0) on drawInMTKView: called
-    // 1) Make sure PPU frame generated from other thread
-    // 2) Copy PPU frame data into this texture/buffer
-    // 3) Signal SystemNES.Tick() thread to continue executation
-    // 4) SystemNES.Tick() will generate next frame then wait for this consumer
-    // 5) SystemNES.Tick() - maybe call all the ticks as fast as possible or time them
-    //  5.1) Make this an option
-    const size_t nNumPPUTicksPerFrame = 89342;
-    for(size_t i = 0;i < nNumPPUTicksPerFrame;++i)
+    // Emulation ticks
     {
-        g_NESConsole.Tick();
-    }
-
-    if(self.emulationOutputData.storageMode == MTLStorageModeManaged)
-    {
-        [self.emulationOutputData didModifyRange:NSMakeRange(0, self.emulationOutputData.length)];
-    }
-    
-    id<MTLCommandBuffer> cmdBuffer = [self.cmdQueue commandBuffer];
-    
-    {
-        id<MTLRenderCommandEncoder> renderEncoder = [cmdBuffer renderCommandEncoderWithDescriptor:view.currentRenderPassDescriptor];
+        const size_t nNumPPUTicksPerFrame = 89342;
+        for(size_t i = 0;i < nNumPPUTicksPerFrame;++i)
         {
-            [renderEncoder setCullMode:MTLCullModeBack];
-            [renderEncoder setFrontFacingWinding:MTLWindingCounterClockwise];
-            [renderEncoder setRenderPipelineState:self.pipelineEmulationOutputToFrameBufferTexture];
-            [renderEncoder setVertexBytes:g_quadVerts length:sizeof(Vertex) * 6 atIndex:0];
-            [renderEncoder setFragmentTexture:self.emulationOutput atIndex:0];
-            [renderEncoder drawPrimitives:MTLPrimitiveTypeTriangle vertexStart:0 vertexCount:6];
+            g_NESConsole.Tick();
         }
-        [renderEncoder endEncoding];
     }
-    [cmdBuffer presentDrawable:view.currentDrawable];
-    [cmdBuffer commit];
+    
+    // Render
+    {
+        if(self.emulationOutputData.storageMode == MTLStorageModeManaged)
+        {
+            [self.emulationOutputData didModifyRange:NSMakeRange(0, self.emulationOutputData.length)];
+        }
+        
+        id<MTLCommandBuffer> cmdBuffer = [self.cmdQueue commandBuffer];
+        
+        {
+            id<MTLRenderCommandEncoder> renderEncoder = [cmdBuffer renderCommandEncoderWithDescriptor:view.currentRenderPassDescriptor];
+            {
+                [renderEncoder setCullMode:MTLCullModeBack];
+                [renderEncoder setFrontFacingWinding:MTLWindingCounterClockwise];
+                [renderEncoder setRenderPipelineState:self.pipelineEmulationOutputToFrameBufferTexture];
+                [renderEncoder setVertexBytes:g_quadVerts length:sizeof(Vertex) * 6 atIndex:0];
+                [renderEncoder setFragmentTexture:self.emulationOutput atIndex:0];
+                [renderEncoder drawPrimitives:MTLPrimitiveTypeTriangle vertexStart:0 vertexCount:6];
+            }
+            [renderEncoder endEncoding];
+        }
+        [cmdBuffer presentDrawable:view.currentDrawable];
+        [cmdBuffer commit];
+    }
 }
 
 @end
