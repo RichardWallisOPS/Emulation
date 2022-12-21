@@ -100,17 +100,6 @@
 			path = Mappers;
 			sourceTree = "<group>";
 		};
-		A16D8D6F233A727B0062A78D /* OS-Wrapper */ = {
-			isa = PBXGroup;
-			children = (
-				A1718B462922D7B8007BA5CD /* RenderDefs.h */,
-				84907F3C20D902CD005E174C /* shaders.metal */,
-				A1ED077E1DDBA71800697B8C /* MetalRenderer.h */,
-				A1ED077F1DDBA72C00697B8C /* MetalRenderer.mm */,
-			);
-			name = "OS-Wrapper";
-			sourceTree = "<group>";
-		};
 		A17210F029241C180055A57A /* Core */ = {
 			isa = PBXGroup;
 			children = (
@@ -148,8 +137,11 @@
 		A1D57EEA1DDB715200CA09B7 /* NES */ = {
 			isa = PBXGroup;
 			children = (
-				A16D8D6F233A727B0062A78D /* OS-Wrapper */,
 				A17210F029241C180055A57A /* Core */,
+				A1718B462922D7B8007BA5CD /* RenderDefs.h */,
+				84907F3C20D902CD005E174C /* shaders.metal */,
+				A1ED077E1DDBA71800697B8C /* MetalRenderer.h */,
+				A1ED077F1DDBA72C00697B8C /* MetalRenderer.mm */,
 				A1D57EEB1DDB715200CA09B7 /* AppDelegate.h */,
 				A1D57EEC1DDB715200CA09B7 /* AppDelegate.m */,
 				A1D57EF11DDB715200CA09B7 /* ViewController.h */,
