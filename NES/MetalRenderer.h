@@ -12,13 +12,6 @@
 
 @interface MetalRenderer : NSObject <MTKViewDelegate>
 
-// Device Access
-@property (nonatomic,readonly) id<MTLDevice> CurrentDevice;
-
-// Initialisation
 - (instancetype) initWithView:(EmulationMetalView*)metalView;
-
-// Global Access
-+ (MetalRenderer*) GetRenderer;
 
 @end

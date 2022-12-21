@@ -44,9 +44,6 @@ public:
     
     // Expects a 256x240 RGBA data pointer
     void SetVideoOutputDataPtr(uint32_t* pVideoOutData);
-    
-    // Debug
-    void WritePPUMetaData();
 
 private:
 

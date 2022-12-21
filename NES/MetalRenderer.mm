@@ -5,12 +5,12 @@
 //
 
 #import "MetalRenderer.h"
+#import "Controller.h"
 #import "RenderDefs.h"
 #include "SystemNES.h"
 
 // The console we are emulating
 SystemNES g_NESConsole;
-BOOL g_showDebugInfo = NO;
 
 @implementation EmulationMetalView
 
@@ -23,35 +23,35 @@ BOOL g_showDebugInfo = NO;
 {
     if(event.keyCode == 26)
     {
-        g_NESConsole.SetControllerButtonState(1, Controller_Start, true);
+        g_NESConsole.SetControllerButtonState(0, SystemNES::Controller_Start, true);
     }
     else if(event.keyCode == 22)
     {
-        g_NESConsole.SetControllerButtonState(1, Controller_Select, true);
+        g_NESConsole.SetControllerButtonState(0, SystemNES::Controller_Select, true);
     }
     else if(event.keyCode == 31)
     {
-        g_NESConsole.SetControllerButtonState(1, Controller_B, true);
+        g_NESConsole.SetControllerButtonState(0, SystemNES::Controller_B, true);
     }
     else if(event.keyCode == 35)
     {
-        g_NESConsole.SetControllerButtonState(1, Controller_A, true);
+        g_NESConsole.SetControllerButtonState(0, SystemNES::Controller_A, true);
     }
     else if(event.keyCode == 2)
     {
-        g_NESConsole.SetControllerButtonState(1, Controller_Right, true);
+        g_NESConsole.SetControllerButtonState(0, SystemNES::Controller_Right, true);
     }
     else if(event.keyCode == 0)
     {
-        g_NESConsole.SetControllerButtonState(1, Controller_Left, true);
+        g_NESConsole.SetControllerButtonState(0, SystemNES::Controller_Left, true);
     }
-        else if(event.keyCode == 1)
+    else if(event.keyCode == 1)
     {
-    g_NESConsole.SetControllerButtonState(1, Controller_Down, true);
+        g_NESConsole.SetControllerButtonState(0, SystemNES::Controller_Down, true);
     }
     else if(event.keyCode == 13)
     {
-        g_NESConsole.SetControllerButtonState(1, Controller_Up, true);
+        g_NESConsole.SetControllerButtonState(0, SystemNES::Controller_Up, true);
     }
     else if(event.keyCode == 126)   // up
     {
@@ -75,7 +75,7 @@ BOOL g_showDebugInfo = NO;
     }
     else if(event.keyCode == 36) // enter
     {
-        g_showDebugInfo = !g_showDebugInfo;
+
     }
     else if(event.keyCode == 53) // esc
     {
@@ -87,35 +87,35 @@ BOOL g_showDebugInfo = NO;
 {
     if(event.keyCode == 26)
     {
-        g_NESConsole.SetControllerButtonState(1, Controller_Start, false);
+        g_NESConsole.SetControllerButtonState(0, SystemNES::Controller_Start, false);
     }
     else if(event.keyCode == 22)
     {
-        g_NESConsole.SetControllerButtonState(1, Controller_Select, false);
+        g_NESConsole.SetControllerButtonState(0, SystemNES::Controller_Select, false);
     }
     else if(event.keyCode == 31)
     {
-        g_NESConsole.SetControllerButtonState(1, Controller_B, false);
+        g_NESConsole.SetControllerButtonState(0, SystemNES::Controller_B, false);
     }
     else if(event.keyCode == 35)
     {
-        g_NESConsole.SetControllerButtonState(1, Controller_A, false);
+        g_NESConsole.SetControllerButtonState(0, SystemNES::Controller_A, false);
     }
     else if(event.keyCode == 2)
     {
-        g_NESConsole.SetControllerButtonState(1, Controller_Right, false);
+        g_NESConsole.SetControllerButtonState(0, SystemNES::Controller_Right, false);
     }
     else if(event.keyCode == 0)
     {
-        g_NESConsole.SetControllerButtonState(1, Controller_Left, false);
+        g_NESConsole.SetControllerButtonState(0, SystemNES::Controller_Left, false);
     }
-        else if(event.keyCode == 1)
+    else if(event.keyCode == 1)
     {
-    g_NESConsole.SetControllerButtonState(1, Controller_Down, false);
+        g_NESConsole.SetControllerButtonState(0, SystemNES::Controller_Down, false);
     }
     else if(event.keyCode == 13)
     {
-        g_NESConsole.SetControllerButtonState(1, Controller_Up, false);
+        g_NESConsole.SetControllerButtonState(0, SystemNES::Controller_Up, false);
     }
 }
 
@@ -132,7 +132,6 @@ BOOL g_showDebugInfo = NO;
 
 @end
                             
-static __weak MetalRenderer* theRenderer;
 
 @implementation MetalRenderer
 
@@ -142,16 +141,12 @@ Vertex const g_quadVerts[] = {  {{-1.f,-1.f,0.f,1.f},   {0.f,1.f}},
                                 {{-1.f,-1.f,0.f,1.f},   {0.f,1.f}},
                                 {{1.f,-1.f,0.f,1.f},    {1.f,1.f}},
                                 {{1.f,1.f,0.f,1.f},     {1.f,0.f}} };
-
-+ (MetalRenderer*) GetRenderer
+                                
+- (BOOL) isAppleSilicon
 {
-    return theRenderer;
+	return [self.device supportsFamily:MTLGPUFamilyApple1];
 }
 
-- (id<MTLDevice>) CurrentDevice
-{
-    return self.device;
-}
 
 - (instancetype) initWithView:(EmulationMetalView*)metalView
 {
@@ -159,22 +154,22 @@ Vertex const g_quadVerts[] = {  {{-1.f,-1.f,0.f,1.f},   {0.f,1.f}},
     
     if(self != nil)
     {
-        theRenderer = self;
-        
         if(self.device == nil)
         {
             self.device = MTLCreateSystemDefaultDevice();
         }
+        
+        bool const bAppleSilicon = [self isAppleSilicon];
 
         MTLTextureDescriptor* outputTextureDesc = [MTLTextureDescriptor new];
         outputTextureDesc.width = 256;
         outputTextureDesc.height = 240;
         outputTextureDesc.pixelFormat = MTLPixelFormatBGRA8Unorm;
-        outputTextureDesc.storageMode = MTLStorageModeManaged; //TODO change this for Apple Silicon
+        outputTextureDesc.storageMode = bAppleSilicon ? MTLStorageModeShared : MTLStorageModeManaged;
         
         size_t bufferBytes = outputTextureDesc.width * outputTextureDesc.height * 4;
         
-        self.emulationOutputData = [self.device newBufferWithLength:bufferBytes options:MTLResourceStorageModeManaged];
+        self.emulationOutputData = [self.device newBufferWithLength:bufferBytes options: bAppleSilicon ? MTLResourceStorageModeShared : MTLResourceStorageModeManaged];
         self.emulationOutput = [self.emulationOutputData newTextureWithDescriptor:outputTextureDesc offset:0 bytesPerRow: outputTextureDesc.width * 4];
 
         self.cmdQueue = [self.device newCommandQueue];
@@ -234,6 +229,17 @@ Vertex const g_quadVerts[] = {  {{-1.f,-1.f,0.f,1.f},   {0.f,1.f}},
 
 - (void) drawInMTKView:(MTKView*)view
 {
+    {
+        for(uint32_t port = 0;port < 2;++port)
+        {
+            uint32_t controllerBits = [PlayerControllerManager controllerBitsForNESController:port];
+            if(controllerBits & ControllerInfo_Valid)
+            {
+                g_NESConsole.SetControllerBits(port, controllerBits & ControllerInfo_DataMask_08);
+            }
+        }
+    }
+    
     // 1) Not a good way of doing this - move this tick logic into a different thread
     //  1.1) Maybe timed or maybe do the ticks as fast as possible?
     // 2) After the set number of ticks, waits on a conditional variables until the frame has been consumed
@@ -252,12 +258,7 @@ Vertex const g_quadVerts[] = {  {{-1.f,-1.f,0.f,1.f},   {0.f,1.f}},
     {
         g_NESConsole.Tick();
     }
-    
-    if(g_showDebugInfo)
-    {
-        g_NESConsole.WritePPUMetaData();
-    }
-    
+
     if(self.emulationOutputData.storageMode == MTLStorageModeManaged)
     {
         [self.emulationOutputData didModifyRange:NSMakeRange(0, self.emulationOutputData.length)];

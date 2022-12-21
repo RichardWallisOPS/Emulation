@@ -159,7 +159,7 @@ void SystemNES::SetMirrorMode(MirrorMode mode)
 
 void SystemNES::SetControllerButtonState(uint8_t port, ControllerButton Button, bool bSet)
 {
-    uint8_t & controllerPort = (port == 1 ? m_controller1 : m_controller2);
+    uint8_t & controllerPort = (port == 0 ? m_controller1 : m_controller2);
     if(bSet)
     {
         controllerPort |= 1 << Button;
@@ -167,6 +167,18 @@ void SystemNES::SetControllerButtonState(uint8_t port, ControllerButton Button, 
     else
     {
         controllerPort &= ~(1 << Button);
+    }
+}
+
+void SystemNES::SetControllerBits(uint8_t port, uint8_t bits)
+{
+    if(port == 0)
+    {
+        m_controller1 = bits;
+    }
+    else if(port == 1)
+    {
+        m_controller2 = bits;
     }
 }
 
@@ -318,10 +330,4 @@ void SystemNES::ppuWrite(uint16_t address, uint8_t byte)
 void SystemNES::SetVideoOutputDataPtr(uint32_t* pVideoOutData)
 {
     m_ppu.SetVideoOutputDataPtr(pVideoOutData);
-}
-
-// Debug
-void SystemNES::WritePPUMetaData()
-{
-    m_ppu.WritePPUMetaData();
 }
