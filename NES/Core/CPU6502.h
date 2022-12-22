@@ -138,7 +138,7 @@ private:
     void BCC(uint8_t Tn); void BCS(uint8_t Tn); void BEQ(uint8_t Tn); void BMI(uint8_t Tn); void BNE(uint8_t Tn); void BPL(uint8_t Tn); void BVC(uint8_t Tn); void BVS(uint8_t Tn);
     bool Branch(uint8_t Tn);
     
-    // Extra address mode NOPs
+    // Extra address mode NOPs FunctionName = Instruction_AddressMode_ByteCount_CycleCount[_(+1)]
     bool NOP_IMPLIED_1_2(uint8_t Tn); bool NOP_IMMEDIATE_2_2(uint8_t Tn); bool NOP_ZEROPAGE_2_3(uint8_t Tn); bool NOP_ZEROPAGE_X_2_4(uint8_t Tn); bool NOP_ABSOLUTE_3_4(uint8_t Tn); bool NOP_ABSOLUTE_X_3_4_1(uint8_t Tn);
     
     // Illegal opcodes as required

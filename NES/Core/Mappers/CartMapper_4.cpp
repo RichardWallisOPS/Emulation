@@ -23,6 +23,8 @@ CartMapper_4::CartMapper_4(IOBus& bus, uint8_t* pPrg, uint32_t nProgramSize, uin
 , m_chrBank3(nullptr)
 , m_chrBank4(nullptr)
 , m_chrBank5(nullptr)
+, m_chrBank6(nullptr)
+, m_chrBank7(nullptr)
 {
     // Point the bank pointers somewhere useful for startup - especially the last prg bank for reset vectors
     uint32_t lastBankAddress = m_nProgramSize - 0x2000;
@@ -36,7 +38,7 @@ CartMapper_4::CartMapper_4(IOBus& bus, uint8_t* pPrg, uint32_t nProgramSize, uin
         m_nCharacterSize = nChrRAMSize;
     }
     
-    m_chrBank0 = m_chrBank1 = m_chrBank2 = m_chrBank3 = m_chrBank4 = m_chrBank5 = m_pChr;
+    m_chrBank0 = m_chrBank1 = m_chrBank2 = m_chrBank3 = m_chrBank4 = m_chrBank5 = m_chrBank6 = m_chrBank7 = m_pChr;
 }
 
 uint8_t CartMapper_4::cpuRead(uint16_t address)
@@ -80,54 +82,110 @@ void CartMapper_4::cpuWrite(uint16_t address, uint8_t byte)
         else                    // odd registers
         {
             m_bankData = byte;
-            
-            // Bank select R0-R7
             uint8_t registerSelect = m_bankSelect & 0b111;
+            
+            // 0-5 chr select, 6-7 prg select
             if(registerSelect >= 0 && registerSelect <= 5)
             {
-                //uint8_t chrBankMode = (m_bankSelect >> 7) & 1;
+                uint16_t chrBankSize = 0x0400;
+                uint8_t chrBankMode = (m_bankSelect >> 7) & 1;
+                
+                uint8_t maxBanks = m_nCharacterSize / 0x0400;
+                uint16_t bankData = m_bankData % maxBanks;
+
+                if(chrBankMode == 0)
+                {
+                    if(registerSelect == 0)
+                    {
+                        uint16_t bankData2K = bankData & 0b11111110;
+                        m_chrBank0 = &m_pChr[bankData2K * chrBankSize];
+                        m_chrBank1 = m_chrBank0 + 0x0400;
+                    }
+                    else if(registerSelect == 1)
+                    {
+                        uint16_t bankData2K = bankData & 0b11111110;
+                        m_chrBank2 = &m_pChr[bankData2K * chrBankSize];
+                        m_chrBank3 = m_chrBank2 + 0x0400;
+                    }
+                    else if(registerSelect == 2)
+                    {
+                        m_chrBank4 = &m_pChr[bankData * chrBankSize];
+                    }
+                    else if(registerSelect == 3)
+                    {
+                        m_chrBank5 = &m_pChr[bankData * chrBankSize];
+                    }
+                    else if(registerSelect == 4)
+                    {
+                        m_chrBank6 = &m_pChr[bankData * chrBankSize];
+                    }
+                    else if(registerSelect == 5)
+                    {
+                        m_chrBank7 = &m_pChr[bankData * chrBankSize];
+                    }
+                }
+                else
+                {
+                    if(registerSelect == 0)
+                    {
+                        uint16_t bankData2K = bankData & 0b11111110;
+                        m_chrBank4 = &m_pChr[bankData2K * 0x0400];
+                        m_chrBank5 = m_chrBank4 + 0x0400;
+                    }
+                    else if(registerSelect == 1)
+                    {
+                        uint16_t bankData2K = bankData & 0b11111110;
+                        m_chrBank6 = &m_pChr[bankData2K * chrBankSize];
+                        m_chrBank7 = m_chrBank6 + 0x0400;
+                    }
+                    else if(registerSelect == 2)
+                    {
+                        m_chrBank0 = &m_pChr[bankData * chrBankSize];
+                    }
+                    else if(registerSelect == 3)
+                    {
+                        m_chrBank1 = &m_pChr[bankData * chrBankSize];
+                    }
+                    else if(registerSelect == 4)
+                    {
+                        m_chrBank2 = &m_pChr[bankData * chrBankSize];
+                    }
+                    else if(registerSelect == 5)
+                    {
+                        m_chrBank3 = &m_pChr[bankData * chrBankSize];
+                    }
+                }
             }
             else if(registerSelect >= 6 && registerSelect <= 7)
             {
                 uint16_t prgBankSize = 0x2000;
                 uint16_t bankData = m_bankData & 0b00111111;
                 
-                // $8000-$9FFF 	R6 	    (-2)  m_prgBank0
-                // $A000-$BFFF 	R7 	    R7    m_prgBank1
-                // $C000-$DFFF 	(-2) 	R6    m_prgBank2
-                // $E000-$FFFF 	(-1) 	(-1)  m_prgBank3
-                
+                uint8_t maxBanks = m_nProgramSize / prgBankSize;
+                bankData = bankData % maxBanks;
+
                 uint8_t prgBankMode = (m_bankSelect >> 6) & 1;
-                                
                 if(prgBankMode == 0)
                 {
-                    //$8000-$9FFF swappable
-                    //$C000-$DFFF fixed to second-last bank
                     if(registerSelect == 6)
                     {
-                        // 110: R6: Select 8 KB PRG ROM bank at $8000-$9FFF
                         m_prgBank0 = &m_pPrg[(bankData * prgBankSize) % m_nProgramSize];
                         m_prgBank2 = &m_pPrg[m_nProgramSize - (prgBankSize * 2)];
                     }
                     else if(registerSelect == 7)
                     {
-                        // 111: R7: Select 8 KB PRG ROM bank at $A000-$BFFF
                         m_prgBank1 = &m_pPrg[bankData * prgBankSize];
                     }
                 }
                 else
                 {
-                    //$C000-$DFFF swappable
-                    //$8000-$9FFF fixed to second-last bank
                     if(registerSelect == 6)
                     {
-                        // 110: R6: Select 8 KB PRG ROM bank at $C000-$DFFF
                         m_prgBank2 = &m_pPrg[(bankData * prgBankSize) % m_nProgramSize];
                         m_prgBank0 = &m_pPrg[m_nProgramSize - (prgBankSize * 2)];
                     }
                     else if(registerSelect == 7)
                     {
-                        // 111: R7: Select 8 KB PRG ROM bank at $A000-$BFFF
                         m_prgBank1 = &m_pPrg[bankData * prgBankSize];
                     }
                 }
@@ -161,57 +219,73 @@ void CartMapper_4::cpuWrite(uint16_t address, uint8_t byte)
 
 uint8_t CartMapper_4::ppuRead(uint16_t address)
 {
-    if(address >= 0x0000 && address <= 0x07FF)
+    if(address >= 0x0000 && address <= 0x03FF)
     {
         return m_chrBank0[address - 0x0000];
     }
-    else if(address >= 0x0800 && address <= 0x0FFF)
+    else if(address >= 0x0400 && address <= 0x07FF)
     {
-        return m_chrBank1[address - 0x0800];
+        return m_chrBank1[address - 0x0400];
+    }
+    else if(address >= 0x0800 && address <= 0x0BFF)
+    {
+        return m_chrBank2[address - 0x0800];
+    }
+    else if(address >= 0x0C00 && address <= 0x0FFF)
+    {
+        return m_chrBank3[address - 0x0C00];
     }
     else if(address >= 0x1000 && address <= 0x13FF)
     {
-        return m_chrBank2[address - 0x1000];
+        return m_chrBank4[address - 0x1000];
     }
     else if(address >= 0x1400 && address <= 0x17FF)
     {
-        return m_chrBank3[address - 0x1400];
+        return m_chrBank5[address - 0x1400];
     }
     else if(address >= 0x1800 && address <= 0x1BFF)
     {
-        return m_chrBank4[address - 0x1800];
+        return m_chrBank6[address - 0x1800];
     }
     else if(address >= 0x1C00 && address <= 0x1FFF)
     {
-        return m_chrBank5[address - 0x1C00];
+        return m_chrBank7[address - 0x1C00];
     }
     return 0;
 }
 
 void CartMapper_4::ppuWrite(uint16_t address, uint8_t byte)
 {
-    if(address >= 0x0000 && address <= 0x07FF)
+    if(address >= 0x0000 && address <= 0x03FF)
     {
         m_chrBank0[address - 0x0000] = byte;
     }
-    else if(address >= 0x0800 && address <= 0x0FFF)
+    else if(address >= 0x0400 && address <= 0x07FF)
     {
-        m_chrBank1[address - 0x0800] = byte;
+        m_chrBank1[address - 0x0400] = byte;
+    }
+    else if(address >= 0x0800 && address <= 0x0BFF)
+    {
+        m_chrBank2[address - 0x0800] = byte;
+    }
+    else if(address >= 0x0C00 && address <= 0x0FFF)
+    {
+        m_chrBank3[address - 0x0C00] = byte;
     }
     else if(address >= 0x1000 && address <= 0x13FF)
     {
-        m_chrBank2[address - 0x1000] = byte;
+        m_chrBank4[address - 0x1000] = byte;
     }
     else if(address >= 0x1400 && address <= 0x17FF)
     {
-        m_chrBank3[address - 0x1400] = byte;
+        m_chrBank5[address - 0x1400] = byte;
     }
     else if(address >= 0x1800 && address <= 0x1BFF)
     {
-        m_chrBank4[address - 0x1800] = byte;
+        m_chrBank6[address - 0x1800] = byte;
     }
     else if(address >= 0x1C00 && address <= 0x1FFF)
     {
-        m_chrBank5[address - 0x1C00] = byte;
+        m_chrBank7[address - 0x1C00] = byte;
     }
 }

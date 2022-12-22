@@ -29,15 +29,16 @@ private:
     uint8_t* m_prgBank2;
     uint8_t* m_prgBank3;
     
-    // 2x 2KB Character banks
+    // 8x 1KB Character banks
+    // Some are conceptually swapped in 2K chunks so the next bank is sequential in memory
     uint8_t* m_chrBank0;
     uint8_t* m_chrBank1;
-    
-    // 4x 1KB Character banks
     uint8_t* m_chrBank2;
     uint8_t* m_chrBank3;
     uint8_t* m_chrBank4;
     uint8_t* m_chrBank5;
+    uint8_t* m_chrBank6;
+    uint8_t* m_chrBank7;
     
     static const uint32_t nPrgRAMSize = 8192;
     uint8_t m_cartPRGRAM[nPrgRAMSize];
