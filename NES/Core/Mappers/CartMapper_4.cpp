@@ -169,25 +169,27 @@ void CartMapper_4::cpuWrite(uint16_t address, uint8_t byte)
                 {
                     if(registerSelect == 6)
                     {
-                        m_prgBank0 = &m_pPrg[(bankData * prgBankSize) % m_nProgramSize];
-                        m_prgBank2 = &m_pPrg[m_nProgramSize - (prgBankSize * 2)];
+                        m_prgBank0 = &m_pPrg[bankData * prgBankSize];
                     }
                     else if(registerSelect == 7)
                     {
                         m_prgBank1 = &m_pPrg[bankData * prgBankSize];
                     }
+                    m_prgBank2 = &m_pPrg[m_nProgramSize - (prgBankSize * 2)];
+                    m_prgBank3 = &m_pPrg[m_nProgramSize - (prgBankSize * 1)];
                 }
                 else
                 {
+                    m_prgBank0 = &m_pPrg[m_nProgramSize - (prgBankSize * 2)];
                     if(registerSelect == 6)
                     {
-                        m_prgBank2 = &m_pPrg[(bankData * prgBankSize) % m_nProgramSize];
-                        m_prgBank0 = &m_pPrg[m_nProgramSize - (prgBankSize * 2)];
+                        m_prgBank2 = &m_pPrg[bankData * prgBankSize];
                     }
                     else if(registerSelect == 7)
                     {
                         m_prgBank1 = &m_pPrg[bankData * prgBankSize];
                     }
+                    m_prgBank3 = &m_pPrg[m_nProgramSize - (prgBankSize * 1)];
                 }
             }
         }
