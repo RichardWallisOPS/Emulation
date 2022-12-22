@@ -42,7 +42,14 @@ CartMapper_4::CartMapper_4(IOBus& bus, uint8_t* pPrg, uint32_t nProgramSize, uin
         m_nCharacterSize = nChrRAMSize;
     }
     
-    m_chrBank0 = m_chrBank1 = m_chrBank2 = m_chrBank3 = m_chrBank4 = m_chrBank5 = m_chrBank6 = m_chrBank7 = m_pChr;
+    m_chrBank0 = &m_pChr[0x0400 * 0];
+    m_chrBank1 = &m_pChr[0x0400 * 1];
+    m_chrBank2 = &m_pChr[0x0400 * 2];
+    m_chrBank3 = &m_pChr[0x0400 * 3];
+    m_chrBank4 = &m_pChr[0x0400 * 4];
+    m_chrBank5 = &m_pChr[0x0400 * 5];
+    m_chrBank6 = &m_pChr[0x0400 * 6];
+    m_chrBank7 = &m_pChr[0x0400 * 7];
 }
 
 uint8_t CartMapper_4::cpuRead(uint16_t address)
