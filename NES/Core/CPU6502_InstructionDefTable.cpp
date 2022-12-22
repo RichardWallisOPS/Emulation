@@ -776,16 +776,13 @@ void CPU6502::InitInstructions()
     m_Instructions[0xFE].m_operation = &CPU6502::RMW_INC;
     m_Instructions[0xFE].m_opStr = "INC";
     m_Instructions[0xFE].m_opAddressModeStr = absoluteX;
-
+    
 #if DEBUG
-    // implemented and duplicate instruction set checks
-    int implementedInstructions = 0;
+    // Duplicate instruction set check up to this point - after here then lots of things are getting nopped out
     for(uint32_t i = 0;i < 256;++i)
     {
         if(m_Instructions[i].m_opOrAddrMode != &CPU6502::ERROR)
         {
-            ++implementedInstructions;
-
             for(uint32_t j = 0;j < 256;++j)
             {
                 if(i != j)
@@ -793,13 +790,88 @@ void CPU6502::InitInstructions()
                     if( m_Instructions[i].m_opOrAddrMode == m_Instructions[j].m_opOrAddrMode &&
                         m_Instructions[i].m_operation == m_Instructions[j].m_operation )
                     {
-                        printf("Duplicate instruction found %2X vs %2X!!!", i, j);
+                        printf("6502 CPU Startup check: Duplicate instruction found %2X vs %2X!!!", i, j);
                         ERROR(0);
                     }
                 }
             }
         }
     }
+#endif
+
+    // Real Extra NOPs via address modes
+    m_Instructions[0x1A].m_opOrAddrMode = &CPU6502::NOP_IMPLIED_1_2;
+    m_Instructions[0x1A].m_opStr = "NOP_IMPLIED_1_2";
+    m_Instructions[0x3A].m_opOrAddrMode = &CPU6502::NOP_IMPLIED_1_2;
+    m_Instructions[0x3A].m_opStr = "NOP_IMPLIED_1_2";
+    m_Instructions[0x5A].m_opOrAddrMode = &CPU6502::NOP_IMPLIED_1_2;
+    m_Instructions[0x5A].m_opStr = "NOP_IMPLIED_1_2";
+    m_Instructions[0x7A].m_opOrAddrMode = &CPU6502::NOP_IMPLIED_1_2;
+    m_Instructions[0x7A].m_opStr = "NOP_IMPLIED_1_2";
+    m_Instructions[0xDA].m_opOrAddrMode = &CPU6502::NOP_IMPLIED_1_2;
+    m_Instructions[0xDA].m_opStr = "NOP_IMPLIED_1_2";
+    m_Instructions[0xFA].m_opOrAddrMode = &CPU6502::NOP_IMPLIED_1_2;
+    m_Instructions[0xFA].m_opStr = "NOP_IMPLIED_1_2";
+
+    m_Instructions[0x80].m_opOrAddrMode = &CPU6502::NOP_IMMEDIATE_2_2;
+    m_Instructions[0x80].m_opStr = "NOP_IMMEDIATE_2_2";
+    m_Instructions[0x82].m_opOrAddrMode = &CPU6502::NOP_IMMEDIATE_2_2;
+    m_Instructions[0x82].m_opStr = "NOP_IMMEDIATE_2_2";
+    m_Instructions[0x89].m_opOrAddrMode = &CPU6502::NOP_IMMEDIATE_2_2;
+    m_Instructions[0x89].m_opStr = "NOP_IMMEDIATE_2_2";
+    m_Instructions[0xC2].m_opOrAddrMode = &CPU6502::NOP_IMMEDIATE_2_2;
+    m_Instructions[0xC2].m_opStr = "NOP_IMMEDIATE_2_2";
+    m_Instructions[0xE2].m_opOrAddrMode = &CPU6502::NOP_IMMEDIATE_2_2;
+    m_Instructions[0xE2].m_opStr = "NOP_IMMEDIATE_2_2";
+    
+    m_Instructions[0x04].m_opOrAddrMode = &CPU6502::NOP_ZEROPAGE_2_3;
+    m_Instructions[0x04].m_opStr = "NOP_ZEROPAGE_2_3";
+    m_Instructions[0x44].m_opOrAddrMode = &CPU6502::NOP_ZEROPAGE_2_3;
+    m_Instructions[0x44].m_opStr = "NOP_ZEROPAGE_2_3";
+    m_Instructions[0x64].m_opOrAddrMode = &CPU6502::NOP_ZEROPAGE_2_3;
+    m_Instructions[0x64].m_opStr = "NOP_ZEROPAGE_2_3";
+
+    m_Instructions[0x14].m_opOrAddrMode = &CPU6502::NOP_ZEROPAGE_X_2_4;
+    m_Instructions[0x14].m_opStr = "NOP_ZEROPAGE_X_2_4";
+    m_Instructions[0x34].m_opOrAddrMode = &CPU6502::NOP_ZEROPAGE_X_2_4;
+    m_Instructions[0x34].m_opStr = "NOP_ZEROPAGE_X_2_4";
+    m_Instructions[0x54].m_opOrAddrMode = &CPU6502::NOP_ZEROPAGE_X_2_4;
+    m_Instructions[0x54].m_opStr = "NOP_ZEROPAGE_X_2_4";
+    m_Instructions[0x74].m_opOrAddrMode = &CPU6502::NOP_ZEROPAGE_X_2_4;
+    m_Instructions[0x74].m_opStr = "NOP_ZEROPAGE_X_2_4";
+    m_Instructions[0xD4].m_opOrAddrMode = &CPU6502::NOP_ZEROPAGE_X_2_4;
+    m_Instructions[0xD4].m_opStr = "NOP_ZEROPAGE_X_2_4";
+    m_Instructions[0xF4].m_opOrAddrMode = &CPU6502::NOP_ZEROPAGE_X_2_4;
+    m_Instructions[0xF4].m_opStr = "NOP_ZEROPAGE_X_2_4";
+
+    m_Instructions[0x0C].m_opOrAddrMode = &CPU6502::NOP_ABSOLUTE_3_4;
+    m_Instructions[0x0C].m_opStr = "NOP_ABSOLUTE_3_4";
+    
+    m_Instructions[0x1C].m_opOrAddrMode = &CPU6502::NOP_ABSOLUTE_X_3_4_1;
+    m_Instructions[0x1C].m_opStr = "NOP_ABSOLUTE_X_3_4_1";
+    m_Instructions[0x3C].m_opOrAddrMode = &CPU6502::NOP_ABSOLUTE_X_3_4_1;
+    m_Instructions[0x3C].m_opStr = "NOP_ABSOLUTE_X_3_4_1";
+    m_Instructions[0x5C].m_opOrAddrMode = &CPU6502::NOP_ABSOLUTE_X_3_4_1;
+    m_Instructions[0x5C].m_opStr = "NOP_ABSOLUTE_X_3_4_1";
+    m_Instructions[0x7C].m_opOrAddrMode = &CPU6502::NOP_ABSOLUTE_X_3_4_1;
+    m_Instructions[0x7C].m_opStr = "NOP_ABSOLUTE_X_3_4_1";
+    m_Instructions[0xDC].m_opOrAddrMode = &CPU6502::NOP_ABSOLUTE_X_3_4_1;
+    m_Instructions[0xDC].m_opStr = "NOP_ABSOLUTE_X_3_4_1";
+    m_Instructions[0xFC].m_opOrAddrMode = &CPU6502::NOP_ABSOLUTE_X_3_4_1;
+    m_Instructions[0xFC].m_opStr = "NOP_ABSOLUTE_X_3_4_1";
+
+    // Illegal opcodes - either implemented or same byte/cycle NOP'ed out
+    
+#if DEBUG
+    int implementedInstructions = 0;
+    for(uint32_t i = 0;i < 256;++i)
+    {
+        if(m_Instructions[i].m_opOrAddrMode != &CPU6502::ERROR)
+        {
+            ++implementedInstructions;
+        }
+    }
     printf("6502 CPU Startup check: %d instructions implemented\n", implementedInstructions);
 #endif
+    
 }

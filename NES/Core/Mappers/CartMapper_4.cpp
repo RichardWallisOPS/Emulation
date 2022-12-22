@@ -30,7 +30,8 @@ CartMapper_4::CartMapper_4(IOBus& bus, uint8_t* pPrg, uint32_t nProgramSize, uin
     
     if(nCharacterSize == 0)
     {
-        *(volatile char*)(0) = 'M' | 'M' | 'C'; // CHRRAM is untested and there could be combinations of both CHR ROM and CHR RAM
+        *(volatile char*)(0) = 'M' | 'M' | 'C' | '3'; // CHRRAM is untested and there could be combinations/interleaving of both CHR ROM and CHR RAM
+        
         m_pChr = m_cartCHRRAM;
         m_nCharacterSize = nChrRAMSize;
     }
@@ -72,21 +73,71 @@ void CartMapper_4::cpuWrite(uint16_t address, uint8_t byte)
     else if(address >= 0x8000 && address <= 0x9FFF)
     {
         // memory mapping
-        if((address & 1) == 0)
+        if((address & 1) == 0)  // even registers
         {
-            // TODO
             m_bankSelect = byte;
         }
-        else
+        else                    // odd registers
         {
-            // TODO
             m_bankData = byte;
+            
+            // Bank select R0-R7
+            uint8_t registerSelect = m_bankSelect & 0b111;
+            if(registerSelect >= 0 && registerSelect <= 5)
+            {
+                //uint8_t chrBankMode = (m_bankSelect >> 7) & 1;
+            }
+            else if(registerSelect >= 6 && registerSelect <= 7)
+            {
+                uint16_t prgBankSize = 0x2000;
+                uint16_t bankData = m_bankData & 0b00111111;
+                
+                // $8000-$9FFF 	R6 	    (-2)  m_prgBank0
+                // $A000-$BFFF 	R7 	    R7    m_prgBank1
+                // $C000-$DFFF 	(-2) 	R6    m_prgBank2
+                // $E000-$FFFF 	(-1) 	(-1)  m_prgBank3
+                
+                uint8_t prgBankMode = (m_bankSelect >> 6) & 1;
+                                
+                if(prgBankMode == 0)
+                {
+                    //$8000-$9FFF swappable
+                    //$C000-$DFFF fixed to second-last bank
+                    if(registerSelect == 6)
+                    {
+                        // 110: R6: Select 8 KB PRG ROM bank at $8000-$9FFF
+                        m_prgBank0 = &m_pPrg[(bankData * prgBankSize) % m_nProgramSize];
+                        m_prgBank2 = &m_pPrg[m_nProgramSize - (prgBankSize * 2)];
+                    }
+                    else if(registerSelect == 7)
+                    {
+                        // 111: R7: Select 8 KB PRG ROM bank at $A000-$BFFF
+                        m_prgBank1 = &m_pPrg[bankData * prgBankSize];
+                    }
+                }
+                else
+                {
+                    //$C000-$DFFF swappable
+                    //$8000-$9FFF fixed to second-last bank
+                    if(registerSelect == 6)
+                    {
+                        // 110: R6: Select 8 KB PRG ROM bank at $C000-$DFFF
+                        m_prgBank2 = &m_pPrg[(bankData * prgBankSize) % m_nProgramSize];
+                        m_prgBank0 = &m_pPrg[m_nProgramSize - (prgBankSize * 2)];
+                    }
+                    else if(registerSelect == 7)
+                    {
+                        // 111: R7: Select 8 KB PRG ROM bank at $A000-$BFFF
+                        m_prgBank1 = &m_pPrg[bankData * prgBankSize];
+                    }
+                }
+            }
         }
     }
     else if(address >= 0xA000 && address <= 0xBFFF)
     {
         // mirroring
-        if((address & 1) == 0)
+        if((address & 1) == 0)  // even registers
         {
             m_mirror = byte;
             uint8_t mirrorMode = byte & 1;
@@ -99,9 +150,9 @@ void CartMapper_4::cpuWrite(uint16_t address, uint8_t byte)
                 m_bus.SetMirrorMode(VRAM_MIRROR_H);
             }
         }
-        else
+        else                    // odd registers
         {
-            // TODO: ram protect
+            // RAM Protect
         }
     }
     

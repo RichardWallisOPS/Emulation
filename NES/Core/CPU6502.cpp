@@ -1587,3 +1587,108 @@ bool CPU6502::Branch(uint8_t Tn)
     }
     return false;
 }
+
+bool CPU6502::NOP_IMPLIED_1_2(uint8_t Tn)
+{
+    return Tn == 1;
+}
+
+bool CPU6502::NOP_IMMEDIATE_2_2(uint8_t Tn)
+{
+    if(Tn == 1)
+    {
+        m_dataBus = programCounterReadByte();
+    }
+    
+    return Tn == 1;
+}
+
+bool CPU6502::NOP_ZEROPAGE_2_3(uint8_t Tn)
+{
+    if(Tn == 1)
+    {
+        m_dataBus = programCounterReadByte();
+    }
+    else if(Tn == 2)
+    {
+        m_addressBusH = 0;
+        m_addressBusL = m_dataBus;
+        m_dataBus = addressBusReadByte();
+    }
+
+    return Tn == 2;
+}
+
+bool CPU6502::NOP_ZEROPAGE_X_2_4(uint8_t Tn)
+{
+    if(Tn == 1)
+    {
+        m_dataBus = programCounterReadByte();
+        m_baseAddressL = m_dataBus;
+    }
+    else if(Tn == 2)
+    {
+        m_addressBusH = 0;
+        m_addressBusL = m_baseAddressL;
+    }
+    else if(Tn == 3)
+    {
+        m_addressBusL = m_baseAddressL + m_x;
+        m_dataBus = addressBusReadByte();
+    }
+    
+    return Tn == 3;
+}
+
+bool CPU6502::NOP_ABSOLUTE_3_4(uint8_t Tn)
+{
+    if(Tn == 1)
+    {
+        m_dataBus = programCounterReadByte();
+    }
+    else if(Tn == 2)
+    {
+        m_addressBusL = m_dataBus;
+        m_dataBus = programCounterReadByte();
+    }
+    else if(Tn == 3)
+    {
+        m_addressBusH = m_dataBus;
+        m_dataBus = addressBusReadByte();
+    }
+    
+    return Tn == 3;
+}
+
+bool CPU6502::NOP_ABSOLUTE_X_3_4_1(uint8_t Tn)
+{
+    if(Tn == 1)
+    {
+        m_dataBus = programCounterReadByte();
+        m_baseAddressL = m_dataBus;
+    }
+    else if(Tn == 2)
+    {
+        m_dataBus = programCounterReadByte();
+        m_baseAddressH = m_dataBus;
+    }
+    else if(Tn == 3)
+    {
+        uint8_t carry = uint16_t(m_baseAddressL) + uint16_t(m_x) > 255 ? 1 : 0;
+        m_addressBusL = m_baseAddressL + m_x;
+        m_addressBusH = m_baseAddressH; // we could add the carry here but the docs say that occurs on the next cycle
+        
+        m_dataBus = addressBusReadByte();
+        
+        return carry == 0;
+    }
+    else if(Tn == 4)
+    {
+        // This cycle is not always executed if T3 returned true i.e. page boundry not crossed
+        m_addressBusH = m_baseAddressH + 1;
+        m_dataBus = addressBusReadByte();
+        return true;
+    }
+    
+    return false;
+}
