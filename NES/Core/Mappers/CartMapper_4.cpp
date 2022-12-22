@@ -25,10 +25,14 @@ CartMapper_4::CartMapper_4(IOBus& bus, uint8_t* pPrg, uint32_t nProgramSize, uin
 , m_chrBank5(nullptr)
 , m_chrBank6(nullptr)
 , m_chrBank7(nullptr)
+, m_scanlineLatch(0)
+, m_scanlineCounter(0)
+, m_scanlineEnable(0)
 {
-    // Point the bank pointers somewhere useful for startup - especially the last prg bank for reset vectors
-    uint32_t lastBankAddress = m_nProgramSize - 0x2000;
-    m_prgBank0 = m_prgBank1 = m_prgBank2 = m_prgBank3 = &m_pPrg[lastBankAddress];
+    m_prgBank0 = &m_pPrg[0];
+    m_prgBank1 = &m_pPrg[0x2000];
+    m_prgBank2 = &m_pPrg[m_nProgramSize - 0x4000];
+    m_prgBank3 = &m_pPrg[m_nProgramSize - 0x2000];
     
     if(nCharacterSize == 0)
     {
@@ -215,8 +219,30 @@ void CartMapper_4::cpuWrite(uint16_t address, uint8_t byte)
             // RAM Protect
         }
     }
-    
-    //TODO: scanline counting
+    else if(address >= 0xC000 && address <= 0xDFFF)
+    {
+        if((address & 1) == 0)  // even registers
+        {
+            // IRQ latch
+            m_scanlineLatch = byte;
+        }
+        else                    // odd registers
+        {
+            // IRQ reload
+            m_scanlineCounter = m_scanlineLatch;
+        }
+    }
+    else if(address >= 0xE000 && address <= 0xFFFF)
+    {
+        if((address & 1) == 0)  // even registers
+        {
+            m_scanlineEnable = 0;
+        }
+        else                    // odd registers
+        {
+            m_scanlineEnable = 1;
+        }
+    }
 }
 
 uint8_t CartMapper_4::ppuRead(uint16_t address)

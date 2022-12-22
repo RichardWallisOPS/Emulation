@@ -45,6 +45,10 @@ private:
     
     static const uint32_t nChrRAMSize = 8192;
     uint8_t m_cartCHRRAM[nChrRAMSize];
+    
+    uint8_t m_scanlineLatch;
+    uint8_t m_scanlineCounter;
+    uint8_t m_scanlineEnable;
 };
 
 #endif /* CartMapper_4_h */

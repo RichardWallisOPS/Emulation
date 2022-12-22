@@ -821,6 +821,12 @@ void PPUNES::GenerateVideoPixel()
         uint16_t x = m_scanlineDot - 1;
   
         m_pVideoOutput[y * 256 + x] = GetPixelColour(palletteIndex);
+
+        // Hide top and bottom 8 pixels - can hide a lot of glitches on multi scroll games - TODO make an option
+//        if(y < 8 || y > 230)
+//        {
+//            m_pVideoOutput[y * 256 + x] = 0x00000000;
+//        }
     }
 }
 
