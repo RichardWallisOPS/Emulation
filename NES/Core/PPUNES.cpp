@@ -408,9 +408,13 @@ void PPUNES::SpriteFetch()
             else
             {
                 // Dummy reads for unused sprites things like MMC3 etc...
-                // TODO needs checking for 
+                // TODO variations require checking
                 sprite.m_patternShift0 = m_bus.ppuRead(0x1000);
                 sprite.m_patternShift1 = m_bus.ppuRead(0x1000 + 0x8);
+                
+                // Make sure pattern data is zero'd so we don't get artifacts
+                sprite.m_patternShift0 = 0;
+                sprite.m_patternShift1 = 0;
             }
         }
     }
