@@ -237,6 +237,7 @@ void CPU6502::Tick()
             // Does a hardware interrupt still advance the program counter? Currently assuming not
             m_opCode = 0;
             ClearFlag(Flag_Break);
+            //SetFlag(Flag_IRQDisable); // conflicting info on this
         }
         else
         {
@@ -1420,6 +1421,7 @@ bool CPU6502::BRK(uint8_t Tn)
         }
         
         ClearFlag(Flag_Break);
+        //ClearFlag(Flag_IRQDisable);
         
         m_addressBusL = m_bus.cpuRead(vectorAddressL);
         m_addressBusH = m_bus.cpuRead(vectorAddressH);

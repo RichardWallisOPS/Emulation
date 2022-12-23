@@ -232,7 +232,7 @@ void CartMapper_4::cpuWrite(uint16_t address, uint8_t byte)
         if((address & 1) == 0)  // even registers
         {
             // IRQ latch
-            m_scanlineLatch = byte + 1;
+            m_scanlineLatch = byte; // TODO: Fix me: Different games need different values so I'm missing some edge cases
         }
         else                    // odd registers
         {
