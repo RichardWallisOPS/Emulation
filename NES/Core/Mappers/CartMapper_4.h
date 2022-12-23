@@ -16,6 +16,10 @@ public:
     CartMapper_4(IOBus& bus, uint8_t* pPrg, uint32_t nProgramSize, uint8_t* pChr, uint32_t nCharacterSize);
     
     BUS_HEADER_IMPL
+    
+private:
+    void MM3Signal(uint16_t address);
+    
 private:
 
     uint8_t m_bankSelect;
@@ -49,6 +53,7 @@ private:
     uint8_t m_scanlineLatch;
     uint8_t m_scanlineCounter;
     uint8_t m_scanlineEnable;
+    uint16_t m_lastAddress;
 };
 
 #endif /* CartMapper_4_h */

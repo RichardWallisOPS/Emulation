@@ -405,6 +405,13 @@ void PPUNES::SpriteFetch()
                 sprite.m_counter = xPos;
                 sprite.m_spriteZero = spriteIndex == 0 && m_spriteZero == 1 ? 1 : 0;
             }
+            else
+            {
+                // Dummy reads for unused sprites things like MMC3 etc...
+                // TODO needs checking for 
+                sprite.m_patternShift0 = m_bus.ppuRead(0x1000);
+                sprite.m_patternShift1 = m_bus.ppuRead(0x1000 + 0x8);
+            }
         }
     }
 }

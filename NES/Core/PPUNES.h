@@ -42,7 +42,7 @@ public:
     uint8_t cpuRead(uint8_t port);
     void cpuWrite(uint8_t port, uint8_t byte);
     
-    // Expects a 256x240 RGBA data pointer
+    // Expects a 256x240 RGBA8 pixel foramt data pointer
     void SetVideoOutputDataPtr(uint32_t* pVideoOutData);
 
 private:
