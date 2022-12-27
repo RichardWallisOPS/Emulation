@@ -19,6 +19,7 @@ CartMapper_1::CartMapper_1(IOBus& bus,
 , m_chrBank0(0)
 , m_chrBank1(0)
 , m_prgBank(0)
+, m_pCartCHRRAM(nullptr)
 {
     m_prgBank = 0x06;
     m_chrBank0 = 0x00;
@@ -27,17 +28,39 @@ CartMapper_1::CartMapper_1(IOBus& bus,
     // Using 8k CHR RAM
     if(nCharacterSize == 0)
     {
-        m_pChr = m_cartCHRRAM;
+        m_pCartCHRRAM = new uint8_t[m_nChrRamSize];
+        m_pChr = m_pCartCHRRAM;
+    }
+    
+    if(m_nPrgRamSize > 0 || m_nNVPrgRamSize > 0)
+    {
+        uint32_t allocRamSize = m_nPrgRamSize > m_nNVPrgRamSize ? m_nPrgRamSize : m_nNVPrgRamSize;
+        m_pCartPRGRAM = new uint8_t[allocRamSize];
+    }
+}
+
+CartMapper_1::~CartMapper_1()
+{
+    if(m_pCartPRGRAM != nullptr)
+    {
+        delete m_pCartPRGRAM;
+        m_pCartPRGRAM = nullptr;
+    }
+    
+    if(m_pCartCHRRAM != nullptr)
+    {
+        delete m_pCartCHRRAM;
+        m_pCartCHRRAM = nullptr;
     }
 }
 
 uint8_t CartMapper_1::cpuRead(uint16_t address)
 {
-    if(address >= 0x6000 && address <= 0x7fff)
+    if(address >= 0x6000 && address <= 0x7fff && m_pCartPRGRAM != nullptr)
     {
         // current 8k ram bank of max 32k
         // TODO: handle PrgRam size detection and bank switching
-        return m_cartPRGRAM[address - 0x6000];
+        return m_pCartPRGRAM[address - 0x6000];
     }
     else
     {
@@ -92,10 +115,10 @@ uint8_t CartMapper_1::cpuRead(uint16_t address)
     
 void CartMapper_1::cpuWrite(uint16_t address, uint8_t byte)
 {
-    if(address >= 0x6000 && address <= 0x7FFF)
+    if(address >= 0x6000 && address <= 0x7FFF && m_pCartPRGRAM != nullptr)
     {
-        // current 8k ram bank of max 32k
-        m_cartPRGRAM[address - 0x6000] = byte;
+        // TODO: Current 8k ram bank of max 32k
+        m_pCartPRGRAM[address - 0x6000] = byte;
     }
     else if(address >= 0x8000 && address <= 0xFFFF)
     {

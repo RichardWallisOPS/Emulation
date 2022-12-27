@@ -20,6 +20,7 @@ public:
                     uint32_t nChrRamSize, uint32_t nChrNVRamSize);
     
     BUS_HEADER_IMPL
+    
 private:
     uint8_t m_chrBankSelect;
 };

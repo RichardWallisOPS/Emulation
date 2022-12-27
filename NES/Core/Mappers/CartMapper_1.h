@@ -18,6 +18,9 @@ public:
                     uint8_t* pChr, uint32_t nCharacterSize,
                     uint32_t nPrgRamSize, uint32_t nNVPrgRamSize,
                     uint32_t nChrRamSize, uint32_t nChrNVRamSize);
+                    
+    ~CartMapper_1();
+    
     BUS_HEADER_IMPL
 private:
 
@@ -28,11 +31,8 @@ private:
     uint8_t m_chrBank1;
     uint8_t m_prgBank;
     
-    static const uint32_t nPrgRAMSize = 32768;
-    uint8_t m_cartPRGRAM[nPrgRAMSize];
-
-    static const uint32_t nChrRAMSize = 32768;
-    uint8_t m_cartCHRRAM[nChrRAMSize];
+    uint8_t* m_pCartPRGRAM;
+    uint8_t* m_pCartCHRRAM;
 };
 
 #endif /* CartMapper_1_h */
