@@ -15,11 +15,11 @@
 #include "CartMapper_4.h"
 #include "CartMapper_66.h"
 
-Mapper* CartMapper::CreateMapper(   IOBus& bus, uint8_t mapperID,
-                                    uint8_t* pPrg, uint32_t nProgramSize,
-                                    uint8_t* pChr, uint32_t nCharacterSize,
-                                    uint32_t nPrgRamSize, uint32_t nNVPrgRamSize,
-                                    uint32_t nChrRamSize, uint32_t nChrNVRamSize)
+Mapper* Mapper::CreateMapper(   IOBus& bus, uint8_t mapperID,
+                                uint8_t* pPrg, uint32_t nProgramSize,
+                                uint8_t* pChr, uint32_t nCharacterSize,
+                                uint32_t nPrgRamSize, uint32_t nNVPrgRamSize,
+                                uint32_t nChrRamSize, uint32_t nChrNVRamSize)
 {
     Mapper* pMapper = nullptr;
     

@@ -103,11 +103,11 @@ Cartridge::Cartridge(IOBus& bus, void const* pData, uint32_t dataSize)
     bus.SetMirrorMode(vramMirror);
 
     // Create specific mapper for this cart
-    m_pMapper = CartMapper::CreateMapper(   bus, mapperID,
-                                            pPrg, nProgramSize,
-                                            pChr, nCharacterSize,
-                                            nPrgRamSize, nNVPrgRamSize,
-                                            nChrRamSize, nChrNVRamSize);
+    m_pMapper = Mapper::CreateMapper(   bus, mapperID,
+                                        pPrg, nProgramSize,
+                                        pChr, nCharacterSize,
+                                        nPrgRamSize, nNVPrgRamSize,
+                                        nChrRamSize, nChrNVRamSize);
 }
 
 Cartridge::~Cartridge()

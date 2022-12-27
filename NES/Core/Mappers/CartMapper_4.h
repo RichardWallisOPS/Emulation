@@ -8,7 +8,7 @@
 #ifndef CartMapper_4_h
 #define CartMapper_4_h
 
-#include "Cartridge.h"
+#include "CartMapperFactory.h"
 
 class CartMapper_4 : public Mapper
 {
