@@ -97,11 +97,15 @@ bool SystemNES::InsertCartridge(void const* pData, uint32_t dataSize)
         uint8_t m_prg16KChunks;
         uint8_t m_chr8KChunks;
         uint8_t m_flags6;
-        uint8_t m_flags7;
-        uint8_t m_flags8;
+        uint8_t m_flags7;       // last standard flag
+        uint8_t m_flags8;       // iNes1 or iNes2 onwards
         uint8_t m_flags9;
         uint8_t m_flags10;
-        uint8_t m_flagsUnused[5];
+        uint8_t m_flags11;
+        uint8_t m_flags12;
+        uint8_t m_flags13;
+        uint8_t m_flags14;
+        uint8_t m_flags15;
     };
     
     if(pData == nullptr || dataSize < sizeof(iNesheader))
@@ -125,13 +129,24 @@ bool SystemNES::InsertCartridge(void const* pData, uint32_t dataSize)
         return false;
     }
     
-    // TODO let the cartridge handle the header info
+    // TODO: Let the cartridge handle the header info
     
     // VRAM Name table mirror mode
     MirrorMode vramMirror = (pHeader->m_flags6 & 1) == 0 ? VRAM_MIRROR_H : VRAM_MIRROR_V;
     vramMirror = (pHeader->m_flags6 & 1 << 3) != 0 ? VRAM_MIRROR_CART4 : vramMirror;
     
     uint8_t mapperID = (pHeader->m_flags7 & 0xF0) | ((pHeader->m_flags6 & 0xF0) >> 4);
+
+    // TODO: Sort out better cart RAM size detection by using iNes 2.0 header info
+//    uint8_t iNes2_0 = ((pHeader->m_flags7 >> 2) & 0x3);
+//    if(iNes2_0 == 2)
+//    {
+//        uint8_t prgRamSize = 64 << (pHeader->m_flags10 & 0b00001111);
+//        uint8_t prgNVRamSize = 64 << ((pHeader->m_flags10 & 0b11110000) >> 4);
+//        uint8_t chrRamSize = 64 << (pHeader->m_flags11 & 0b00001111);
+//        uint8_t chrNVRamSize = 64 << ((pHeader->m_flags11 & 0b11110000) >> 4);
+//    }
+    
     m_pCart = new Cartridge(*this, mapperID, vramMirror, pCartData, pHeader->m_prg16KChunks, pHeader->m_chr8KChunks);
     
     return m_pCart != nullptr && m_pCart->IsValid();
@@ -155,19 +170,6 @@ void SystemNES::SignalIRQ(bool bSignal)
 void SystemNES::SetMirrorMode(MirrorMode mode)
 {
     m_ppu.SetMirrorMode(mode);
-}
-
-void SystemNES::SetControllerButtonState(uint8_t port, ControllerButton Button, bool bSet)
-{
-    uint8_t & controllerPort = (port == 0 ? m_controller1 : m_controller2);
-    if(bSet)
-    {
-        controllerPort |= 1 << Button;
-    }
-    else
-    {
-        controllerPort &= ~(1 << Button);
-    }
 }
 
 void SystemNES::SetControllerBits(uint8_t port, uint8_t bits)

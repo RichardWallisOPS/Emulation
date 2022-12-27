@@ -39,7 +39,7 @@ public:
     ~Cartridge();
     
     bool IsValid() const;
-    
+
     BUS_HEADER_IMPL
     
 private:

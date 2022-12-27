@@ -33,6 +33,8 @@ uint8_t CartMapper_1::cpuRead(uint16_t address)
     if(address >= 0x6000 && address <= 0x7fff)
     {
         // current 8k ram bank of max 32k
+        // TODO: handle PrgRam size detection and bank switching
+        return m_cartPRGRAM[address - 0x6000];
     }
     else
     {
@@ -71,12 +73,12 @@ uint8_t CartMapper_1::cpuRead(uint16_t address)
             // fix last bank at $C000 and switch 16 KB bank at $8000
             if(address >= 0x8000 && address <= 0xBFFF)
             {
-                uint32_t bankAddress = (progBank * 0x4000) + (address - 0x8000);
+                uint32_t bankAddress = (progBank * 0x4000) + address - 0x8000;
                 return m_pPrg[bankAddress];
             }
             else if(address >= 0xC000 && address <= 0xFFFF)
             {
-                uint32_t bankAddress = (m_nProgramSize - 0x4000) + (address - 0xC000);
+                uint32_t bankAddress = (m_nProgramSize - 0x4000) + address - 0xC000;
                 return m_pPrg[bankAddress];
             }
         }
@@ -90,6 +92,7 @@ void CartMapper_1::cpuWrite(uint16_t address, uint8_t byte)
     if(address >= 0x6000 && address <= 0x7FFF)
     {
         // current 8k ram bank of max 32k
+        m_cartPRGRAM[address - 0x6000] = byte;
     }
     else if(address >= 0x8000 && address <= 0xFFFF)
     {

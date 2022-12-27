@@ -53,7 +53,8 @@ private:
     uint8_t m_scanlineLatch;
     uint8_t m_scanlineCounter;
     uint8_t m_scanlineEnable;
-    uint16_t m_lastAddress;
+    uint8_t m_scanlineReload;
+    uint8_t m_lastA12;
 };
 
 #endif /* CartMapper_4_h */

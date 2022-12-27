@@ -113,7 +113,7 @@ private:
         uint8_t m_attribute;
         uint8_t m_counter;
         uint8_t m_spriteZero;
-    }m_scanlineSprites[8];
+    } m_scanlineSprites[8];
     
     // Emulation
     uint64_t m_tickCount;

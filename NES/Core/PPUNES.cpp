@@ -407,14 +407,31 @@ void PPUNES::SpriteFetch()
             }
             else
             {
-                // Dummy reads for unused sprites things like MMC3 etc...
-                // TODO variations require checking
-                sprite.m_patternShift0 = m_bus.ppuRead(0x1000);
-                sprite.m_patternShift1 = m_bus.ppuRead(0x1000 + 0x8);
-                
-                // Make sure pattern data is zero'd so we don't get artifacts
-                sprite.m_patternShift0 = 0;
-                sprite.m_patternShift1 = 0;
+                // Dummy reads for unused sprites, things like MMC3 etc rely on this behavious
+                if(TestFlag(CTRL_SPRITE_SIZE, m_ctrl))
+                {
+                    // TODO variations require checking
+                    sprite.m_patternShift0 = m_bus.ppuRead(0x1000);
+                    sprite.m_patternShift1 = m_bus.ppuRead(0x1000 + 0x8);
+
+                    // Make sure pattern data is zero'd so we don't get artifacts
+                    sprite.m_patternShift0 = 0;
+                    sprite.m_patternShift1 = 0;
+                }
+                else
+                {
+                    uint16_t spriteBaseAddress = 0x0000;
+                    if(TestFlag(CTRL_SPRITE_TABLE_ADDR, m_ctrl))
+                    {
+                        spriteBaseAddress = 0x1000;
+                    }
+
+                    sprite.m_patternShift0 = m_bus.ppuRead(spriteBaseAddress);
+                    sprite.m_patternShift1 = m_bus.ppuRead(spriteBaseAddress + 0x8);
+
+                    sprite.m_patternShift0 = 0;
+                    sprite.m_patternShift1 = 0;
+                }
             }
         }
     }

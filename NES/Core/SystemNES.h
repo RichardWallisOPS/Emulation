@@ -60,7 +60,6 @@ public:
     void SetVideoOutputDataPtr(uint32_t* pVideoOutData);
     
     // port 0 = player 1
-    void SetControllerButtonState(uint8_t port, ControllerButton Button, bool bSet);
     void SetControllerBits(uint8_t port, uint8_t bits);
     
 private:

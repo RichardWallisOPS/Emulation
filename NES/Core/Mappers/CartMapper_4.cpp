@@ -28,7 +28,8 @@ CartMapper_4::CartMapper_4(IOBus& bus, uint8_t* pPrg, uint32_t nProgramSize, uin
 , m_scanlineLatch(0)
 , m_scanlineCounter(0)
 , m_scanlineEnable(0)
-, m_lastAddress(0)
+, m_scanlineReload(0)
+, m_lastA12(0)
 {
     m_prgBank0 = &m_pPrg[0];
     m_prgBank1 = &m_pPrg[0x2000];
@@ -237,7 +238,7 @@ void CartMapper_4::cpuWrite(uint16_t address, uint8_t byte)
         else                    // odd registers
         {
             // IRQ reload
-            m_scanlineCounter = m_scanlineLatch;
+            m_scanlineReload = 1;
         }
     }
     else if(address >= 0xE000 && address <= 0xFFFF)
@@ -332,18 +333,25 @@ void CartMapper_4::ppuWrite(uint16_t address, uint8_t byte)
 
 void CartMapper_4::MM3Signal(uint16_t address)
 {
-    if((m_lastAddress & (1 << 12)) == 0 && (address & (1 << 12)) != 0)
+    uint8_t currentA12 = (address & (1 << 12)) >> 12;
+
+    if(m_lastA12 == 0 && currentA12 == 1)
     {
-        --m_scanlineCounter;
-     
-        if(m_scanlineCounter == 0)
+        if(m_scanlineReload)
         {
-            if(m_scanlineEnable)
-            {
-                m_bus.SignalIRQ(true);
-            }
+            m_scanlineReload = 0;
             m_scanlineCounter = m_scanlineLatch;
         }
+        else
+        {
+            --m_scanlineCounter;
+
+            if(m_scanlineCounter == 0)
+            {
+                m_bus.SignalIRQ(true);
+                m_scanlineReload = 1;
+            }
+        }
     }
-    m_lastAddress = address;
+    m_lastA12 = currentA12;
 }

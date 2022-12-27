@@ -25,6 +25,9 @@ private:
     uint8_t m_chrBank1;
     uint8_t m_prgBank;
     
+    static const uint32_t nPrgRAMSize = 32768;
+    uint8_t m_cartPRGRAM[nPrgRAMSize];
+
     static const uint32_t nChrRAMSize = 32768;
     uint8_t m_cartCHRRAM[nChrRAMSize];
 };
