@@ -7,10 +7,27 @@
 
 #include "CartMapper_2.h"
 
-CartMapper_2::CartMapper_2(IOBus& bus, uint8_t* pPrg, uint32_t nProgramSize, uint8_t* pChr, uint32_t nCharacterSize)
-: Mapper(bus, pPrg, nProgramSize, pChr, nCharacterSize)
+CartMapper_2::CartMapper_2( IOBus& bus,
+                            uint8_t* pPrg, uint32_t nProgramSize,
+                            uint8_t* pChr, uint32_t nCharacterSize,
+                            uint32_t nPrgRamSize, uint32_t nNVPrgRamSize,
+                            uint32_t nChrRamSize, uint32_t nChrNVRamSize)
+: Mapper(bus, pPrg, nProgramSize, pChr, nCharacterSize, nPrgRamSize, nNVPrgRamSize, nChrRamSize, nChrNVRamSize)
 , m_prgBankSelect(0)
-{}
+, m_pCartCHRRAM(nullptr)
+{
+    uint32_t chrRamSize = m_nChrRamSize ? m_nChrRamSize : 8192;
+    m_pCartCHRRAM = new uint8_t[chrRamSize];
+}
+
+ CartMapper_2::~CartMapper_2()
+ {
+    if(m_pCartCHRRAM != nullptr)
+    {
+        delete m_pCartCHRRAM;
+        m_pCartCHRRAM = nullptr;
+    }
+ }
 
 uint8_t CartMapper_2::cpuRead(uint16_t address)
 {
@@ -41,10 +58,10 @@ void CartMapper_2::cpuWrite(uint16_t address, uint8_t byte)
 
 uint8_t CartMapper_2::ppuRead(uint16_t address)
 {
-    return m_cartCHRRAM[address % nChrRAMSize];
+    return m_pCartCHRRAM[address % m_nChrRamSize];
 }
 
 void CartMapper_2::ppuWrite(uint16_t address, uint8_t byte)
 {
-    m_cartCHRRAM[address % nChrRAMSize] = byte;
+    m_pCartCHRRAM[address % m_nChrRamSize] = byte;
 }

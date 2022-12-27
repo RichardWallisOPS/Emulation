@@ -13,12 +13,20 @@
 class Mapper : public IOBus
 {
 public:
-    Mapper(IOBus& bus, uint8_t* pPrg, uint32_t nProgramSize, uint8_t* pChr, uint32_t nCharacterSize)
+    Mapper( IOBus& bus,
+            uint8_t* pPrg, uint32_t nProgramSize,
+            uint8_t* pChr, uint32_t nCharacterSize,
+            uint32_t nPrgRamSize, uint32_t nNVPrgRamSize,
+            uint32_t nChrRamSize, uint32_t nChrNVRamSize)
     : m_bus(bus)
     , m_pPrg(pPrg)
     , m_pChr(pChr)
     , m_nProgramSize(nProgramSize)
     , m_nCharacterSize(nCharacterSize)
+    , m_nPrgRamSize(nPrgRamSize)
+    , m_nNVPrgRamSize(nNVPrgRamSize)
+    , m_nChrRamSize(nChrRamSize)
+    , m_nChrNVRamSize(nChrNVRamSize)
     {}
     
     virtual ~Mapper() {}
@@ -30,12 +38,16 @@ protected:
     uint8_t*    m_pChr;
     uint32_t    m_nProgramSize;
     uint32_t    m_nCharacterSize;
+    uint32_t    m_nPrgRamSize;
+    uint32_t    m_nNVPrgRamSize;
+    uint32_t    m_nChrRamSize;
+    uint32_t    m_nChrNVRamSize;
 };
 
 class Cartridge : public IOBus
 {
 public:
-    Cartridge(IOBus& bus, uint8_t mapperID, MirrorMode mirrorMode, uint8_t const* pPakData, uint8_t nPakPrgCount, uint8_t nPakChrCount);
+    Cartridge(IOBus& bus, void const* pData, uint32_t dataSize);
     ~Cartridge();
     
     bool IsValid() const;

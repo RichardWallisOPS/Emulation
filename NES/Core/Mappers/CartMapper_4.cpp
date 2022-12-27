@@ -7,8 +7,12 @@
 
 #include "CartMapper_4.h"
 
-CartMapper_4::CartMapper_4(IOBus& bus, uint8_t* pPrg, uint32_t nProgramSize, uint8_t* pChr, uint32_t nCharacterSize)
-: Mapper(bus, pPrg, nProgramSize, pChr, nCharacterSize)
+CartMapper_4::CartMapper_4( IOBus& bus,
+                            uint8_t* pPrg, uint32_t nProgramSize,
+                            uint8_t* pChr, uint32_t nCharacterSize,
+                            uint32_t nPrgRamSize, uint32_t nNVPrgRamSize,
+                            uint32_t nChrRamSize, uint32_t nChrNVRamSize)
+: Mapper(bus, pPrg, nProgramSize, pChr, nCharacterSize, nPrgRamSize, nNVPrgRamSize, nChrRamSize, nChrNVRamSize)
 , m_bankSelect(0)
 , m_bankData(0)
 , m_mirror(0)
@@ -40,9 +44,6 @@ CartMapper_4::CartMapper_4(IOBus& bus, uint8_t* pPrg, uint32_t nProgramSize, uin
     if(nCharacterSize == 0)
     {
         *(volatile char*)(0) = 'M' | 'M' | 'C' | '3'; // CHRRAM is untested and there could be combinations/interleaving of both CHR ROM and CHR RAM
-        
-        m_pChr = m_cartCHRRAM;
-        m_nCharacterSize = nChrRAMSize;
     }
     
     m_chrBank0 = &m_pChr[0x0400 * 0];

@@ -10,28 +10,104 @@
 #include "Cartridge.h"
 #include "Mappers/CartMapperFactory.h"
 
-Cartridge::Cartridge(IOBus& bus, uint8_t mapperID, MirrorMode mirrorMode, uint8_t const* pPakData, uint8_t nPakPrgCount, uint8_t nPakChrCount)
+Cartridge::Cartridge(IOBus& bus, void const* pData, uint32_t dataSize)
 : m_pMapper(nullptr)
 , m_pPakData(nullptr)
 {
-    memset(m_cartVRAM, 0x00, sizeof(m_cartVRAM));
+    // Parse header
+    struct iNesheader
+    {
+        uint8_t m_constant[4];
+        uint8_t m_prg16KChunks;
+        uint8_t m_chr8KChunks;
+        uint8_t m_flags6;
+        uint8_t m_flags7;       // last standard flag
+        uint8_t m_flags8;       // iNes1 or iNes2 onwards
+        uint8_t m_flags9;
+        uint8_t m_flags10;
+        uint8_t m_flags11;
+        uint8_t m_flags12;
+        uint8_t m_flags13;
+        uint8_t m_flags14;
+        uint8_t m_flags15;
+    };
     
-    uint32_t nProgramSize = (16384 * (uint32_t)nPakPrgCount);
-    uint32_t nCharacterSize = (8192 * (uint32_t)nPakChrCount);
-    
-    const uint32_t nCartDataSize = nProgramSize + nCharacterSize;
+    if(pData == nullptr || dataSize < sizeof(iNesheader))
+    {
+        return;
+    }
         
-    m_pPakData = new uint8_t[nCartDataSize];
-    memcpy(m_pPakData, pPakData, nCartDataSize);
+    uint8_t const* pRawBytes = (uint8_t const*)pData;
+    iNesheader const* pHeader = (iNesheader const*)pRawBytes;
+    uint8_t const* pCartData = pRawBytes + sizeof(iNesheader);
     
+    char const magic[4] = {0x4E, 0x45, 0x53, 0x1A};
+    if(memcmp(magic, pData, 4) != 0)
+    {
+        return;
+    }
+    
+    if((pHeader->m_flags6 & (1 << 2)) != 0)
+    {
+        // 512 byte trainer not handled
+        return;
+    }
+    
+    bool iNes2_0 = ((pHeader->m_flags7 >> 2) & 0x3) == 2;
+    
+    // VRAM Name table mirror mode
+    MirrorMode vramMirror = (pHeader->m_flags6 & 1) == 0 ? VRAM_MIRROR_H : VRAM_MIRROR_V;
+    vramMirror = (pHeader->m_flags6 & 1 << 3) != 0 ? VRAM_MIRROR_CART4 : vramMirror;
+    
+    uint8_t mapperID = (pHeader->m_flags7 & 0xF0) | ((pHeader->m_flags6 & 0xF0) >> 4);
+    
+    // iNes 1.0 size
+    uint32_t nProgramSize = (16384 * (uint32_t)pHeader->m_prg16KChunks);
+    uint32_t nCharacterSize = (8192 * (uint32_t)pHeader->m_chr8KChunks);
+    
+    if(iNes2_0)
+    {
+        // TODO: MSB ROM sizes
+    }
+    
+    uint32_t nPrgRamSize = 0;
+    uint32_t nNVPrgRamSize = 0;
+    uint32_t nChrRamSize = 0;
+    uint32_t nChrNVRamSize = 0;
+
+    // Other ram bank sizes
+    if(iNes2_0)
+    {
+        nPrgRamSize = 64 << (pHeader->m_flags10 & 0b00001111);
+        if(nPrgRamSize <= 64) nPrgRamSize = 0;
+        nNVPrgRamSize = 64 << ((pHeader->m_flags10 & 0b11110000) >> 4);
+        if(nNVPrgRamSize <= 64) nNVPrgRamSize = 0;
+        nChrRamSize = 64 << (pHeader->m_flags11 & 0b00001111);
+        if(nChrRamSize <= 64) nChrRamSize = 0;
+        nChrNVRamSize = 64 << ((pHeader->m_flags11 & 0b11110000) >> 4);
+        if(nChrNVRamSize <= 64) nChrNVRamSize = 0;
+    }
+
+    // Setup cartridge data and rom mapping
+    memset(m_cartVRAM, 0x00, sizeof(m_cartVRAM));
+
+    const uint32_t nCartDataSize = nProgramSize + nCharacterSize;
+
+    m_pPakData = new uint8_t[nCartDataSize];
+    memcpy(m_pPakData, pCartData, nCartDataSize);
+
     uint8_t* pPrg = m_pPakData + 0;
     uint8_t* pChr = m_pPakData + nProgramSize;
 
     // Mirror mode for cart wiring - mapper can override
-    bus.SetMirrorMode(mirrorMode);
-    
-    // Mappers can do their own mirror modes
-    m_pMapper = CartMapper::CreateMapper(bus, mapperID, pPrg, nProgramSize, pChr, nCharacterSize);
+    bus.SetMirrorMode(vramMirror);
+
+    // Create specific mapper for this cart
+    m_pMapper = CartMapper::CreateMapper(   bus, mapperID,
+                                            pPrg, nProgramSize,
+                                            pChr, nCharacterSize,
+                                            nPrgRamSize, nNVPrgRamSize,
+                                            nChrRamSize, nChrNVRamSize);
 }
 
 Cartridge::~Cartridge()

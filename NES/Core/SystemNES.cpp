@@ -91,63 +91,7 @@ bool SystemNES::InsertCartridge(void const* pData, uint32_t dataSize)
 {
     EjectCartridge();
     
-    struct iNesheader
-    {
-        uint8_t m_constant[4];
-        uint8_t m_prg16KChunks;
-        uint8_t m_chr8KChunks;
-        uint8_t m_flags6;
-        uint8_t m_flags7;       // last standard flag
-        uint8_t m_flags8;       // iNes1 or iNes2 onwards
-        uint8_t m_flags9;
-        uint8_t m_flags10;
-        uint8_t m_flags11;
-        uint8_t m_flags12;
-        uint8_t m_flags13;
-        uint8_t m_flags14;
-        uint8_t m_flags15;
-    };
-    
-    if(pData == nullptr || dataSize < sizeof(iNesheader))
-    {
-        return false;
-    }
-        
-    uint8_t const* pRawBytes = (uint8_t const*)pData;
-    iNesheader const* pHeader = (iNesheader const*)pRawBytes;
-    uint8_t const* pCartData = pRawBytes + sizeof(iNesheader);
-    
-    char const magic[4] = {0x4E, 0x45, 0x53, 0x1A};
-    if(memcmp(magic, pData, 4) != 0)
-    {
-        return false;
-    }
-    
-    if((pHeader->m_flags6 & (1 << 2)) != 0)
-    {
-        // 512 byte trainer not handled
-        return false;
-    }
-    
-    // TODO: Let the cartridge handle the header info
-    
-    // VRAM Name table mirror mode
-    MirrorMode vramMirror = (pHeader->m_flags6 & 1) == 0 ? VRAM_MIRROR_H : VRAM_MIRROR_V;
-    vramMirror = (pHeader->m_flags6 & 1 << 3) != 0 ? VRAM_MIRROR_CART4 : vramMirror;
-    
-    uint8_t mapperID = (pHeader->m_flags7 & 0xF0) | ((pHeader->m_flags6 & 0xF0) >> 4);
-
-    // TODO: Sort out better cart RAM size detection by using iNes 2.0 header info
-//    uint8_t iNes2_0 = ((pHeader->m_flags7 >> 2) & 0x3);
-//    if(iNes2_0 == 2)
-//    {
-//        uint8_t prgRamSize = 64 << (pHeader->m_flags10 & 0b00001111);
-//        uint8_t prgNVRamSize = 64 << ((pHeader->m_flags10 & 0b11110000) >> 4);
-//        uint8_t chrRamSize = 64 << (pHeader->m_flags11 & 0b00001111);
-//        uint8_t chrNVRamSize = 64 << ((pHeader->m_flags11 & 0b11110000) >> 4);
-//    }
-    
-    m_pCart = new Cartridge(*this, mapperID, vramMirror, pCartData, pHeader->m_prg16KChunks, pHeader->m_chr8KChunks);
+    m_pCart = new Cartridge(*this, pData, dataSize);
     
     return m_pCart != nullptr && m_pCart->IsValid();
 }

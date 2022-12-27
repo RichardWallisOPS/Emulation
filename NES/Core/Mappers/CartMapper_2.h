@@ -13,14 +13,18 @@
 class CartMapper_2 : public Mapper
 {
 public:
-    CartMapper_2(IOBus& bus, uint8_t* pPrg, uint32_t nProgramSize, uint8_t* pChr, uint32_t nCharacterSize);
+    CartMapper_2(   IOBus& bus,
+                    uint8_t* pPrg, uint32_t nProgramSize,
+                    uint8_t* pChr, uint32_t nCharacterSize,
+                    uint32_t nPrgRamSize, uint32_t nNVPrgRamSize,
+                    uint32_t nChrRamSize, uint32_t nChrNVRamSize);
+    
+    ~CartMapper_2();
     
     BUS_HEADER_IMPL
 private:
     uint8_t m_prgBankSelect;
-    
-    static const uint32_t nChrRAMSize = 8192;
-    uint8_t m_cartCHRRAM[nChrRAMSize];
+    uint8_t* m_pCartCHRRAM;
 };
 
 #endif /* CartMapper_2_h */
