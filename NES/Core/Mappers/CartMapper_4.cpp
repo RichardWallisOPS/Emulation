@@ -30,6 +30,7 @@ CartMapper_4::CartMapper_4(IOBus& bus, uint8_t* pPrg, uint32_t nProgramSize, uin
 , m_scanlineEnable(0)
 , m_scanlineReload(0)
 , m_lastA12(0)
+, m_delay(0)
 {
     m_prgBank0 = &m_pPrg[0];
     m_prgBank1 = &m_pPrg[0x2000];
@@ -335,7 +336,19 @@ void CartMapper_4::MM3Signal(uint16_t address)
 {
     uint8_t currentA12 = (address & (1 << 12)) >> 12;
 
-    if(m_lastA12 == 0 && currentA12 == 1)
+    if(m_delay > 0)
+    {
+        --m_delay;
+        if(m_delay == 0)
+        {
+            if(m_scanlineEnable)
+            {
+                m_bus.SignalIRQ(true);
+            }
+            m_scanlineReload = 1;
+        }
+    }
+    else if(m_lastA12 == 0 && currentA12 == 1)
     {
         if(m_scanlineReload)
         {
@@ -348,8 +361,13 @@ void CartMapper_4::MM3Signal(uint16_t address)
 
             if(m_scanlineCounter == 0)
             {
-                m_bus.SignalIRQ(true);
-                m_scanlineReload = 1;
+//                if(m_scanlineEnable)
+//                {
+//                    m_bus.SignalIRQ(true);
+//                }
+//                m_scanlineReload = 1;
+                // Not sure about this delay???
+                m_delay = 8;
             }
         }
     }

@@ -116,7 +116,6 @@ private:
     } m_scanlineSprites[8];
     
     // Emulation
-    uint64_t m_tickCount;
     uint16_t m_scanline;
     uint16_t m_scanlineDot;
     

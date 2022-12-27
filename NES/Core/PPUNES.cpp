@@ -56,7 +56,6 @@ PPUNES::PPUNES(IOBus& bus)
 , m_oamAddress(0)
 , m_portLatch(0)
 , m_ppuDataBuffer(0)
-, m_tickCount(0)
 , m_scanline(0)
 , m_scanlineDot(0)
 , m_ppuAddress(0)
@@ -115,7 +114,6 @@ void PPUNES::PowerOn()
     m_oamAddress = 0;
     m_portLatch = 0;
     m_ppuDataBuffer = 0;
-    m_tickCount = 0;
     m_scanline = 0;
     m_scanlineDot = 0;
     
@@ -145,7 +143,6 @@ void PPUNES::Reset()
     m_oamAddress = 0;
     m_portLatch = 0;
     m_ppuDataBuffer = 0;
-    m_tickCount = 0;
     m_scanline = 0;
     m_scanlineDot = 0;
     
@@ -238,9 +235,7 @@ void PPUNES::Tick()
     }
 
     // update next dot positon and scanline
-    ++m_tickCount;
     ++m_scanlineDot;
-    
     if(m_scanlineDot > 340)
     {
         m_scanlineDot = 0;
@@ -408,9 +403,9 @@ void PPUNES::SpriteFetch()
             else
             {
                 // Dummy reads for unused sprites, things like MMC3 etc rely on this behavious
+                // TODO variations require checking....
                 if(TestFlag(CTRL_SPRITE_SIZE, m_ctrl))
                 {
-                    // TODO variations require checking
                     sprite.m_patternShift0 = m_bus.ppuRead(0x1000);
                     sprite.m_patternShift1 = m_bus.ppuRead(0x1000 + 0x8);
 
