@@ -35,6 +35,12 @@ CartMapper_1::CartMapper_1(IOBus& bus,
     if(m_nPrgRamSize > 0 || m_nNVPrgRamSize > 0)
     {
         uint32_t allocRamSize = m_nPrgRamSize > m_nNVPrgRamSize ? m_nPrgRamSize : m_nNVPrgRamSize;
+        
+        if(allocRamSize > 8192)
+        {
+            *(volatile char*)(0) = 'M' | 'M' | 'C' | '1'; // more than 8k w-ram is not implemented - bank switching required
+        }
+        
         m_pCartPRGRAM = new uint8_t[allocRamSize];
     }
 }
