@@ -185,6 +185,8 @@ Cartridge::Cartridge(IOBus& bus, const char* pCartPath)
         {
             m_pCartCHRRAM = new uint8_t[allocChrRamSize];
         }
+        
+        LoadNVRAM();
     }
 
     // Mirror mode for cart wiring - mapper can override
@@ -198,8 +200,20 @@ Cartridge::Cartridge(IOBus& bus, const char* pCartPath)
                                         m_pCartCHRRAM, nChrRamSize, nChrNVRamSize);
 }
 
+void Cartridge::LoadNVRAM()
+{
+    // TODO
+}
+
+void Cartridge::SaveNVRAM()
+{
+    // TODO
+}
+
 Cartridge::~Cartridge()
 {
+    SaveNVRAM();    // TODO: more often than stutdown?
+    
     if(m_pMapper != nullptr)
     {
         delete m_pMapper;

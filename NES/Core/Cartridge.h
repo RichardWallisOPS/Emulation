@@ -23,6 +23,11 @@ public:
     BUS_HEADER_IMPL
     
 private:
+
+    void LoadNVRAM();
+    void SaveNVRAM();
+    
+private:
     const char* m_pCartPath;
     Mapper*     m_pMapper;
     

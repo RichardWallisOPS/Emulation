@@ -33,6 +33,8 @@ public:
     
     virtual ~Mapper() {}
     
+    uint32_t GetNVPrgRAMSize() const {return m_nNVPrgRamSize;}
+    uint32_t GetNVChrRAMSize() const {return m_nChrNVRamSize;}
     
     static Mapper* CreateMapper(    IOBus& bus, uint8_t mapperID,
                                     uint8_t* pPrg, uint32_t nProgramSize,
