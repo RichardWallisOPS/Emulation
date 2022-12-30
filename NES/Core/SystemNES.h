@@ -44,7 +44,7 @@ public:
     
     void Reset();
     void EjectCartridge();
-    bool InsertCartridge(void const* pData, uint32_t dataSize);
+    bool InsertCartridge(const char* pCartPath);
     void PowerOn();
 
     void Tick();

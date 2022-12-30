@@ -87,11 +87,11 @@ void SystemNES::EjectCartridge()
     }
 }
 
-bool SystemNES::InsertCartridge(void const* pData, uint32_t dataSize)
+bool SystemNES::InsertCartridge(const char* pCartPath)
 {
     EjectCartridge();
     
-    m_pCart = new Cartridge(*this, pData, dataSize);
+    m_pCart = new Cartridge(*this, pCartPath);
     
     return m_pCart != nullptr && m_pCart->IsValid();
 }

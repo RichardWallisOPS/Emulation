@@ -10,39 +10,109 @@
 #include "Cartridge.h"
 #include "Mappers/CartMapperFactory.h"
 
-Cartridge::Cartridge(IOBus& bus, void const* pData, uint32_t dataSize)
-: m_pMapper(nullptr)
+// Parse header
+struct iNesheader
+{
+    uint8_t m_constant[4];
+    uint8_t m_prg16KChunks;
+    uint8_t m_chr8KChunks;
+    uint8_t m_flags6;
+    uint8_t m_flags7;       // last standard flag
+    uint8_t m_flags8;       // iNes1 or iNes2 onwards
+    uint8_t m_flags9;
+    uint8_t m_flags10;
+    uint8_t m_flags11;
+    uint8_t m_flags12;
+    uint8_t m_flags13;
+    uint8_t m_flags14;
+    uint8_t m_flags15;
+};
+
+class FileStack
+{
+public:
+    FileStack(FILE* pFile)
+    : m_pHandle(pFile)
+    {}
+    ~FileStack()
+    {
+        if(m_pHandle != nullptr)
+        {
+            fclose(m_pHandle);
+            m_pHandle = nullptr;
+        }
+    }
+    
+    FILE* handle() {return m_pHandle;}
+
+private:
+    FILE* m_pHandle;
+};
+
+class MemStack
+{
+public:
+    MemStack(uint32_t size)
+    : m_pData(nullptr)
+    {
+        m_pData = new uint8_t[size];
+    }
+    ~MemStack()
+    {
+        if(m_pData != nullptr)
+        {
+            delete m_pData;
+            m_pData = nullptr;
+        }
+    }
+    
+    uint8_t* mem() {return m_pData;}
+
+private:
+    uint8_t* m_pData;
+};
+
+Cartridge::Cartridge(IOBus& bus, const char* pCartPath)
+: m_pCartPath(pCartPath)
+, m_pMapper(nullptr)
 , m_pPakData(nullptr)
 {
-    // Parse header
-    struct iNesheader
-    {
-        uint8_t m_constant[4];
-        uint8_t m_prg16KChunks;
-        uint8_t m_chr8KChunks;
-        uint8_t m_flags6;
-        uint8_t m_flags7;       // last standard flag
-        uint8_t m_flags8;       // iNes1 or iNes2 onwards
-        uint8_t m_flags9;
-        uint8_t m_flags10;
-        uint8_t m_flags11;
-        uint8_t m_flags12;
-        uint8_t m_flags13;
-        uint8_t m_flags14;
-        uint8_t m_flags15;
-    };
+    FileStack fileHandle(fopen(pCartPath, "r"));
     
-    if(pData == nullptr || dataSize < sizeof(iNesheader))
+    if(fileHandle.handle() == nullptr)
     {
         return;
     }
-        
-    uint8_t const* pRawBytes = (uint8_t const*)pData;
-    iNesheader const* pHeader = (iNesheader const*)pRawBytes;
-    uint8_t const* pCartData = pRawBytes + sizeof(iNesheader);
+    
+    if(fseek(fileHandle.handle(), 0, SEEK_END) != 0)
+    {
+        return;
+    }
+    
+    uint32_t dataSize = (uint32_t)ftell(fileHandle.handle());
+    
+    if(fseek(fileHandle.handle(), 0, SEEK_SET) != 0)
+    {
+        return;
+    }
+    
+    if(dataSize < sizeof(iNesheader))
+    {
+        return;
+    }
+    
+    MemStack fileBytes(dataSize);
+
+    if(fread(fileBytes.mem(), 1, dataSize, fileHandle.handle()) != dataSize)
+    {
+        return;
+    }
+
+    iNesheader const* pHeader = (iNesheader const*)fileBytes.mem();
+    uint8_t const* pCartData = fileBytes.mem() + sizeof(iNesheader);
     
     char const magic[4] = {0x4E, 0x45, 0x53, 0x1A};
-    if(memcmp(magic, pData, 4) != 0)
+    if(memcmp(magic, fileBytes.mem(), 4) != 0)
     {
         return;
     }
@@ -67,7 +137,7 @@ Cartridge::Cartridge(IOBus& bus, void const* pData, uint32_t dataSize)
     
     if(iNes2_0)
     {
-        // TODO: MSB ROM sizes
+        // TODO: MSB ROM sizes if required
     }
     
     uint32_t nPrgRamSize = 0;

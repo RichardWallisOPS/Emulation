@@ -199,24 +199,14 @@ Vertex const g_quadVerts[] = {  {{-1.f,-1.f,0.f,1.f},   {0.f,1.f}},
         self.pipelineEmulationOutputToFrameBufferTexture = [self.device newRenderPipelineStateWithDescriptor:pipelineEmulationOutputToFrameBufferTextureDesc error:nil];
         
         {
-            // TMP use passed in file for cart
-            // TODO better file selection
+            // TODO better file selection in UI
             NSProcessInfo* process = [NSProcessInfo processInfo];
             NSArray* arguments = [process arguments];
             
             if(arguments.count > 1)
             {
-                NSString* path = arguments[1];
-                
-                printf("Inserting cart: %s\n", [path cStringUsingEncoding:NSUTF8StringEncoding]);
-                
-                NSURL* gamePakURL = [[NSURL alloc] initFileURLWithPath:path isDirectory:NO];
-                
-                NSError* pError = nil;
-                NSData* pakData = [NSData dataWithContentsOfURL:gamePakURL options:0 error:&pError];
-                
                 g_NESConsole.SetVideoOutputDataPtr((uint32_t*)self.emulationOutputData.contents);
-                if(g_NESConsole.InsertCartridge(pakData.bytes, (uint32_t)pakData.length))
+                if(g_NESConsole.InsertCartridge([arguments[1] cStringUsingEncoding:NSUTF8StringEncoding]))
                 {
                     g_NESConsole.PowerOn();
                 }

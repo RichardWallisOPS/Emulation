@@ -15,7 +15,7 @@ class Mapper;
 class Cartridge : public IOBus
 {
 public:
-    Cartridge(IOBus& bus, void const* pData, uint32_t dataSize);
+    Cartridge(IOBus& bus, const char* pCartPath);
     ~Cartridge();
     
     bool IsValid() const;
@@ -23,6 +23,7 @@ public:
     BUS_HEADER_IMPL
     
 private:
+    const char* m_pCartPath;
     Mapper*     m_pMapper;
     uint8_t*    m_pPakData;
         
