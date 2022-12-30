@@ -28,13 +28,20 @@ private:
     void SaveNVRAM();
     
 private:
+
+    // Source cart file location
     const char* m_pCartPath;
+    
+    // Cached NVRAM save location
+    char*       m_pNVRAMPath;
+    
+    // Mapper logic
     Mapper*     m_pMapper;
     
     // ROM Data PRG + CHR in one block
     uint8_t*    m_pPakData;
     
-    // Extra VRAM tables
+    // Extra VRAM tables for certain carts
     uint8_t     m_cartVRAM[4096];
     
     // On cart RAM (optional)

@@ -125,6 +125,19 @@ Cartridge::Cartridge(IOBus& bus, const char* pCartPath)
         return;
     }
     
+    // Cache a NV RAM save location based on cartridge path
+    {
+        const char* pNVSave = ".NVPRGRAM";
+        const size_t cartPathLen = strlen(m_pCartPath);
+        const size_t nvSaveExensionLen = strlen(pNVSave);
+        
+        m_pNVRAMPath = new char[cartPathLen + nvSaveExensionLen + 1];
+        
+        memcpy(m_pNVRAMPath, m_pCartPath, cartPathLen);
+        memcpy(m_pNVRAMPath + cartPathLen, pNVSave, nvSaveExensionLen);
+        *(m_pNVRAMPath + cartPathLen + nvSaveExensionLen) = 0;
+    }
+    
     bool iNes2_0 = ((pHeader->m_flags7 >> 2) & 0x3) == 2;
     
     // VRAM Name table mirror mode
@@ -172,21 +185,21 @@ Cartridge::Cartridge(IOBus& bus, const char* pCartPath)
         if(nChrNVRamSize <= 64) nChrNVRamSize = 0;
     }
     
-    // Assume Volatile RAM OR Non-Volatile RAM but not both
+    // Currently assume Volatile RAM OR Non-Volatile RAM but not both
     {
         uint32_t allocPrgRamSize = nPrgRamSize > nNVPrgRamSize ? nPrgRamSize : nNVPrgRamSize;
         if(allocPrgRamSize > 0)
         {
             m_pCartPRGRAM = new uint8_t[allocPrgRamSize];
+            memset(m_pCartPRGRAM, 0x00, allocPrgRamSize);
         }
         
         uint32_t allocChrRamSize = nChrRamSize > nChrNVRamSize ? nChrRamSize : nChrNVRamSize;
         if(allocChrRamSize > 0)
         {
             m_pCartCHRRAM = new uint8_t[allocChrRamSize];
+            memset(m_pCartCHRRAM, 0x00, allocPrgRamSize);
         }
-        
-        LoadNVRAM();
     }
 
     // Mirror mode for cart wiring - mapper can override
@@ -198,21 +211,44 @@ Cartridge::Cartridge(IOBus& bus, const char* pCartPath)
                                         pChr, nCharacterSize,
                                         m_pCartPRGRAM, nPrgRamSize, nNVPrgRamSize,
                                         m_pCartCHRRAM, nChrRamSize, nChrNVRamSize);
+    
+    // All setup - load any saved NV RAM data
+    LoadNVRAM();
 }
 
 void Cartridge::LoadNVRAM()
 {
-    // TODO
+    if(m_pMapper != nullptr)
+    {
+        FileStack fileLoad(fopen(m_pNVRAMPath, "r"));
+        if(fileLoad.handle() != nullptr)
+        {
+            fread(m_pCartPRGRAM, 1, m_pMapper->GetNVPrgRAMSize(), fileLoad.handle());
+        }
+    }
 }
 
 void Cartridge::SaveNVRAM()
 {
-    // TODO
+    if(m_pMapper != nullptr)
+    {
+        FileStack fileSave(fopen(m_pNVRAMPath, "w"));
+        if(fileSave.handle() != nullptr)
+        {
+            fwrite(m_pCartPRGRAM, 1, m_pMapper->GetNVPrgRAMSize(), fileSave.handle());
+        }
+    }
 }
 
 Cartridge::~Cartridge()
 {
     SaveNVRAM();    // TODO: more often than stutdown?
+    
+    if(m_pNVRAMPath != nullptr)
+    {
+        delete [] m_pNVRAMPath;
+        m_pNVRAMPath = nullptr;
+    }
     
     if(m_pMapper != nullptr)
     {
