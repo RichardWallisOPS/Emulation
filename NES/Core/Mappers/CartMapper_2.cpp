@@ -10,24 +10,11 @@
 CartMapper_2::CartMapper_2( IOBus& bus,
                             uint8_t* pPrg, uint32_t nProgramSize,
                             uint8_t* pChr, uint32_t nCharacterSize,
-                            uint32_t nPrgRamSize, uint32_t nNVPrgRamSize,
-                            uint32_t nChrRamSize, uint32_t nChrNVRamSize)
-: Mapper(bus, pPrg, nProgramSize, pChr, nCharacterSize, nPrgRamSize, nNVPrgRamSize, nChrRamSize, nChrNVRamSize)
+                            uint8_t* pCartPRGRAM, uint32_t nPrgRamSize, uint32_t nNVPrgRamSize,
+                            uint8_t* pCartCHRRAM, uint32_t nChrRamSize, uint32_t nChrNVRamSize)
+: Mapper(bus, pPrg, nProgramSize, pChr, nCharacterSize, pCartPRGRAM, nPrgRamSize, nNVPrgRamSize, pCartCHRRAM, nChrRamSize, nChrNVRamSize)
 , m_prgBankSelect(0)
-, m_pCartCHRRAM(nullptr)
-{
-    uint32_t chrRamSize = m_nChrRamSize ? m_nChrRamSize : 8192;
-    m_pCartCHRRAM = new uint8_t[chrRamSize];
-}
-
- CartMapper_2::~CartMapper_2()
- {
-    if(m_pCartCHRRAM != nullptr)
-    {
-        delete m_pCartCHRRAM;
-        m_pCartCHRRAM = nullptr;
-    }
- }
+{}
 
 uint8_t CartMapper_2::cpuRead(uint16_t address)
 {

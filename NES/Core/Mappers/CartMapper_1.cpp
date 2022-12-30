@@ -10,16 +10,15 @@
 CartMapper_1::CartMapper_1(IOBus& bus,
                             uint8_t* pPrg, uint32_t nProgramSize,
                             uint8_t* pChr, uint32_t nCharacterSize,
-                            uint32_t nPrgRamSize, uint32_t nNVPrgRamSize,
-                            uint32_t nChrRamSize, uint32_t nChrNVRamSize)
-: Mapper(bus, pPrg, nProgramSize, pChr, nCharacterSize, nPrgRamSize, nNVPrgRamSize, nChrRamSize, nChrNVRamSize)
+                            uint8_t* pCartPRGRAM, uint32_t nPrgRamSize, uint32_t nNVPrgRamSize,
+                            uint8_t* pCartCHRRAM, uint32_t nChrRamSize, uint32_t nChrNVRamSize)
+: Mapper(bus, pPrg, nProgramSize, pChr, nCharacterSize, pCartPRGRAM, nPrgRamSize, nNVPrgRamSize, pCartCHRRAM, nChrRamSize, nChrNVRamSize)
 , m_shiftRegister(0)
 , m_shiftCount(0)
 , m_ctrl(0)
 , m_chrBank0(0)
 , m_chrBank1(0)
 , m_prgBank(0)
-, m_pCartCHRRAM(nullptr)
 {
     m_prgBank = 0x06;
     m_chrBank0 = 0x00;
@@ -28,35 +27,7 @@ CartMapper_1::CartMapper_1(IOBus& bus,
     // Using 8k CHR RAM
     if(nCharacterSize == 0)
     {
-        m_pCartCHRRAM = new uint8_t[m_nChrRamSize];
         m_pChr = m_pCartCHRRAM;
-    }
-    
-    if(m_nPrgRamSize > 0 || m_nNVPrgRamSize > 0)
-    {
-        uint32_t allocRamSize = m_nPrgRamSize > m_nNVPrgRamSize ? m_nPrgRamSize : m_nNVPrgRamSize;
-        
-        if(allocRamSize > 8192)
-        {
-            *(volatile char*)(0) = 'M' | 'M' | 'C' | '1'; // more than 8k w-ram is not implemented - bank switching required
-        }
-        
-        m_pCartPRGRAM = new uint8_t[allocRamSize];
-    }
-}
-
-CartMapper_1::~CartMapper_1()
-{
-    if(m_pCartPRGRAM != nullptr)
-    {
-        delete m_pCartPRGRAM;
-        m_pCartPRGRAM = nullptr;
-    }
-    
-    if(m_pCartCHRRAM != nullptr)
-    {
-        delete m_pCartCHRRAM;
-        m_pCartCHRRAM = nullptr;
     }
 }
 

@@ -11,14 +11,14 @@
 CartMapper_0::CartMapper_0( IOBus& bus,
                             uint8_t* pPrg, uint32_t nProgramSize,
                             uint8_t* pChr, uint32_t nCharacterSize,
-                            uint32_t nPrgRamSize, uint32_t nNVPrgRamSize,
-                            uint32_t nChrRamSize, uint32_t nChrNVRamSize)
-: Mapper(bus, pPrg, nProgramSize, pChr, nCharacterSize, nPrgRamSize, nNVPrgRamSize, nChrRamSize, nChrNVRamSize)
+                            uint8_t* pCartPRGRAM, uint32_t nPrgRamSize, uint32_t nNVPrgRamSize,
+                            uint8_t* pCartCHRRAM, uint32_t nChrRamSize, uint32_t nChrNVRamSize)
+: Mapper(bus, pPrg, nProgramSize, pChr, nCharacterSize, pCartPRGRAM, nPrgRamSize, nNVPrgRamSize, pCartCHRRAM, nChrRamSize, nChrNVRamSize)
 {
     if(nCharacterSize == 0)
     {
         m_nCharacterSize = nChrRamSize;
-        m_pChr = m_cartCHRRAM;
+        m_pChr = m_pCartCHRRAM;
     }
 }
 
@@ -28,7 +28,7 @@ uint8_t CartMapper_0::cpuRead(uint16_t address)
     {
         if(address >= 0x6000 && address <= 0x7FFF)
         {
-            return m_cartPRGRAM[address - 0x6000];
+            return m_pCartPRGRAM[address - 0x6000];
         }
         else if(address >= 0x8000 && address <= 0xFFFF)
         {
@@ -43,7 +43,7 @@ void CartMapper_0::cpuWrite(uint16_t address, uint8_t byte)
 {
     if(address >= 0x6000 && address <= 0x7FFF)
     {
-        m_cartPRGRAM[address - 0x6000] = byte;
+        m_pCartPRGRAM[address - 0x6000] = byte;
     }
 }
 

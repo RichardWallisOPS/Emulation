@@ -25,9 +25,16 @@ public:
 private:
     const char* m_pCartPath;
     Mapper*     m_pMapper;
+    
+    // ROM Data PRG + CHR in one block
     uint8_t*    m_pPakData;
-        
+    
+    // Extra VRAM tables
     uint8_t     m_cartVRAM[4096];
+    
+    // On cart RAM (optional)
+    uint8_t*    m_pCartPRGRAM;
+    uint8_t*    m_pCartCHRRAM;
 };
 
 #endif /* Cartridge_h */

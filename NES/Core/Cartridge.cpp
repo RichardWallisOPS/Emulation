@@ -76,6 +76,8 @@ Cartridge::Cartridge(IOBus& bus, const char* pCartPath)
 : m_pCartPath(pCartPath)
 , m_pMapper(nullptr)
 , m_pPakData(nullptr)
+, m_pCartPRGRAM(nullptr)
+, m_pCartCHRRAM(nullptr)
 {
     FileStack fileHandle(fopen(pCartPath, "r"));
     
@@ -137,9 +139,21 @@ Cartridge::Cartridge(IOBus& bus, const char* pCartPath)
     
     if(iNes2_0)
     {
-        // TODO: MSB ROM sizes if required
+        // TODO: MSB of ROM sizes if required iNes 1.0 is just the low bytes
     }
+
+    // Setup cartridge data and rom mapping
+    memset(m_cartVRAM, 0x00, sizeof(m_cartVRAM));
+
+    const uint32_t nCartDataSize = nProgramSize + nCharacterSize;
+
+    m_pPakData = new uint8_t[nCartDataSize];
+    memcpy(m_pPakData, pCartData, nCartDataSize);
+
+    uint8_t* pPrg = m_pPakData + 0;
+    uint8_t* pChr = m_pPakData + nProgramSize;
     
+    // Setup other on cart [NV]RAM
     uint32_t nPrgRamSize = 0;
     uint32_t nNVPrgRamSize = 0;
     uint32_t nChrRamSize = 0;
@@ -157,17 +171,21 @@ Cartridge::Cartridge(IOBus& bus, const char* pCartPath)
         nChrNVRamSize = 64 << ((pHeader->m_flags11 & 0b11110000) >> 4);
         if(nChrNVRamSize <= 64) nChrNVRamSize = 0;
     }
-
-    // Setup cartridge data and rom mapping
-    memset(m_cartVRAM, 0x00, sizeof(m_cartVRAM));
-
-    const uint32_t nCartDataSize = nProgramSize + nCharacterSize;
-
-    m_pPakData = new uint8_t[nCartDataSize];
-    memcpy(m_pPakData, pCartData, nCartDataSize);
-
-    uint8_t* pPrg = m_pPakData + 0;
-    uint8_t* pChr = m_pPakData + nProgramSize;
+    
+    // Assume Volatile RAM OR Non-Volatile RAM but not both
+    {
+        uint32_t allocPrgRamSize = nPrgRamSize > nNVPrgRamSize ? nPrgRamSize : nNVPrgRamSize;
+        if(allocPrgRamSize > 0)
+        {
+            m_pCartPRGRAM = new uint8_t[allocPrgRamSize];
+        }
+        
+        uint32_t allocChrRamSize = nChrRamSize > nChrNVRamSize ? nChrRamSize : nChrNVRamSize;
+        if(allocChrRamSize > 0)
+        {
+            m_pCartCHRRAM = new uint8_t[allocChrRamSize];
+        }
+    }
 
     // Mirror mode for cart wiring - mapper can override
     bus.SetMirrorMode(vramMirror);
@@ -176,8 +194,8 @@ Cartridge::Cartridge(IOBus& bus, const char* pCartPath)
     m_pMapper = Mapper::CreateMapper(   bus, mapperID,
                                         pPrg, nProgramSize,
                                         pChr, nCharacterSize,
-                                        nPrgRamSize, nNVPrgRamSize,
-                                        nChrRamSize, nChrNVRamSize);
+                                        m_pCartPRGRAM, nPrgRamSize, nNVPrgRamSize,
+                                        m_pCartCHRRAM, nChrRamSize, nChrNVRamSize);
 }
 
 Cartridge::~Cartridge()
@@ -186,6 +204,18 @@ Cartridge::~Cartridge()
     {
         delete m_pMapper;
         m_pMapper = nullptr;
+    }
+    
+    if(m_pCartPRGRAM != nullptr)
+    {
+        delete [] m_pCartPRGRAM;
+        m_pCartPRGRAM = nullptr;
+    }
+    
+    if(m_pCartCHRRAM != nullptr)
+    {
+        delete [] m_pCartCHRRAM;
+        m_pCartCHRRAM = nullptr;
     }
     
     if(m_pPakData != nullptr)
