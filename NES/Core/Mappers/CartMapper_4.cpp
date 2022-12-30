@@ -235,7 +235,7 @@ void CartMapper_4::cpuWrite(uint16_t address, uint8_t byte)
         if((address & 1) == 0)  // even registers
         {
             // IRQ latch
-            m_scanlineLatch = byte; // TODO: Fix me: Different games need different values so I'm missing some edge cases
+            m_scanlineLatch = byte;
         }
         else                    // odd registers
         {
@@ -346,10 +346,11 @@ void CartMapper_4::MM3Signal(uint16_t address)
             {
                 m_bus.SignalIRQ(true);
             }
-            m_scanlineReload = 1;
+            //m_scanlineReload = 1;
         }
     }
-    else if(m_lastA12 == 0 && currentA12 == 1)
+
+    if(m_lastA12 == 0 && currentA12 == 1)
     {
         if(m_scanlineReload)
         {
@@ -362,13 +363,10 @@ void CartMapper_4::MM3Signal(uint16_t address)
 
             if(m_scanlineCounter == 0)
             {
-//                if(m_scanlineEnable)
-//                {
-//                    m_bus.SignalIRQ(true);
-//                }
-//                m_scanlineReload = 1;
-                // Not sure about this delay???
-                m_delay = 8;
+                //m_scanlineReload = 1;
+                m_scanlineCounter = m_scanlineLatch;
+
+                m_delay = 4;
             }
         }
     }
