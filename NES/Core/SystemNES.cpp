@@ -48,7 +48,6 @@ void SystemNES::PowerOn()
     
     memset(m_ram, 0x00, nRamSize);
     
-    // TODO apu registers on power on
     memset(m_apuRegisters, 0x00, nAPURegisterCount);
     
     m_bPowerOn = true;
@@ -70,7 +69,6 @@ void SystemNES::Reset()
 //    
 //    // ram does not change on reset
 //    
-//    // TODO apu registers on reset
 //    memset(m_apuRegisters, 0x00, nAPURegisterCount);
     
     SignalReset(true);

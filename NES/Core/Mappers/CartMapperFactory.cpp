@@ -15,6 +15,8 @@
 #include "CartMapper_4.h"
 #include "CartMapper_66.h"
 
+#define CART_MAPPER(X) new CartMapper_##X(bus, pPrg, nProgramSize, pChr, nCharacterSize, pCartPRGRAM, nPrgRamSize, nNVPrgRamSize, pCartCHRRAM, nChrRamSize, nChrNVRamSize);
+
 Mapper* Mapper::CreateMapper(   IOBus& bus, uint8_t mapperID,
                                 uint8_t* pPrg, uint32_t nProgramSize,
                                 uint8_t* pChr, uint32_t nCharacterSize,
@@ -25,31 +27,33 @@ Mapper* Mapper::CreateMapper(   IOBus& bus, uint8_t mapperID,
     
     if(mapperID == 0)
     {
-        pMapper = new CartMapper_0(bus, pPrg, nProgramSize, pChr, nCharacterSize, pCartPRGRAM, nPrgRamSize, nNVPrgRamSize, pCartCHRRAM, nChrRamSize, nChrNVRamSize);
+        pMapper = CART_MAPPER(0);
     }
     else if(mapperID == 1)
     {
-        pMapper = new CartMapper_1(bus, pPrg, nProgramSize, pChr, nCharacterSize, pCartPRGRAM, nPrgRamSize, nNVPrgRamSize, pCartCHRRAM, nChrRamSize, nChrNVRamSize);
+        pMapper = CART_MAPPER(1);
     }
     else if(mapperID == 2)
     {
-        pMapper = new CartMapper_2(bus, pPrg, nProgramSize, pChr, nCharacterSize, pCartPRGRAM, nPrgRamSize, nNVPrgRamSize, pCartCHRRAM, nChrRamSize, nChrNVRamSize);
+        pMapper = CART_MAPPER(2);
     }
     else if(mapperID == 3)
     {
-        pMapper = new CartMapper_3(bus, pPrg, nProgramSize, pChr, nCharacterSize, pCartPRGRAM, nPrgRamSize, nNVPrgRamSize, pCartCHRRAM, nChrRamSize, nChrNVRamSize);
+        pMapper = CART_MAPPER(3);
     }
     else if(mapperID == 4)
     {
-        pMapper = new CartMapper_4(bus, pPrg, nProgramSize, pChr, nCharacterSize, pCartPRGRAM, nPrgRamSize, nNVPrgRamSize, pCartCHRRAM, nChrRamSize, nChrNVRamSize);
+        pMapper = CART_MAPPER(4);
     }
     else if(mapperID == 66)
     {
-        pMapper = new CartMapper_66(bus, pPrg, nProgramSize, pChr, nCharacterSize, pCartPRGRAM, nPrgRamSize, nNVPrgRamSize, pCartCHRRAM, nChrRamSize, nChrNVRamSize);
+        pMapper = CART_MAPPER(66);
     }
     
     if(pMapper != nullptr)
     {
+        pMapper->Initialise();
+        
         printf("Created cart mapper id = %d\n", mapperID);
     }
     else

@@ -32,6 +32,7 @@ public:
     {}
     
     virtual ~Mapper() {}
+    virtual void Initialise() {}
     
     uint32_t GetNVPrgRAMSize() const {return m_nNVPrgRamSize;}
     uint32_t GetNVChrRAMSize() const {return m_nChrNVRamSize;}
@@ -60,5 +61,8 @@ protected:
     uint32_t    m_nChrRamSize;
     uint32_t    m_nChrNVRamSize;
 };
+
+#define MAPPER_HEADER_IMPL  using Mapper::Mapper; \
+                            virtual void Initialise() override;
 
 #endif /* CartMapperFactory_h */

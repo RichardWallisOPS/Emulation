@@ -8,14 +8,10 @@
 
 #include "CartMapper_66.h"
 
-CartMapper_66::CartMapper_66(   IOBus& bus,
-                                uint8_t* pPrg, uint32_t nProgramSize,
-                                uint8_t* pChr, uint32_t nCharacterSize,
-                                uint8_t* pCartPRGRAM, uint32_t nPrgRamSize, uint32_t nNVPrgRamSize,
-                                uint8_t* pCartCHRRAM, uint32_t nChrRamSize, uint32_t nChrNVRamSize)
-: Mapper(bus, pPrg, nProgramSize, pChr, nCharacterSize, pCartPRGRAM, nPrgRamSize, nNVPrgRamSize, pCartCHRRAM, nChrRamSize, nChrNVRamSize)
-, m_bankSelect(0)
-{}
+void CartMapper_66::Initialise()
+{
+    m_bankSelect = 0;
+}
 
 uint8_t CartMapper_66::cpuRead(uint16_t address)
 {

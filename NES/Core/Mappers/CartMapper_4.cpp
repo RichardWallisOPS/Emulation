@@ -7,41 +7,26 @@
 
 #include "CartMapper_4.h"
 
-CartMapper_4::CartMapper_4( IOBus& bus,
-                            uint8_t* pPrg, uint32_t nProgramSize,
-                            uint8_t* pChr, uint32_t nCharacterSize,
-                            uint8_t* pCartPRGRAM, uint32_t nPrgRamSize, uint32_t nNVPrgRamSize,
-                            uint8_t* pCartCHRRAM, uint32_t nChrRamSize, uint32_t nChrNVRamSize)
-: Mapper(bus, pPrg, nProgramSize, pChr, nCharacterSize, pCartPRGRAM, nPrgRamSize, nNVPrgRamSize, pCartCHRRAM, nChrRamSize, nChrNVRamSize)
-, m_bankSelect(0)
-, m_bankData(0)
-, m_mirror(0)
-, m_prgRamProtect(0)
-, m_prgBank0(nullptr)
-, m_prgBank1(nullptr)
-, m_prgBank2(nullptr)
-, m_prgBank3(nullptr)
-, m_chrBank0(nullptr)
-, m_chrBank1(nullptr)
-, m_chrBank2(nullptr)
-, m_chrBank3(nullptr)
-, m_chrBank4(nullptr)
-, m_chrBank5(nullptr)
-, m_chrBank6(nullptr)
-, m_chrBank7(nullptr)
-, m_scanlineLatch(0)
-, m_scanlineCounter(0)
-, m_scanlineEnable(0)
-, m_scanlineReload(0)
-, m_lastA12(0)
-, m_delay(0)
+void CartMapper_4::Initialise()
 {
+    m_bankSelect = 0;
+    m_bankData = 0;
+    m_mirror = 0;
+    m_prgRamProtect = 0;
+    m_scanlineLatch = 0;
+    m_scanlineCounter = 0;
+    m_scanlineEnable = 0;
+    m_scanlineReload = 0;
+    m_lastA12 = 0;
+    m_delay = 0;
+
+
     m_prgBank0 = &m_pPrg[0];
     m_prgBank1 = &m_pPrg[0x2000];
     m_prgBank2 = &m_pPrg[m_nProgramSize - 0x4000];
     m_prgBank3 = &m_pPrg[m_nProgramSize - 0x2000];
     
-    if(nCharacterSize == 0)
+    if(m_nCharacterSize == 0)
     {
         *(volatile char*)(0) = 'M' | 'M' | 'C' | '3'; // CHRRAM is not implemented, there could be combinations/interleaving of both CHR ROM and CHR RAM
     }

@@ -7,25 +7,21 @@
 
 #include "CartMapper_1.h"
 
-CartMapper_1::CartMapper_1(IOBus& bus,
-                            uint8_t* pPrg, uint32_t nProgramSize,
-                            uint8_t* pChr, uint32_t nCharacterSize,
-                            uint8_t* pCartPRGRAM, uint32_t nPrgRamSize, uint32_t nNVPrgRamSize,
-                            uint8_t* pCartCHRRAM, uint32_t nChrRamSize, uint32_t nChrNVRamSize)
-: Mapper(bus, pPrg, nProgramSize, pChr, nCharacterSize, pCartPRGRAM, nPrgRamSize, nNVPrgRamSize, pCartCHRRAM, nChrRamSize, nChrNVRamSize)
-, m_shiftRegister(0)
-, m_shiftCount(0)
-, m_ctrl(0)
-, m_chrBank0(0)
-, m_chrBank1(0)
-, m_prgBank(0)
+void CartMapper_1::Initialise()
 {
+    m_shiftRegister = 0;
+    m_shiftCount = 0;
+    m_ctrl = 0;
+    m_chrBank0 = 0;
+    m_chrBank1 = 0;
+    m_prgBank =0;
+
     m_prgBank = 0x06;
     m_chrBank0 = 0x00;
     m_ctrl = 0b11111;
     
     // Using 8k CHR RAM
-    if(nCharacterSize == 0)
+    if(m_nCharacterSize == 0)
     {
         m_pChr = m_pCartCHRRAM;
     }

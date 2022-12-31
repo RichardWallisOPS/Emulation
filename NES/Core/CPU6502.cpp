@@ -106,8 +106,8 @@ void CPU6502::ConditionalSetFlag(uint8_t flag, bool bCondition)
 
 void CPU6502::PowerOn()
 {
-    // TODO power on takes about 6 CPU cycles to get ready
-    // TODO may have to emulate this and use the reset routine
+    // Power on takes about 6 CPU cycles to get ready
+    // May have to emulate this and use the reset routine
     
     m_a = 0;
     m_x = 0;
