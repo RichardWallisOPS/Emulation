@@ -13,8 +13,8 @@
 class CartMapper_4 : public Mapper
 {
 public:
-    BUS_HEADER_IMPL
-    MAPPER_HEADER_IMPL
+    BUS_HEADER_DECL
+    MAPPER_HEADER_DECL
 private:
     void MM3Signal(uint16_t address);
     

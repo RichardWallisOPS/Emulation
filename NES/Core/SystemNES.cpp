@@ -10,6 +10,8 @@
 #include "SystemNES.h"
 #include <string>
 
+#include "Serialise.h"
+
 SystemNES::SystemNES()
 : m_bPowerOn(false)
 , m_cycleCount(0)

@@ -9,18 +9,21 @@
 #define Cartridge_h
 
 #include "IOBus.h"
+#include "Serialise.h"
 
 class Mapper;
 
-class Cartridge : public IOBus
+class Cartridge : public IOBus, public Serialisable
 {
 public:
+    SERIALISABLE_DECL;
+
     Cartridge(SystemIOBus& bus, const char* pCartPath);
     ~Cartridge();
     
     bool IsValid() const;
 
-    BUS_HEADER_IMPL
+    BUS_HEADER_DECL
     
 private:
 

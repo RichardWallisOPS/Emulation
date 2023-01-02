@@ -62,7 +62,7 @@ protected:
     uint32_t    m_nChrNVRamSize;
 };
 
-#define MAPPER_HEADER_IMPL  using Mapper::Mapper; \
+#define MAPPER_HEADER_DECL  using Mapper::Mapper; \
                             virtual void Initialise() override;
 
 #endif /* CartMapperFactory_h */

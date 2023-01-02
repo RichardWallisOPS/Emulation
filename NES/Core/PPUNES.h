@@ -10,6 +10,7 @@
 
 #include <cstdint>
 #include "IOBus.h"
+#include "Serialise.h"
 
 enum PortRegisterID :uint8_t
 {
@@ -24,9 +25,11 @@ enum PortRegisterID :uint8_t
     PortRegister_Count
 };
 
-class PPUNES
+class PPUNES : public Serialisable
 {
 public:
+    SERIALISABLE_DECL
+    
     static const uint32_t nVRamSize = 0x0800;
     static const uint32_t nPalletteSize = 0x20;
 

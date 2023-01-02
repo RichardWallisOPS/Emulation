@@ -8,9 +8,16 @@
 #import "Controller.h"
 #import "RenderDefs.h"
 #include "SystemNES.h"
+#include "Serialise.h"
 
 // The console we are emulating
 SystemNES g_NESConsole;
+bool g_Rewind = false;
+
+size_t          m_archiveIndex = 0;
+size_t          m_rewindStartIndex = 0;
+const size_t    m_archiveCount = 5 * 60;
+Archive         m_ArchiveBuffer[m_archiveCount];
 
 @implementation EmulationMetalView
 
@@ -56,13 +63,35 @@ uint8_t m_keyboardController[2] = {0 , 0};
     {
         m_keyboardController[m_keyboardPort] |= 1 << SystemNES::Controller_Up;
     }
-    else if(event.keyCode == 126)   // up
+    else if(event.keyCode == 125)   // down
     {
-
+        // save
+        NSProcessInfo* process = [NSProcessInfo processInfo];
+        NSArray* arguments = [process arguments];
+            
+        if(arguments.count > 1)
+        {
+            Archive archive;
+            g_NESConsole.Save(archive);
+            NSString* cartPath = arguments[1];
+            NSString* savePath = [cartPath stringByAppendingString:@".SAVE"];
+            archive.Save([savePath cStringUsingEncoding:NSUTF8StringEncoding]);
+        }
     }
-    else if(event.keyCode == 125) // down
+    else if(event.keyCode == 126) // up
     {
-
+        // load
+        NSProcessInfo* process = [NSProcessInfo processInfo];
+        NSArray* arguments = [process arguments];
+            
+        if(arguments.count > 1)
+        {
+            Archive archive;
+            NSString* cartPath = arguments[1];
+            NSString* loadPath = [cartPath stringByAppendingString:@".SAVE"];
+            archive.Load([loadPath cStringUsingEncoding:NSUTF8StringEncoding]);
+            g_NESConsole.Load(archive);
+        }
     }
     else if(event.keyCode == 124) // right
     {
@@ -70,7 +99,11 @@ uint8_t m_keyboardController[2] = {0 , 0};
     }
     else if(event.keyCode == 123) // left
     {
-
+        if(!g_Rewind)
+        {
+            g_Rewind = true;
+            m_rewindStartIndex = m_archiveIndex;
+        }
     }
     else if(event.keyCode == 49) // space
     {
@@ -121,6 +154,14 @@ uint8_t m_keyboardController[2] = {0 , 0};
     else if(event.keyCode == 13)
     {
         m_keyboardController[m_keyboardPort] &= ~(1 << SystemNES::Controller_Up);
+    }
+    else if(event.keyCode == 124)
+    {
+    
+    }
+    else if(event.keyCode == 123)
+    {
+        g_Rewind = false;
     }
 }
 
@@ -249,6 +290,23 @@ id<MTLTexture>  m_emulationOutput[m_renderTextureCount];
         }
     }
     
+    if(g_Rewind)
+    {
+        ssize_t tmpArchiveIndex = m_archiveIndex == 0 ? m_archiveCount - 1 : m_archiveIndex - 1;
+
+        if(tmpArchiveIndex != m_rewindStartIndex)
+        {
+            m_archiveIndex = tmpArchiveIndex;
+        }
+        
+        Archive& current = m_ArchiveBuffer[m_archiveIndex];
+        if(current.ByteCount() > 0)
+        {
+            current.ResetRead();
+            g_NESConsole.Load(current);
+        }
+    }
+    
     // Emulation ticks
     {
         g_NESConsole.SetVideoOutputDataPtr((uint32_t*)currentTextureBacking.contents);
@@ -280,8 +338,16 @@ id<MTLTexture>  m_emulationOutput[m_renderTextureCount];
             }
             [renderEncoder endEncoding];
         }
+        
         [cmdBuffer presentDrawable:view.currentDrawable];
         [cmdBuffer commit];
+    }
+    
+    if(!g_Rewind)
+    {
+        m_ArchiveBuffer[m_archiveIndex].Reset();
+        g_NESConsole.Save(m_ArchiveBuffer[m_archiveIndex]);
+        m_archiveIndex = (m_archiveIndex + 1) % m_archiveCount;
     }
 }
 

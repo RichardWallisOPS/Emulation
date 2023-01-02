@@ -28,27 +28,6 @@ struct iNesheader
     uint8_t m_flags15;
 };
 
-class FileStack
-{
-public:
-    FileStack(FILE* pFile)
-    : m_pHandle(pFile)
-    {}
-    ~FileStack()
-    {
-        if(m_pHandle != nullptr)
-        {
-            fclose(m_pHandle);
-            m_pHandle = nullptr;
-        }
-    }
-    
-    FILE* handle() {return m_pHandle;}
-
-private:
-    FILE* m_pHandle;
-};
-
 class MemStack
 {
 public:

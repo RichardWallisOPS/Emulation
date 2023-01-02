@@ -10,6 +10,7 @@
 
 #include <cstdint>
 #include "IOBus.h"
+#include "Serialise.h"
 
 // Implementation notes:
 
@@ -21,9 +22,11 @@
 // NOTE: Decimal mode is not implemented - it and any illegal op-codes will error in Debug and NOP in Release
 // NOTE: Illegal opcode are not implemented
 
-class CPU6502
+class CPU6502 : public Serialisable
 {
 public:
+    SERIALISABLE_DECL;
+
     CPU6502(IOBus& bus);
     ~CPU6502();
     

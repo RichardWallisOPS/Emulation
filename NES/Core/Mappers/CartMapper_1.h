@@ -13,8 +13,8 @@
 class CartMapper_1 : public Mapper
 {
 public:
-    BUS_HEADER_IMPL
-    MAPPER_HEADER_IMPL
+    BUS_HEADER_DECL
+    MAPPER_HEADER_DECL
 private:
 
     uint8_t m_shiftRegister;

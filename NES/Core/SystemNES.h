@@ -12,10 +12,12 @@
 #include "CPU6502.h"
 #include "PPUNES.h"
 #include "Cartridge.h"
+#include "Serialise.h"
 
-class SystemNES : public SystemIOBus
+class SystemNES : public SystemIOBus, public Serialisable
 {
 public:
+    SERIALISABLE_DECL
 
     enum ControllerButton : uint8_t
     {
@@ -49,7 +51,7 @@ public:
 
     void Tick();
     
-    BUS_HEADER_IMPL
+    BUS_HEADER_DECL
         
     virtual void SignalReset(bool bSignal) override;
     virtual void SignalNMI(bool bSignal) override;
