@@ -12,8 +12,9 @@
 
 // The console we are emulating
 SystemNES g_NESConsole;
-bool g_Rewind = false;
 
+// History and rewind support
+bool            g_Rewind = false;
 size_t          m_archiveIndex = 0;
 size_t          m_rewindStartIndex = 0;
 const size_t    m_archiveCount = 5 * 60;
@@ -63,9 +64,8 @@ uint8_t m_keyboardController[2] = {0 , 0};
     {
         m_keyboardController[m_keyboardPort] |= 1 << SystemNES::Controller_Up;
     }
-    else if(event.keyCode == 125)   // down
+    else if(event.keyCode == 125)   // down - save into file
     {
-        // save
         NSProcessInfo* process = [NSProcessInfo processInfo];
         NSArray* arguments = [process arguments];
             
@@ -78,9 +78,8 @@ uint8_t m_keyboardController[2] = {0 , 0};
             archive.Save([savePath cStringUsingEncoding:NSUTF8StringEncoding]);
         }
     }
-    else if(event.keyCode == 126) // up
+    else if(event.keyCode == 126) // up - load from file
     {
-        // load
         NSProcessInfo* process = [NSProcessInfo processInfo];
         NSArray* arguments = [process arguments];
             
@@ -97,7 +96,7 @@ uint8_t m_keyboardController[2] = {0 , 0};
     {
 
     }
-    else if(event.keyCode == 123) // left
+    else if(event.keyCode == 123) // left - go back in time
     {
         if(!g_Rewind)
         {
@@ -109,13 +108,13 @@ uint8_t m_keyboardController[2] = {0 , 0};
     {
 
     }
-    else if(event.keyCode == 36) // enter
+    else if(event.keyCode == 36) // enter - swap keyboard for player 1<->2
     {
         m_keyboardController[m_keyboardPort] = 0;
         m_keyboardPort = (m_keyboardPort + 1) % 2;
         m_keyboardController[m_keyboardPort] = 0;
     }
-    else if(event.keyCode == 53) // esc
+    else if(event.keyCode == 53) // esc - console reset button
     {
          g_NESConsole.Reset();
     }
