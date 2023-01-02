@@ -13,7 +13,7 @@
 class Mapper : public IOBus
 {
 public:
-    Mapper( IOBus& bus,
+    Mapper( SystemIOBus& bus,
             uint8_t* pPrg, uint32_t nProgramSize,
             uint8_t* pChr, uint32_t nCharacterSize,
             uint8_t* pCartPRGRAM, uint32_t nPrgRamSize, uint32_t nNVPrgRamSize,
@@ -37,7 +37,7 @@ public:
     uint32_t GetNVPrgRAMSize() const {return m_nNVPrgRamSize;}
     uint32_t GetNVChrRAMSize() const {return m_nChrNVRamSize;}
     
-    static Mapper* CreateMapper(    IOBus& bus, uint8_t mapperID,
+    static Mapper* CreateMapper(SystemIOBus& bus, uint8_t mapperID,
                                     uint8_t* pPrg, uint32_t nProgramSize,
                                     uint8_t* pChr, uint32_t nCharacterSize,
                                     uint8_t* pCartPRGRAM, uint32_t nPrgRamSize, uint32_t nNVPrgRamSize,
@@ -45,7 +45,7 @@ public:
         
 protected:
 
-    IOBus&      m_bus;
+    SystemIOBus& m_bus;
     
     uint8_t*    m_pPrg;
     uint8_t*    m_pChr;

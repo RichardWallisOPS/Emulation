@@ -72,7 +72,7 @@ private:
     uint8_t* m_pData;
 };
 
-Cartridge::Cartridge(IOBus& bus, const char* pCartPath)
+Cartridge::Cartridge(SystemIOBus& bus, const char* pCartPath)
 : m_pCartPath(pCartPath)
 , m_pMapper(nullptr)
 , m_pPakData(nullptr)

@@ -45,7 +45,7 @@ enum FlagStatus : uint8_t
     STATUS_VBLANK           = 1 << 7
 };
 
-PPUNES::PPUNES(IOBus& bus)
+PPUNES::PPUNES(SystemIOBus& bus)
 : m_bus(bus)
 , m_mirrorMode(VRAM_MIRROR_H)
 , m_secondaryOAMWrite(0)
@@ -375,8 +375,8 @@ void PPUNES::SpriteFetch()
                     spriteLineAddress = spriteTileAddress + (7 - (m_scanline - yPos));
                 }
                 
-                uint8_t spritePlane0 = m_bus.ppuRead(spriteLineAddress);
-                uint8_t spritePlane1 = m_bus.ppuRead(spriteLineAddress + 8);
+                uint8_t spritePlane0 = ppuReadAddress(spriteLineAddress);
+                uint8_t spritePlane1 = ppuReadAddress(spriteLineAddress + 8);
                 
                 if(bFlipH)
                 {
@@ -406,8 +406,8 @@ void PPUNES::SpriteFetch()
                 // TODO variations require checking....
                 if(TestFlag(CTRL_SPRITE_SIZE, m_ctrl))
                 {
-                    sprite.m_patternShift0 = m_bus.ppuRead(0x1000);
-                    sprite.m_patternShift1 = m_bus.ppuRead(0x1000 + 0x8);
+                    sprite.m_patternShift0 = ppuReadAddress(0x1000);
+                    sprite.m_patternShift1 = ppuReadAddress(0x1000 + 0x8);
 
                     // Make sure pattern data is zero'd so we don't get artifacts
                     sprite.m_patternShift0 = 0;
@@ -421,8 +421,8 @@ void PPUNES::SpriteFetch()
                         spriteBaseAddress = 0x1000;
                     }
 
-                    sprite.m_patternShift0 = m_bus.ppuRead(spriteBaseAddress);
-                    sprite.m_patternShift1 = m_bus.ppuRead(spriteBaseAddress + 0x8);
+                    sprite.m_patternShift0 = ppuReadAddress(spriteBaseAddress);
+                    sprite.m_patternShift1 = ppuReadAddress(spriteBaseAddress + 0x8);
 
                     sprite.m_patternShift0 = 0;
                     sprite.m_patternShift1 = 0;
@@ -1028,6 +1028,7 @@ void PPUNES::cpuWrite(uint8_t port, uint8_t byte)
                     m_ppuTAddress &= (uint16_t(0xFF00));
                     m_ppuTAddress |= uint16_t(byte);
                     m_ppuAddress = m_ppuTAddress;
+                    ppuReadAddress(m_ppuAddress);   // affects address line so could affect cart mappers
                 }
                 m_ppuWriteToggle = m_ppuWriteToggle == 0 ? 1 : 0;
                 break;

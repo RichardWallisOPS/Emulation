@@ -30,7 +30,7 @@ public:
     static const uint32_t nVRamSize = 0x0800;
     static const uint32_t nPalletteSize = 0x20;
 
-    PPUNES(IOBus& bus);
+    PPUNES(SystemIOBus& bus);
     ~PPUNES();
     
     void SetMirrorMode(MirrorMode mode);
@@ -69,8 +69,7 @@ private:
     void vramVertCopy();
     
 private:
-    IOBus& m_bus;
-    
+    SystemIOBus& m_bus;
     MirrorMode m_mirrorMode;
     
     // Nametable + Pallette RAM

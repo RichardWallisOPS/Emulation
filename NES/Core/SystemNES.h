@@ -13,7 +13,7 @@
 #include "PPUNES.h"
 #include "Cartridge.h"
 
-class SystemNES : public IOBus
+class SystemNES : public SystemIOBus
 {
 public:
 
@@ -55,6 +55,7 @@ public:
     virtual void SignalNMI(bool bSignal) override;
     virtual void SignalIRQ(bool bSignal) override;
     virtual void SetMirrorMode(MirrorMode mode) override;
+    virtual uint64_t CycleCount() override;
 
     // assumed space for a 32bit colour 256x240 image data
     void SetVideoOutputDataPtr(uint32_t* pVideoOutData);

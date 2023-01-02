@@ -18,8 +18,8 @@ void CartMapper_4::Initialise()
     m_scanlineEnable = 0;
     m_scanlineReload = 0;
     m_lastA12 = 0;
-    m_delay = 0;
-
+    m_delay = 0;    
+    m_cycleCount = 0;
 
     m_prgBank0 = &m_pPrg[0];
     m_prgBank1 = &m_pPrg[0x2000];
@@ -220,7 +220,7 @@ void CartMapper_4::cpuWrite(uint16_t address, uint8_t byte)
         if((address & 1) == 0)  // even registers
         {
             // IRQ latch
-            m_scanlineLatch = byte;
+            m_scanlineLatch = byte - 1;
         }
         else                    // odd registers
         {
@@ -321,7 +321,13 @@ void CartMapper_4::ppuWrite(uint16_t address, uint8_t byte)
 void CartMapper_4::MM3Signal(uint16_t address)
 {
     uint8_t currentA12 = (address & (1 << 12)) >> 12;
-
+    
+    // We need to know how many cycles have passes since A12 went low
+    if(m_lastA12 == 1 && currentA12 == 0)
+    {
+        m_cycleCount = m_bus.CycleCount();
+    }
+    
     if(m_delay > 0)
     {
         --m_delay;
@@ -331,11 +337,11 @@ void CartMapper_4::MM3Signal(uint16_t address)
             {
                 m_bus.SignalIRQ(true);
             }
-            //m_scanlineReload = 1;
         }
     }
 
-    if(m_lastA12 == 0 && currentA12 == 1)
+    // Its gone high but also have enough cycles passed
+    if(m_lastA12 == 0 && currentA12 == 1 && m_bus.CycleCount() - m_cycleCount > 16)
     {
         if(m_scanlineReload)
         {
@@ -348,8 +354,7 @@ void CartMapper_4::MM3Signal(uint16_t address)
 
             if(m_scanlineCounter == 0)
             {
-                //m_scanlineReload = 1;
-                m_scanlineCounter = m_scanlineLatch;
+                m_scanlineReload = 1;
 
                 m_delay = 4;
             }

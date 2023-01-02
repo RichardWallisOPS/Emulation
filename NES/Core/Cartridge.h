@@ -15,7 +15,7 @@ class Mapper;
 class Cartridge : public IOBus
 {
 public:
-    Cartridge(IOBus& bus, const char* pCartPath);
+    Cartridge(SystemIOBus& bus, const char* pCartPath);
     ~Cartridge();
     
     bool IsValid() const;
