@@ -77,6 +77,58 @@ CPU6502::CPU6502(IOBus& bus)
 CPU6502::~CPU6502()
 {}
 
+void CPU6502::Load(Archive& rArchive)
+{
+    rArchive >> m_a;
+    rArchive >> m_x;
+    rArchive >> m_y;
+    rArchive >> m_stack;
+    rArchive >> m_flags;
+    rArchive >> m_pc;
+    rArchive >> m_tickCount;
+    rArchive >> m_instructionCycle;
+    rArchive >> m_opCode;
+    rArchive >> m_dataBus;
+    rArchive >> m_addressBusH;
+    rArchive >> m_addressBusL;
+    rArchive >> m_baseAddressH;
+    rArchive >> m_baseAddressL;
+    rArchive >> m_indirectAddressH;
+    rArchive >> m_indirectAddressL;
+    rArchive >> m_effectiveAddressH;
+    rArchive >> m_effectiveAddressL;
+    rArchive >> m_bSignalReset;
+    rArchive >> m_bSignalIRQ;
+    rArchive >> m_bSignalNMI;
+    rArchive >> m_bBranch;
+}
+
+void CPU6502::Save(Archive& rArchive)
+{
+    rArchive << m_a;
+    rArchive << m_x;
+    rArchive << m_y;
+    rArchive << m_stack;
+    rArchive << m_flags;
+    rArchive << m_pc;
+    rArchive << m_tickCount;
+    rArchive << m_instructionCycle;
+    rArchive << m_opCode;
+    rArchive << m_dataBus;
+    rArchive << m_addressBusH;
+    rArchive << m_addressBusL;
+    rArchive << m_baseAddressH;
+    rArchive << m_baseAddressL;
+    rArchive << m_indirectAddressH;
+    rArchive << m_indirectAddressL;
+    rArchive << m_effectiveAddressH;
+    rArchive << m_effectiveAddressL;
+    rArchive << m_bSignalReset;
+    rArchive << m_bSignalIRQ;
+    rArchive << m_bSignalNMI;
+    rArchive << m_bBranch;
+}
+
 void CPU6502::SetFlag(uint8_t flag)
 {
     m_flags |= flag;

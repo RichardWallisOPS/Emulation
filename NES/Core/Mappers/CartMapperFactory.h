@@ -9,8 +9,9 @@
 #define CartMapperFactory_h
 
 #include "IOBus.h"
+#include "Serialise.h"
 
-class Mapper : public IOBus
+class Mapper : public IOBus, public Serialisable
 {
 public:
     Mapper( SystemIOBus& bus,

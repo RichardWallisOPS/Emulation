@@ -19,6 +19,7 @@ public:
     SERIALISABLE_DECL;
 
     Cartridge(SystemIOBus& bus, const char* pCartPath);
+    Cartridge(SystemIOBus& bus, Archive& rArchive);
     ~Cartridge();
     
     bool IsValid() const;
@@ -27,19 +28,25 @@ public:
     
 private:
 
+    void Initialise(SystemIOBus& bus, const char* pCartPath);
+
     void LoadNVRAM();
     void SaveNVRAM();
     
 private:
 
     // Source cart file location
-    const char* m_pCartPath;
+    char*       m_pCartPath;
     
     // Cached NVRAM save location
     char*       m_pNVRAMPath;
     
     // Mapper logic
     Mapper*     m_pMapper;
+    
+    // The whole data - inc header
+    uint8_t*    m_pFileData;
+    uint32_t    m_fileDataSize;
     
     // ROM Data PRG + CHR in one block
     uint8_t*    m_pPakData;

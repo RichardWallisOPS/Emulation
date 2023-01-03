@@ -79,6 +79,62 @@ PPUNES::~PPUNES()
 
 }
 
+void PPUNES::Load(Archive& rArchive)
+{
+    rArchive.ReadBytes(m_vram, nVRamSize);
+    rArchive.ReadBytes(m_pallette, nPalletteSize);
+    rArchive.ReadBytes(m_primaryOAM, 256);
+    rArchive.ReadBytes(m_secondaryOAM, 32);
+    rArchive >> m_secondaryOAMWrite;
+    rArchive >> m_spriteZero;
+    rArchive >> m_ctrl;
+    rArchive >> m_mask;
+    rArchive >> m_status;
+    rArchive >> m_oamAddress;
+    rArchive >> m_portLatch;
+    rArchive >> m_ppuDataBuffer;
+    rArchive >> m_ppuAddress;
+    rArchive >> m_ppuTAddress;
+    rArchive >> m_ppuWriteToggle;
+    rArchive >> m_ppuData;
+    rArchive >> m_fineX;
+    rArchive >> m_bgPatternShift0;
+    rArchive >> m_bgPatternShift1;
+    rArchive >> m_bgPalletteShift0;
+    rArchive >> m_bgPalletteShift1;
+    rArchive.ReadBytes(m_scanlineSprites, sizeof(ScanlineSprite) * 8);
+    rArchive >> m_scanline;
+    rArchive >> m_scanlineDot;
+}
+
+void PPUNES::Save(Archive& rArchive)
+{
+    rArchive.WriteBytes(m_vram, nVRamSize);
+    rArchive.WriteBytes(m_pallette, nPalletteSize);
+    rArchive.WriteBytes(m_primaryOAM, 256);
+    rArchive.WriteBytes(m_secondaryOAM, 32);
+    rArchive << m_secondaryOAMWrite;
+    rArchive << m_spriteZero;
+    rArchive << m_ctrl;
+    rArchive << m_mask;
+    rArchive << m_status;
+    rArchive << m_oamAddress;
+    rArchive << m_portLatch;
+    rArchive << m_ppuDataBuffer;
+    rArchive << m_ppuAddress;
+    rArchive << m_ppuTAddress;
+    rArchive << m_ppuWriteToggle;
+    rArchive << m_ppuData;
+    rArchive << m_fineX;
+    rArchive << m_bgPatternShift0;
+    rArchive << m_bgPatternShift1;
+    rArchive << m_bgPalletteShift0;
+    rArchive << m_bgPalletteShift1;
+    rArchive.WriteBytes(m_scanlineSprites, sizeof(ScanlineSprite) * 8);
+    rArchive << m_scanline;
+    rArchive << m_scanlineDot;
+}
+
 void PPUNES::SetVideoOutputDataPtr(uint32_t* pVideoOutData)
 {
     m_pVideoOutput = pVideoOutData;

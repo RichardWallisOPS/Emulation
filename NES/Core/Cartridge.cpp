@@ -28,37 +28,16 @@ struct iNesheader
     uint8_t m_flags15;
 };
 
-class MemStack
+void Cartridge::Initialise(SystemIOBus& bus, const char* pCartPath)
 {
-public:
-    MemStack(uint32_t size)
-    : m_pData(nullptr)
     {
-        m_pData = new uint8_t[size];
+        uint32_t pathLen = (uint32_t)strlen(pCartPath);
+        m_pCartPath = new char[pathLen + 1];
+        memcpy(m_pCartPath, pCartPath, pathLen);
+        m_pCartPath[pathLen] = 0;
     }
-    ~MemStack()
-    {
-        if(m_pData != nullptr)
-        {
-            delete m_pData;
-            m_pData = nullptr;
-        }
-    }
-    
-    uint8_t* mem() {return m_pData;}
 
-private:
-    uint8_t* m_pData;
-};
-
-Cartridge::Cartridge(SystemIOBus& bus, const char* pCartPath)
-: m_pCartPath(pCartPath)
-, m_pMapper(nullptr)
-, m_pPakData(nullptr)
-, m_pCartPRGRAM(nullptr)
-, m_pCartCHRRAM(nullptr)
-{
-    FileStack fileHandle(fopen(pCartPath, "r"));
+    FileStack fileHandle(fopen(m_pCartPath, "r"));
     
     if(fileHandle.handle() == nullptr)
     {
@@ -70,30 +49,30 @@ Cartridge::Cartridge(SystemIOBus& bus, const char* pCartPath)
         return;
     }
     
-    uint32_t dataSize = (uint32_t)ftell(fileHandle.handle());
+    m_fileDataSize = (uint32_t)ftell(fileHandle.handle());
     
     if(fseek(fileHandle.handle(), 0, SEEK_SET) != 0)
     {
         return;
     }
     
-    if(dataSize < sizeof(iNesheader))
-    {
-        return;
-    }
-    
-    MemStack fileBytes(dataSize);
-
-    if(fread(fileBytes.mem(), 1, dataSize, fileHandle.handle()) != dataSize)
+    if(m_fileDataSize < sizeof(iNesheader))
     {
         return;
     }
 
-    iNesheader const* pHeader = (iNesheader const*)fileBytes.mem();
-    uint8_t const* pCartData = fileBytes.mem() + sizeof(iNesheader);
+    m_pFileData = new uint8_t[m_fileDataSize];
+
+    if(fread(m_pFileData, 1, m_fileDataSize, fileHandle.handle()) != m_fileDataSize)
+    {
+        return;
+    }
+
+    iNesheader const* pHeader = (iNesheader const*)m_pFileData;
+    m_pPakData = m_pFileData + sizeof(iNesheader);
     
     char const magic[4] = {0x4E, 0x45, 0x53, 0x1A};
-    if(memcmp(magic, fileBytes.mem(), 4) != 0)
+    if(memcmp(magic, m_pFileData, 4) != 0)
     {
         return;
     }
@@ -136,11 +115,6 @@ Cartridge::Cartridge(SystemIOBus& bus, const char* pCartPath)
 
     // Setup cartridge data and rom mapping
     memset(m_cartVRAM, 0x00, sizeof(m_cartVRAM));
-
-    const uint32_t nCartDataSize = nProgramSize + nCharacterSize;
-
-    m_pPakData = new uint8_t[nCartDataSize];
-    memcpy(m_pPakData, pCartData, nCartDataSize);
 
     uint8_t* pPrg = m_pPakData + 0;
     uint8_t* pChr = m_pPakData + nProgramSize;
@@ -191,8 +165,102 @@ Cartridge::Cartridge(SystemIOBus& bus, const char* pCartPath)
                                         m_pCartPRGRAM, nPrgRamSize, nNVPrgRamSize,
                                         m_pCartCHRRAM, nChrRamSize, nChrNVRamSize);
     
+}
+
+Cartridge::Cartridge(SystemIOBus& bus, const char* pCartPath)
+: m_pCartPath(nullptr)
+, m_pMapper(nullptr)
+, m_fileDataSize(0)
+, m_pFileData(nullptr)
+, m_pPakData(nullptr)
+, m_pCartPRGRAM(nullptr)
+, m_pCartCHRRAM(nullptr)
+{
+    // Setup for cart
+    Initialise(bus, pCartPath);
+    
     // All setup - load any saved NV RAM data
     LoadNVRAM();
+}
+
+Cartridge::Cartridge(SystemIOBus& bus, Archive& rArchive)
+: m_pCartPath(nullptr)
+, m_pMapper(nullptr)
+, m_fileDataSize(0)
+, m_pFileData(nullptr)
+, m_pPakData(nullptr)
+, m_pCartPRGRAM(nullptr)
+, m_pCartCHRRAM(nullptr)
+{
+    // Reload last cart
+    // Could have just saved cart data instead... safer?
+    char Buffer[512];
+    uint32_t pathLen = 0;
+    rArchive >> pathLen;
+    rArchive.ReadBytes(Buffer, pathLen);
+    Buffer[pathLen] = 0;
+    
+    // Initialise as usual
+    Initialise(bus, Buffer);
+    
+    // Load saved state
+    Load(rArchive);
+    
+    // SnapShot - don't load NVRAM
+}
+
+void Cartridge::Load(Archive& rArchive)
+{
+    // Path or cart data is handled in the Archive Constructor
+    
+    // TODO
+    // m_cartVRAM
+    // m_pCartPRGRAM
+    // m_pCartCHRRAM
+
+    uint8_t mapperInfo = 0;
+    rArchive >> mapperInfo;
+    
+    if(mapperInfo == kArchiveSentinalHasData)
+    {
+        // We should already have a mapper object - History or Saved Data
+        // Mappers don't handle memory just offsets into this carts memory
+        if(m_pMapper != nullptr)
+        {
+            m_pMapper->Load(rArchive);
+        }
+#if DEBUG
+        else
+        {
+            *(volatile char*)(0) = 'C' | 'A' | 'R' | 'T';
+        }
+#endif
+    }
+}
+
+void Cartridge::Save(Archive& rArchive)
+{
+    if(rArchive.GetArchiveMode() == ArchiveMode_Persistent)
+    {
+        uint32_t pathLen = (uint32_t)strlen(m_pCartPath);
+        rArchive << pathLen;
+        rArchive.WriteBytes(m_pCartPath, pathLen);
+    }
+    
+    // TODO
+    // m_cartVRAM
+    // m_pCartPRGRAM
+    // m_pCartCHRRAM
+
+    if(m_pMapper != nullptr)
+    {
+        rArchive << kArchiveSentinalHasData;
+        m_pMapper->Save(rArchive);
+    }
+    else
+    {
+        rArchive << kArchiveSentinalNoData;
+    }
 }
 
 void Cartridge::LoadNVRAM()
@@ -221,7 +289,15 @@ void Cartridge::SaveNVRAM()
 
 Cartridge::~Cartridge()
 {
-    SaveNVRAM();    // TODO: more often than stutdown?
+    // TODO: more often than stutdown?
+    // Every update is too often - maybe the end of a frame or each second?
+    SaveNVRAM();
+    
+    if(m_pCartPath != nullptr)
+    {
+        delete [] m_pCartPath;
+        m_pCartPath = nullptr;
+    }
     
     if(m_pNVRAMPath != nullptr)
     {
@@ -247,10 +323,10 @@ Cartridge::~Cartridge()
         m_pCartCHRRAM = nullptr;
     }
     
-    if(m_pPakData != nullptr)
+    if(m_pFileData != nullptr)
     {
-        delete [] m_pPakData;
-        m_pPakData = nullptr;
+        delete [] m_pFileData;
+        m_pFileData = nullptr;
     }
 }
 

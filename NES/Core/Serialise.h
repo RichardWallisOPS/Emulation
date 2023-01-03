@@ -32,12 +32,22 @@ private:
     FILE* m_pHandle;
 };
 
+const uint8_t kArchiveSentinalNoData = 0x00;
+const uint8_t kArchiveSentinalHasData = 0xFF;
+
+enum ArchiveMode
+{
+    ArchiveMode_History = 0,
+    ArchiveMode_Persistent,
+};
+
 class Archive
 {
 public:
-    Archive();
+    Archive(ArchiveMode mode = ArchiveMode_History);
     ~Archive();
     
+    ArchiveMode GetArchiveMode() const {return m_mode;}
     void Reset()
     {
         m_readHead = m_writeHead = 0;
@@ -54,7 +64,7 @@ public:
     
     // Saving
     template<typename T>
-    void operator<<(T& object)
+    void operator<<(T const& object)
     {
         size_t objSize = sizeof(object);
         
@@ -118,6 +128,8 @@ private:
     }
 
 private:
+    ArchiveMode m_mode;
+    
     uint8_t* m_pMem;
     size_t m_memSize;
     
@@ -129,8 +141,8 @@ class Serialisable
 {
 public:
     
-    virtual void Load(Archive& rArchive) = 0;
-    virtual void Save(Archive& rArchive) = 0;
+    virtual void Load(Archive& rArchive) {}
+    virtual void Save(Archive& rArchive) {}
 };
 
 #define SERIALISABLE_DECL   virtual void Load(Archive& rArchive) override; \

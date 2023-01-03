@@ -34,6 +34,72 @@ SystemNES::~SystemNES()
     EjectCartridge();
 }
 
+void SystemNES::Load(Archive& rArchive)
+{
+    uint8_t cartInfo = 0;
+    rArchive >> cartInfo;
+    
+    if(cartInfo == kArchiveSentinalHasData)
+    {
+        if(m_pCart != nullptr && rArchive.GetArchiveMode() == ArchiveMode_History)
+        {
+            m_pCart->Load(rArchive);
+        }
+        else
+        {
+            if(m_pCart != nullptr )
+            {
+                delete m_pCart;
+                m_pCart = nullptr;
+            }
+            m_pCart = new Cartridge(*this, rArchive);
+        }
+    }
+    
+    rArchive >> m_bPowerOn;
+    rArchive >> m_cycleCount;
+    rArchive.ReadBytes(m_ram, nRamSize);
+    rArchive.ReadBytes(m_apuRegisters, nAPURegisterCount);
+    rArchive >> m_controller1;
+    rArchive >> m_controller2;
+    rArchive >> m_controllerLatch1;
+    rArchive >> m_controllerLatch2;
+    rArchive >> m_dmaAddress;
+    rArchive >> m_dmaData;
+    rArchive >> m_DMAMode;
+    
+    m_cpu.Load(rArchive);
+    m_ppu.Load(rArchive);
+}
+
+void SystemNES::Save(Archive& rArchive)
+{
+    if(m_pCart != nullptr)
+    {
+        rArchive << kArchiveSentinalHasData;
+        m_pCart->Save(rArchive);
+    }
+    else
+    {
+        rArchive << kArchiveSentinalNoData;
+    }
+    
+    rArchive << m_bPowerOn;
+    rArchive << m_cycleCount;
+    rArchive.WriteBytes(m_ram, nRamSize);
+    rArchive.WriteBytes(m_apuRegisters, nAPURegisterCount);
+    rArchive << m_controller1;
+    rArchive << m_controller2;
+    rArchive << m_controllerLatch1;
+    rArchive << m_controllerLatch2;
+    rArchive << m_dmaAddress;
+    rArchive << m_dmaData;
+    rArchive << m_DMAMode;
+    
+    m_cpu.Save(rArchive);
+    m_ppu.Save(rArchive);
+}
+
 void SystemNES::PowerOn()
 {
     m_cycleCount = 0;
