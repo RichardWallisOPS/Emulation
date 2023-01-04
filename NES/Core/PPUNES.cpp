@@ -81,6 +81,7 @@ PPUNES::~PPUNES()
 
 void PPUNES::Load(Archive& rArchive)
 {
+    rArchive >> m_mirrorMode;
     rArchive.ReadBytes(m_vram, nVRamSize);
     rArchive.ReadBytes(m_pallette, nPalletteSize);
     rArchive.ReadBytes(m_primaryOAM, 256);
@@ -109,6 +110,7 @@ void PPUNES::Load(Archive& rArchive)
 
 void PPUNES::Save(Archive& rArchive)
 {
+    rArchive << m_mirrorMode;
     rArchive.WriteBytes(m_vram, nVRamSize);
     rArchive.WriteBytes(m_pallette, nPalletteSize);
     rArchive.WriteBytes(m_primaryOAM, 256);
