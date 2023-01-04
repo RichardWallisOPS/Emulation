@@ -70,6 +70,7 @@ void SystemNES::Load(Archive& rArchive)
     
     m_cpu.Load(rArchive);
     m_ppu.Load(rArchive);
+    m_apu.Load(rArchive);
 }
 
 void SystemNES::Save(Archive& rArchive)
@@ -98,6 +99,7 @@ void SystemNES::Save(Archive& rArchive)
     
     m_cpu.Save(rArchive);
     m_ppu.Save(rArchive);
+    m_apu.Save(rArchive);
 }
 
 void SystemNES::PowerOn()

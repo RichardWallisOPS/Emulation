@@ -9,10 +9,11 @@
 #define SystemNES_h
 
 #include "IOBus.h"
+#include "Serialise.h"
 #include "CPU6502.h"
 #include "PPUNES.h"
+#include "APUNES.h"
 #include "Cartridge.h"
-#include "Serialise.h"
 
 class SystemNES : public SystemIOBus, public Serialisable
 {
@@ -73,6 +74,7 @@ private:
 
     CPU6502     m_cpu;
     PPUNES      m_ppu;
+    APUNES      m_apu;
     Cartridge*  m_pCart;
     
     // Controller instantious and latch
