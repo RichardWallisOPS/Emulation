@@ -43,12 +43,110 @@ void CartMapper_4::Initialise()
 
 void CartMapper_4::Load(Archive& rArchive)
 {
-    //TODO
+    rArchive >> m_bankSelect;
+    rArchive >> m_bankData;
+    rArchive >> m_mirror;
+    rArchive >> m_prgRamProtect;
+    
+    {
+        uint8_t* pBasePrgAddress = &m_pPrg[0];
+        size_t offsetBank0 = 0;
+        size_t offsetBank1 = 0;
+        size_t offsetBank2 = 0;
+        size_t offsetBank3 = 0;
+        rArchive >> offsetBank0;
+        rArchive >> offsetBank1;
+        rArchive >> offsetBank2;
+        rArchive >> offsetBank3;
+        m_prgBank0 = pBasePrgAddress + offsetBank0;
+        m_prgBank1 = pBasePrgAddress + offsetBank1;
+        m_prgBank2 = pBasePrgAddress + offsetBank2;
+        m_prgBank3 = pBasePrgAddress + offsetBank3;
+    }
+
+    {
+        uint8_t* pBaseChrAddress = &m_pChr[0];
+        size_t offsetBank0 = 0;
+        size_t offsetBank1 = 0;
+        size_t offsetBank2 = 0;
+        size_t offsetBank3 = 0;
+        size_t offsetBank4 = 0;
+        size_t offsetBank5 = 0;
+        size_t offsetBank6 = 0;
+        size_t offsetBank7 = 0;
+        rArchive >> offsetBank0;
+        rArchive >> offsetBank1;
+        rArchive >> offsetBank2;
+        rArchive >> offsetBank3;
+        rArchive >> offsetBank4;
+        rArchive >> offsetBank5;
+        rArchive >> offsetBank6;
+        rArchive >> offsetBank7;
+        m_chrBank0 = pBaseChrAddress + offsetBank0;
+        m_chrBank1 = pBaseChrAddress + offsetBank1;
+        m_chrBank2 = pBaseChrAddress + offsetBank2;
+        m_chrBank3 = pBaseChrAddress + offsetBank3;
+        m_chrBank4 = pBaseChrAddress + offsetBank4;
+        m_chrBank5 = pBaseChrAddress + offsetBank5;
+        m_chrBank6 = pBaseChrAddress + offsetBank6;
+        m_chrBank7 = pBaseChrAddress + offsetBank7;
+    }
+        
+    rArchive >> m_scanlineLatch;
+    rArchive >> m_scanlineCounter;
+    rArchive >> m_scanlineEnable;
+    rArchive >> m_scanlineReload;
+    rArchive >> m_lastA12;
+    rArchive >> m_delay;
+    rArchive >> m_cycleCount;
 }
 
 void CartMapper_4::Save(Archive& rArchive)
 {
-    //TODO
+    rArchive << m_bankSelect;
+    rArchive << m_bankData;
+    rArchive << m_mirror;
+    rArchive << m_prgRamProtect;
+    
+    {
+        uint8_t* pBasePrgAddress = &m_pPrg[0];
+        size_t offsetBank0 = m_prgBank0 - pBasePrgAddress;
+        size_t offsetBank1 = m_prgBank1 - pBasePrgAddress;
+        size_t offsetBank2 = m_prgBank2 - pBasePrgAddress;
+        size_t offsetBank3 = m_prgBank3 - pBasePrgAddress;
+        rArchive << offsetBank0;
+        rArchive << offsetBank1;
+        rArchive << offsetBank2;
+        rArchive << offsetBank3;
+    }
+
+    {
+        uint8_t* pBaseChrAddress = &m_pChr[0];
+        size_t offsetBank0 = m_chrBank0 - pBaseChrAddress;
+        size_t offsetBank1 = m_chrBank1 - pBaseChrAddress;
+        size_t offsetBank2 = m_chrBank2 - pBaseChrAddress;
+        size_t offsetBank3 = m_chrBank3 - pBaseChrAddress;
+        size_t offsetBank4 = m_chrBank4 - pBaseChrAddress;
+        size_t offsetBank5 = m_chrBank5 - pBaseChrAddress;
+        size_t offsetBank6 = m_chrBank6 - pBaseChrAddress;
+        size_t offsetBank7 = m_chrBank7 - pBaseChrAddress;
+        rArchive << offsetBank0;
+        rArchive << offsetBank1;
+        rArchive << offsetBank2;
+        rArchive << offsetBank3;
+        rArchive << offsetBank4;
+        rArchive << offsetBank5;
+        rArchive << offsetBank6;
+        rArchive << offsetBank7;
+    }
+
+    rArchive << m_scanlineLatch;
+    rArchive << m_scanlineCounter;
+    rArchive << m_scanlineEnable;
+    rArchive << m_scanlineReload;
+    rArchive << m_lastA12;
+    rArchive << m_delay;
+    rArchive << m_cycleCount;
 }
 
 uint8_t CartMapper_4::cpuRead(uint16_t address)
