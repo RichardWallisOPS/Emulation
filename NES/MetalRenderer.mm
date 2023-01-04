@@ -14,11 +14,13 @@
 SystemNES g_NESConsole;
 
 // History and rewind support
-bool            g_Rewind = false;
+int             m_emulationDirection = 1;
+const int       m_kRewindFlashFrames = 8;
+int             m_rewindCounter = 0;
 size_t          m_archiveIndex = 0;
 size_t          m_rewindStartIndex = 0;
-const size_t    m_archiveCount = 5 * 60;
-Archive         m_ArchiveBuffer[m_archiveCount];
+const size_t    m_kArchiveCount = 5 * 60;
+Archive         m_ArchiveBuffer[m_kArchiveCount];
 
 @implementation EmulationMetalView
 
@@ -96,10 +98,10 @@ uint8_t m_keyboardController[2] = {0 , 0};
                     g_NESConsole.Load(archive);
                     
                     // Clear history on load
-                    g_Rewind = false;
+                    m_emulationDirection = 1;
                     m_archiveIndex = 0;
                     m_rewindStartIndex = 0;
-                    for(size_t i = 0;i < m_archiveCount;++i)
+                    for(size_t i = 0;i < m_kArchiveCount;++i)
                     {
                         m_ArchiveBuffer[i].Reset();
                     }
@@ -113,9 +115,10 @@ uint8_t m_keyboardController[2] = {0 , 0};
     }
     else if(event.keyCode == 123) // left - go back in time
     {
-        if(!g_Rewind)
+        if(m_emulationDirection > 0)
         {
-            g_Rewind = true;
+            m_emulationDirection = -1;
+            m_rewindCounter = m_kRewindFlashFrames;
             m_rewindStartIndex = m_archiveIndex;
         }
     }
@@ -175,7 +178,7 @@ uint8_t m_keyboardController[2] = {0 , 0};
     }
     else if(event.keyCode == 123)
     {
-        g_Rewind = false;
+        m_emulationDirection = 1;
     }
 }
 
@@ -303,16 +306,21 @@ id<MTLTexture>  m_emulationOutput[m_renderTextureCount];
             g_NESConsole.SetControllerBits(port, portBits);
         }
     }
-    
-    if(g_Rewind)
+
+    // Rewind into archive history
+    if(m_emulationDirection <= 0)
     {
-        ssize_t tmpArchiveIndex = m_archiveIndex == 0 ? m_archiveCount - 1 : m_archiveIndex - 1;
+        ssize_t tmpArchiveIndex = m_archiveIndex == 0 ? m_kArchiveCount - 1 : m_archiveIndex - 1;
 
         if(tmpArchiveIndex != m_rewindStartIndex)
         {
             m_archiveIndex = tmpArchiveIndex;
         }
-        
+        else
+        {
+            m_emulationDirection = 0;
+        }
+
         Archive& current = m_ArchiveBuffer[m_archiveIndex];
         if(current.ByteCount() > 0)
         {
@@ -330,6 +338,72 @@ id<MTLTexture>  m_emulationOutput[m_renderTextureCount];
             g_NESConsole.Tick();
         }
     }
+    
+    // HAck to show visual rewind feedback - write it directly into the output texture for now
+    if(m_emulationDirection <= 0)
+    {
+         --m_rewindCounter;
+        if(m_rewindCounter < -m_kRewindFlashFrames)
+        {
+            m_rewindCounter = m_kRewindFlashFrames;
+        }
+        
+        if(m_rewindCounter > 0)
+        {
+            uint32_t hudColour = 0xFFFF0000;
+            uint32_t* pFinalOutput = (uint32_t*)currentTextureBacking.contents;
+            
+            if(m_emulationDirection == 0)
+            {
+                // End of history - pause symbol ||
+                pFinalOutput[ 10 * 256 + 10] = hudColour; pFinalOutput[ 10 * 256 + 15] = hudColour;
+                pFinalOutput[ 10 * 256 + 11] = hudColour; pFinalOutput[ 10 * 256 + 16] = hudColour;
+                pFinalOutput[ 11 * 256 + 10] = hudColour; pFinalOutput[ 11 * 256 + 15] = hudColour;
+                pFinalOutput[ 11 * 256 + 11] = hudColour; pFinalOutput[ 11 * 256 + 16] = hudColour;
+                pFinalOutput[ 12 * 256 + 10] = hudColour; pFinalOutput[ 12 * 256 + 15] = hudColour;
+                pFinalOutput[ 12 * 256 + 11] = hudColour; pFinalOutput[ 12 * 256 + 16] = hudColour;
+                pFinalOutput[ 13 * 256 + 10] = hudColour; pFinalOutput[ 13 * 256 + 15] = hudColour;
+                pFinalOutput[ 13 * 256 + 11] = hudColour; pFinalOutput[ 13 * 256 + 16] = hudColour;
+                pFinalOutput[ 14 * 256 + 10] = hudColour; pFinalOutput[ 14 * 256 + 15] = hudColour;
+                pFinalOutput[ 14 * 256 + 11] = hudColour; pFinalOutput[ 14 * 256 + 16] = hudColour;
+                pFinalOutput[ 15 * 256 + 10] = hudColour; pFinalOutput[ 15 * 256 + 15] = hudColour;
+                pFinalOutput[ 15 * 256 + 11] = hudColour; pFinalOutput[ 15 * 256 + 16] = hudColour;
+                pFinalOutput[ 16 * 256 + 10] = hudColour; pFinalOutput[ 16 * 256 + 15] = hudColour;
+                pFinalOutput[ 16 * 256 + 11] = hudColour; pFinalOutput[ 16 * 256 + 16] = hudColour;
+                pFinalOutput[ 17 * 256 + 10] = hudColour; pFinalOutput[ 17 * 256 + 15] = hudColour;
+                pFinalOutput[ 17 * 256 + 11] = hudColour; pFinalOutput[ 17 * 256 + 16] = hudColour;
+                pFinalOutput[ 18 * 256 + 10] = hudColour; pFinalOutput[ 18 * 256 + 15] = hudColour;
+                pFinalOutput[ 18 * 256 + 11] = hudColour; pFinalOutput[ 18 * 256 + 16] = hudColour;
+                pFinalOutput[ 19 * 256 + 10] = hudColour; pFinalOutput[ 19 * 256 + 15] = hudColour;
+                pFinalOutput[ 19 * 256 + 11] = hudColour; pFinalOutput[ 19 * 256 + 16] = hudColour;
+            }
+            else
+            {
+                // Scanning through history - rewind symbol <<
+                pFinalOutput[ 10 * 256 + 12] = hudColour; pFinalOutput[ 10 * 256 + 18] = hudColour;
+                pFinalOutput[ 11 * 256 + 11] = hudColour; pFinalOutput[ 11 * 256 + 17] = hudColour;
+                pFinalOutput[ 12 * 256 + 10] = hudColour; pFinalOutput[ 12 * 256 + 16] = hudColour;
+                pFinalOutput[ 13 * 256 +  9] = hudColour; pFinalOutput[ 13 * 256 + 15] = hudColour;
+                pFinalOutput[ 14 * 256 +  8] = hudColour; pFinalOutput[ 14 * 256 + 14] = hudColour;
+                pFinalOutput[ 15 * 256 +  8] = hudColour; pFinalOutput[ 15 * 256 + 14] = hudColour;
+                pFinalOutput[ 16 * 256 +  9] = hudColour; pFinalOutput[ 16 * 256 + 15] = hudColour;
+                pFinalOutput[ 17 * 256 + 10] = hudColour; pFinalOutput[ 17 * 256 + 16] = hudColour;
+                pFinalOutput[ 18 * 256 + 11] = hudColour; pFinalOutput[ 18 * 256 + 17] = hudColour;
+                pFinalOutput[ 19 * 256 + 12] = hudColour; pFinalOutput[ 19 * 256 + 18] = hudColour;
+                pFinalOutput[ 10 * 256 + 11] = hudColour; pFinalOutput[ 10 * 256 + 17] = hudColour;
+                pFinalOutput[ 11 * 256 + 10] = hudColour; pFinalOutput[ 11 * 256 + 16] = hudColour;
+                pFinalOutput[ 12 * 256 +  9] = hudColour; pFinalOutput[ 12 * 256 + 15] = hudColour;
+                pFinalOutput[ 13 * 256 +  8] = hudColour; pFinalOutput[ 13 * 256 + 14] = hudColour;
+                pFinalOutput[ 14 * 256 +  7] = hudColour; pFinalOutput[ 14 * 256 + 13] = hudColour;
+                pFinalOutput[ 15 * 256 +  7] = hudColour; pFinalOutput[ 15 * 256 + 13] = hudColour;
+                pFinalOutput[ 16 * 256 +  8] = hudColour; pFinalOutput[ 16 * 256 + 14] = hudColour;
+                pFinalOutput[ 17 * 256 +  9] = hudColour; pFinalOutput[ 17 * 256 + 15] = hudColour;
+                pFinalOutput[ 18 * 256 + 10] = hudColour; pFinalOutput[ 18 * 256 + 16] = hudColour;
+                pFinalOutput[ 19 * 256 + 11] = hudColour; pFinalOutput[ 19 * 256 + 17] = hudColour;
+            }
+        }
+    }
+   
     
     // Render
     {
@@ -357,11 +431,11 @@ id<MTLTexture>  m_emulationOutput[m_renderTextureCount];
         [cmdBuffer commit];
     }
     
-    if(!g_Rewind)
+    if(m_emulationDirection > 0)
     {
         m_ArchiveBuffer[m_archiveIndex].Reset();
         g_NESConsole.Save(m_ArchiveBuffer[m_archiveIndex]);
-        m_archiveIndex = (m_archiveIndex + 1) % m_archiveCount;
+        m_archiveIndex = (m_archiveIndex + 1) % m_kArchiveCount;
     }
 }
 
