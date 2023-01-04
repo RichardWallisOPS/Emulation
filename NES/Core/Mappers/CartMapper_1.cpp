@@ -27,6 +27,26 @@ void CartMapper_1::Initialise()
     }
 }
 
+void CartMapper_1::Load(Archive& rArchive)
+{
+    rArchive >> m_shiftRegister;
+    rArchive >> m_shiftCount;
+    rArchive >> m_ctrl;
+    rArchive >> m_chrBank0;
+    rArchive >> m_chrBank1;
+    rArchive >> m_prgBank;
+}
+
+void CartMapper_1::Save(Archive& rArchive)
+{
+    rArchive << m_shiftRegister;
+    rArchive << m_shiftCount;
+    rArchive << m_ctrl;
+    rArchive << m_chrBank0;
+    rArchive << m_chrBank1;
+    rArchive << m_prgBank;
+}
+
 uint8_t CartMapper_1::cpuRead(uint16_t address)
 {
     if(address >= 0x6000 && address <= 0x7fff && m_pCartPRGRAM != nullptr)

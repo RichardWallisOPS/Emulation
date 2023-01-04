@@ -85,7 +85,7 @@ void Cartridge::Initialise(SystemIOBus& bus, const char* pCartPath)
     
     // Cache a NV RAM save location based on cartridge path
     {
-        const char* pNVSave = ".NVPRGRAM";
+        const char* pNVSave = ".NVRAM";
         const size_t cartPathLen = strlen(m_pCartPath);
         const size_t nvSaveExensionLen = strlen(pNVSave);
         
@@ -123,7 +123,7 @@ void Cartridge::Initialise(SystemIOBus& bus, const char* pCartPath)
     uint32_t nPrgRamSize = 0;
     uint32_t nNVPrgRamSize = 0;
     uint32_t nChrRamSize = 0;
-    uint32_t nChrNVRamSize = 0;
+    uint32_t nNVChrRamSize = 0;
 
     // Other ram bank sizes
     if(iNes2_0)
@@ -134,8 +134,8 @@ void Cartridge::Initialise(SystemIOBus& bus, const char* pCartPath)
         if(nNVPrgRamSize <= 64) nNVPrgRamSize = 0;
         nChrRamSize = 64 << (pHeader->m_flags11 & 0b00001111);
         if(nChrRamSize <= 64) nChrRamSize = 0;
-        nChrNVRamSize = 64 << ((pHeader->m_flags11 & 0b11110000) >> 4);
-        if(nChrNVRamSize <= 64) nChrNVRamSize = 0;
+        nNVChrRamSize = 64 << ((pHeader->m_flags11 & 0b11110000) >> 4);
+        if(nNVChrRamSize <= 64) nNVChrRamSize = 0;
     }
     
     // Currently assume Volatile RAM OR Non-Volatile RAM but not both
@@ -147,7 +147,7 @@ void Cartridge::Initialise(SystemIOBus& bus, const char* pCartPath)
             memset(m_pCartPRGRAM, 0x00, allocPrgRamSize);
         }
         
-        uint32_t allocChrRamSize = nChrRamSize > nChrNVRamSize ? nChrRamSize : nChrNVRamSize;
+        uint32_t allocChrRamSize = nChrRamSize > nNVChrRamSize ? nChrRamSize : nNVChrRamSize;
         if(allocChrRamSize > 0)
         {
             m_pCartCHRRAM = new uint8_t[allocChrRamSize];
@@ -163,7 +163,7 @@ void Cartridge::Initialise(SystemIOBus& bus, const char* pCartPath)
                                         pPrg, nProgramSize,
                                         pChr, nCharacterSize,
                                         m_pCartPRGRAM, nPrgRamSize, nNVPrgRamSize,
-                                        m_pCartCHRRAM, nChrRamSize, nChrNVRamSize);
+                                        m_pCartCHRRAM, nChrRamSize, nNVChrRamSize);
     
 }
 
@@ -213,28 +213,62 @@ void Cartridge::Load(Archive& rArchive)
 {
     // Path or cart data is handled in the Archive Constructor
     
-    // TODO
+    // TODO: When or if required
     // m_cartVRAM
-    // m_pCartPRGRAM
-    // m_pCartCHRRAM
-
-    uint8_t mapperInfo = 0;
-    rArchive >> mapperInfo;
     
-    if(mapperInfo == kArchiveSentinalHasData)
     {
-        // We should already have a mapper object - History or Saved Data
-        // Mappers don't handle memory just offsets into this carts memory
-        if(m_pMapper != nullptr)
+        uint32_t prgRamSize = 0;
+        rArchive >> prgRamSize;
+        
+        if(m_pCartPRGRAM != nullptr && prgRamSize > 0 && prgRamSize == m_pMapper->GetPrgRamSize())
         {
-            m_pMapper->Load(rArchive);
+            rArchive.ReadBytes(m_pCartPRGRAM, prgRamSize);
         }
 #if DEBUG
-        else
+        else if(prgRamSize > 0)
         {
+            // Something has gone wrong
             *(volatile char*)(0) = 'C' | 'A' | 'R' | 'T';
         }
 #endif
+    }
+    
+    {
+        uint32_t chrRamSize = 0;
+        rArchive >> chrRamSize;
+        
+        if(m_pCartCHRRAM != nullptr && chrRamSize > 0 && chrRamSize == m_pMapper->GetChrRamSize())
+        {
+            rArchive.ReadBytes(m_pCartCHRRAM, chrRamSize);
+        }
+#if DEBUG
+        else if(chrRamSize > 0)
+        {
+            // Something has gone wrong
+            *(volatile char*)(0) = 'C' | 'A' | 'R' | 'T';
+        }
+#endif
+    }
+
+    {
+        uint8_t mapperInfo = 0;
+        rArchive >> mapperInfo;
+        
+        if(mapperInfo == kArchiveSentinalHasData)
+        {
+            // We should already have a mapper object - History or Saved Data
+            // Mappers don't handle memory, just offsets into this carts memory
+            if(m_pMapper != nullptr)
+            {
+                m_pMapper->Load(rArchive);
+            }
+#if DEBUG
+            else
+            {
+                *(volatile char*)(0) = 'C' | 'A' | 'R' | 'T';
+            }
+#endif
+        }
     }
 }
 
@@ -247,10 +281,26 @@ void Cartridge::Save(Archive& rArchive)
         rArchive.WriteBytes(m_pCartPath, pathLen);
     }
     
-    // TODO
+    // TODO: When or if required
     // m_cartVRAM
-    // m_pCartPRGRAM
-    // m_pCartCHRRAM
+    
+    {
+        uint32_t prgRamSize = m_pMapper->GetPrgRamSize();
+        rArchive << prgRamSize;
+        if(m_pCartPRGRAM != nullptr && prgRamSize > 0)
+        {
+            rArchive.WriteBytes(m_pCartPRGRAM, prgRamSize);
+        }
+    }
+    
+    {
+        uint32_t chrRamSize = m_pMapper->GetChrRamSize();
+        rArchive << chrRamSize;
+        if(m_pCartCHRRAM != nullptr && chrRamSize > 0)
+        {
+            rArchive.WriteBytes(m_pCartCHRRAM, chrRamSize);
+        }
+    }
 
     if(m_pMapper != nullptr)
     {
@@ -265,7 +315,7 @@ void Cartridge::Save(Archive& rArchive)
 
 void Cartridge::LoadNVRAM()
 {
-    if(m_pMapper != nullptr)
+    if(m_pMapper != nullptr && m_pMapper->GetNVPrgRAMSize() > 0)
     {
         FileStack fileLoad(fopen(m_pNVRAMPath, "r"));
         if(fileLoad.handle() != nullptr)
@@ -277,7 +327,7 @@ void Cartridge::LoadNVRAM()
 
 void Cartridge::SaveNVRAM()
 {
-    if(m_pMapper != nullptr)
+    if(m_pMapper != nullptr && m_pMapper->GetNVPrgRAMSize() > 0)
     {
         FileStack fileSave(fopen(m_pNVRAMPath, "w"));
         if(fileSave.handle() != nullptr)

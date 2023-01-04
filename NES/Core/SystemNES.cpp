@@ -165,7 +165,7 @@ void SystemNES::SetMirrorMode(MirrorMode mode)
     m_ppu.SetMirrorMode(mode);
 }
 
-uint64_t SystemNES::CycleCount()
+uint64_t SystemNES::CycleCount() const
 {
     return m_cycleCount;
 }

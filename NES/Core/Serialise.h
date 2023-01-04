@@ -37,7 +37,10 @@ const uint8_t kArchiveSentinalHasData = 0xFF;
 
 enum ArchiveMode
 {
+    // Only save items that are required for prev frame in current loaded cart etc
     ArchiveMode_History = 0,
+    
+    // Save all items for a cold start
     ArchiveMode_Persistent,
 };
 
@@ -51,10 +54,16 @@ public:
     void Reset()
     {
         m_readHead = m_writeHead = 0;
+        m_bError = false;
     }
     void ResetRead()
     {
         m_readHead = 0;
+    }
+    
+    void SetError()
+    {
+        m_bError = true;
     }
     
     size_t ByteCount() const {return m_writeHead;}
@@ -66,50 +75,62 @@ public:
     template<typename T>
     void operator<<(T const& object)
     {
-        size_t objSize = sizeof(object);
-        
-        if(objSize + m_writeHead >= m_memSize)
+        if(!m_bError)
         {
-            IncreaseAllocation();
+            size_t objSize = sizeof(object);
+            
+            if(objSize + m_writeHead >= m_memSize)
+            {
+                IncreaseAllocation();
+            }
+            
+            T* pWriteObjectPtr = (T*)(&m_pMem[m_writeHead]);
+            *pWriteObjectPtr = object;
+            
+            m_writeHead += objSize;
         }
-        
-        T* pWriteObjectPtr = (T*)(&m_pMem[m_writeHead]);
-        *pWriteObjectPtr = object;
-        
-        m_writeHead += objSize;
     }
     
     void WriteBytes(void* pBytes, size_t count)
     {
-        if(count + m_writeHead >= m_memSize)
+        if(!m_bError)
         {
-            IncreaseAllocation();
+            if(count + m_writeHead >= m_memSize)
+            {
+                IncreaseAllocation();
+            }
+            
+            memcpy(&m_pMem[m_writeHead], pBytes, count);
+            
+            m_writeHead += count;
         }
-        
-        memcpy(&m_pMem[m_writeHead], pBytes, count);
-        
-        m_writeHead += count;
     }
     
     // Loading
     template<typename T>
     void operator>>(T& object)
     {
-        size_t objSize = sizeof(object);
-        if(objSize + m_readHead <= m_writeHead)
+        if(!m_bError)
         {
-            T* pReadObjectPtr = (T*)(&m_pMem[m_readHead]);
-            object = *pReadObjectPtr;
-            m_readHead += objSize;
+            size_t objSize = sizeof(object);
+            if(objSize + m_readHead <= m_writeHead)
+            {
+                T* pReadObjectPtr = (T*)(&m_pMem[m_readHead]);
+                object = *pReadObjectPtr;
+                m_readHead += objSize;
+            }
         }
     }
     
     void ReadBytes(void* pBytes, size_t count)
     {
-        if(count + m_readHead <= m_writeHead)
+        if(!m_bError)
         {
-            memcpy(pBytes, &m_pMem[m_readHead], count);
-            m_readHead += count;
+            if(count + m_readHead <= m_writeHead)
+            {
+                memcpy(pBytes, &m_pMem[m_readHead], count);
+                m_readHead += count;
+            }
         }
     }
     
@@ -117,17 +138,21 @@ private:
 
     void IncreaseAllocation()
     {
-        uint8_t* pOldMem = m_pMem;
+        if(!m_bError)
+        {
+            uint8_t* pOldMem = m_pMem;
+                
+            m_memSize = m_memSize * 2;
+            m_pMem = new uint8_t[m_memSize];
             
-        m_memSize = m_memSize * 2;
-        m_pMem = new uint8_t[m_memSize];
-        
-        memcpy(m_pMem, pOldMem, m_writeHead);
-        
-        delete [] pOldMem;
+            memcpy(m_pMem, pOldMem, m_writeHead);
+            
+            delete [] pOldMem;
+        }
     }
 
 private:
+    bool        m_bError;
     ArchiveMode m_mode;
     
     uint8_t* m_pMem;

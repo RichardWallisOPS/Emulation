@@ -11,7 +11,8 @@
 #include "Serialise.h"
 
 Archive::Archive(ArchiveMode mode /*= ArchiveMode_History*/)
-: m_mode(mode)
+: m_bError(false)
+, m_mode(mode)
 , m_pMem(nullptr)
 , m_memSize(0)
 , m_readHead(0)
@@ -52,11 +53,14 @@ bool Archive::Load(const char* pPath)
 bool Archive::Save(const char* pPath)
 {
     size_t bytesSaved = 0;
-    
-    FileStack fileSave(fopen(pPath, "w"));
-    if(fileSave.handle() != nullptr)
+ 
+    if(!m_bError)
     {
-        bytesSaved = fwrite(m_pMem, 1, m_writeHead, fileSave.handle());
+        FileStack fileSave(fopen(pPath, "w"));
+        if(fileSave.handle() != nullptr)
+        {
+            bytesSaved = fwrite(m_pMem, 1, m_writeHead, fileSave.handle());
+        }
     }
      
     return bytesSaved == m_writeHead;

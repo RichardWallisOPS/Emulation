@@ -31,7 +31,7 @@ enum MirrorMode : uint8_t
     VRAM_MIRROR_V,
     VRAM_MIRROR_CART4,
     
-    VRAM_MIRROR_CART_SOLDER,
+    VRAM_MIRROR_SINGLE, // TODO: Not yet supported
 };
 
 // Core System has extra features
@@ -42,7 +42,7 @@ public:
     virtual void SignalNMI(bool bSignal)        {}
     virtual void SignalIRQ(bool bSignal)        {}
     virtual void SetMirrorMode(MirrorMode mode) {}
-    virtual uint64_t CycleCount()               {return 0;}
+    virtual uint64_t CycleCount() const      { return 0; }
 };
 
 #endif /* IOBus_h */

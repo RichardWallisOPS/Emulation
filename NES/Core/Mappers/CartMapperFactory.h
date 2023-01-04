@@ -18,7 +18,7 @@ public:
             uint8_t* pPrg, uint32_t nProgramSize,
             uint8_t* pChr, uint32_t nCharacterSize,
             uint8_t* pCartPRGRAM, uint32_t nPrgRamSize, uint32_t nNVPrgRamSize,
-            uint8_t* pCartCHRRAM, uint32_t nChrRamSize, uint32_t nChrNVRamSize)
+            uint8_t* pCartCHRRAM, uint32_t nChrRamSize, uint32_t nNVChrRamSize)
     : m_bus(bus)
     , m_pPrg(pPrg)
     , m_pChr(pChr)
@@ -29,20 +29,29 @@ public:
     , m_nNVPrgRamSize(nNVPrgRamSize)
     , m_pCartCHRRAM(pCartCHRRAM)
     , m_nChrRamSize(nChrRamSize)
-    , m_nChrNVRamSize(nChrNVRamSize)
+    , m_nNVChrRamSize(nNVChrRamSize)
     {}
     
     virtual ~Mapper() {}
     virtual void Initialise() {}
     
+    // Return larger of the two
+    uint32_t GetPrgRamSize() const   { return m_nPrgRamSize > m_nNVPrgRamSize ? m_nPrgRamSize : m_nNVPrgRamSize;}
+    
+    // Just the Non volatile prg ram
     uint32_t GetNVPrgRAMSize() const {return m_nNVPrgRamSize;}
-    uint32_t GetNVChrRAMSize() const {return m_nChrNVRamSize;}
+    
+    // Return larger of the two
+    uint32_t GetChrRamSize() const   { return m_nChrRamSize > m_nNVChrRamSize ? m_nChrRamSize : m_nNVChrRamSize;}
+    
+    // Just the Non volatile chr ram
+    uint32_t GetNVChrRAMSize() const {return m_nNVChrRamSize;}
     
     static Mapper* CreateMapper(SystemIOBus& bus, uint8_t mapperID,
                                     uint8_t* pPrg, uint32_t nProgramSize,
                                     uint8_t* pChr, uint32_t nCharacterSize,
                                     uint8_t* pCartPRGRAM, uint32_t nPrgRamSize, uint32_t nNVPrgRamSize,
-                                    uint8_t* pCartCHRRAM, uint32_t nChrRamSize, uint32_t nChrNVRamSize);
+                                    uint8_t* pCartCHRRAM, uint32_t nChrRamSize, uint32_t nNVChrRamSize);
         
 protected:
 
@@ -60,7 +69,7 @@ protected:
     
     uint8_t*    m_pCartCHRRAM;
     uint32_t    m_nChrRamSize;
-    uint32_t    m_nChrNVRamSize;
+    uint32_t    m_nNVChrRamSize;
 };
 
 #define MAPPER_HEADER_DECL  using Mapper::Mapper; \

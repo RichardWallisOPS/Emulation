@@ -15,13 +15,13 @@
 #include "CartMapper_4.h"
 #include "CartMapper_66.h"
 
-#define CART_MAPPER(X) new CartMapper_##X(bus, pPrg, nProgramSize, pChr, nCharacterSize, pCartPRGRAM, nPrgRamSize, nNVPrgRamSize, pCartCHRRAM, nChrRamSize, nChrNVRamSize);
+#define CART_MAPPER(X) new CartMapper_##X(bus, pPrg, nProgramSize, pChr, nCharacterSize, pCartPRGRAM, nPrgRamSize, nNVPrgRamSize, pCartCHRRAM, nChrRamSize, nNVChrRamSize);
 
 Mapper* Mapper::CreateMapper(SystemIOBus& bus, uint8_t mapperID,
                                 uint8_t* pPrg, uint32_t nProgramSize,
                                 uint8_t* pChr, uint32_t nCharacterSize,
                                 uint8_t* pCartPRGRAM, uint32_t nPrgRamSize, uint32_t nNVPrgRamSize,
-                                uint8_t* pCartCHRRAM, uint32_t nChrRamSize, uint32_t nChrNVRamSize)
+                                uint8_t* pCartCHRRAM, uint32_t nChrRamSize, uint32_t nNVChrRamSize)
 {
     Mapper* pMapper = nullptr;
     
