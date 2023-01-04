@@ -19,24 +19,21 @@ void CartMapper_0::Initialise()
 
 uint8_t CartMapper_0::cpuRead(uint16_t address)
 {
-    if(m_pPrg != nullptr)
+    if(address >= 0x6000 && address <= 0x7FFF && m_pCartPRGRAM != nullptr)
     {
-        if(address >= 0x6000 && address <= 0x7FFF)
-        {
-            return m_pCartPRGRAM[address - 0x6000];
-        }
-        else if(address >= 0x8000 && address <= 0xFFFF)
-        {
-            uint32_t cartAddress = (address - 0x8000) & (m_nProgramSize - 1);
-            return m_pPrg[cartAddress];
-        }
+        return m_pCartPRGRAM[address - 0x6000];
+    }
+    else if(address >= 0x8000 && address <= 0xFFFF)
+    {
+        uint32_t cartAddress = (address - 0x8000) & (m_nProgramSize - 1);
+        return m_pPrg[cartAddress];
     }
     return 0x00;
 }
 
 void CartMapper_0::cpuWrite(uint16_t address, uint8_t byte)
 {
-    if(address >= 0x6000 && address <= 0x7FFF)
+    if(address >= 0x6000 && address <= 0x7FFF && m_pCartPRGRAM != nullptr)
     {
         m_pCartPRGRAM[address - 0x6000] = byte;
     }

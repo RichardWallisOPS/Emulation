@@ -151,7 +151,7 @@ void CartMapper_4::Save(Archive& rArchive)
 
 uint8_t CartMapper_4::cpuRead(uint16_t address)
 {
-    if(address >= 0x6000 && address <= 0x7FFF)
+    if(address >= 0x6000 && address <= 0x7FFF && m_pCartPRGRAM != nullptr)
     {
         return m_pCartPRGRAM[address - 0x6000];
     }
@@ -176,7 +176,7 @@ uint8_t CartMapper_4::cpuRead(uint16_t address)
 
 void CartMapper_4::cpuWrite(uint16_t address, uint8_t byte)
 {
-    if(address >= 0x6000 && address <= 0x7FFF)
+    if(address >= 0x6000 && address <= 0x7FFF && m_pCartPRGRAM != nullptr)
     {
         m_pCartPRGRAM[address - 0x6000] = byte;
     }
