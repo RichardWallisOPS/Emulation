@@ -41,6 +41,16 @@ void CartMapper_4::Initialise()
     m_chrBank7 = &m_pChr[0x0400 * 7];
 }
 
+void CartMapper_4::Load(Archive& rArchive)
+{
+    //TODO
+}
+
+void CartMapper_4::Save(Archive& rArchive)
+{
+    //TODO
+}
+
 uint8_t CartMapper_4::cpuRead(uint16_t address)
 {
     if(address >= 0x6000 && address <= 0x7FFF)

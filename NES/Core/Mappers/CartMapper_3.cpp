@@ -12,6 +12,16 @@ void CartMapper_3::Initialise()
     m_chrBankSelect = 0;
 }
 
+void CartMapper_3::Load(Archive& rArchive)
+{
+    rArchive >> m_chrBankSelect;
+}
+
+void CartMapper_3::Save(Archive& rArchive)
+{
+    rArchive << m_chrBankSelect;
+}
+
 uint8_t CartMapper_3::cpuRead(uint16_t address)
 {
      if(m_pPrg != nullptr)

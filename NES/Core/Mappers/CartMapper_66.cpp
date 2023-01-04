@@ -13,6 +13,16 @@ void CartMapper_66::Initialise()
     m_bankSelect = 0;
 }
 
+void CartMapper_66::Load(Archive& rArchive)
+{
+    rArchive >> m_bankSelect;
+}
+
+void CartMapper_66::Save(Archive& rArchive)
+{
+    rArchive << m_bankSelect;
+}
+
 uint8_t CartMapper_66::cpuRead(uint16_t address)
 {
     if(address >= 0x8000 && address <= 0xFFFF)

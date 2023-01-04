@@ -15,6 +15,7 @@ class CartMapper_2 : public Mapper
 public:
     BUS_HEADER_DECL
     MAPPER_HEADER_DECL
+    SERIALISABLE_DECL
 private:
     uint8_t m_prgBankSelect;
 };

@@ -12,6 +12,16 @@ void CartMapper_2::Initialise()
     m_prgBankSelect = 0;
 }
 
+void CartMapper_2::Load(Archive& rArchive)
+{
+    rArchive >> m_prgBankSelect;
+}
+
+void CartMapper_2::Save(Archive& rArchive)
+{
+    rArchive << m_prgBankSelect;
+}
+
 uint8_t CartMapper_2::cpuRead(uint16_t address)
 {
     if(m_pPrg != nullptr && m_nProgramSize > 0)
