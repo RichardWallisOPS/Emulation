@@ -26,7 +26,6 @@ SystemNES::SystemNES()
 , m_DMAMode(DMA_OFF)
 {
     memset(m_ram, 0x00, nRamSize);
-    memset(m_apuRegisters, 0x00, nAPURegisterCount);
 }
 
 SystemNES::~SystemNES()
@@ -59,7 +58,6 @@ void SystemNES::Load(Archive& rArchive)
     rArchive >> m_bPowerOn;
     rArchive >> m_cycleCount;
     rArchive.ReadBytes(m_ram, nRamSize);
-    rArchive.ReadBytes(m_apuRegisters, nAPURegisterCount);
     rArchive >> m_controller1;
     rArchive >> m_controller2;
     rArchive >> m_controllerLatch1;
@@ -88,7 +86,6 @@ void SystemNES::Save(Archive& rArchive)
     rArchive << m_bPowerOn;
     rArchive << m_cycleCount;
     rArchive.WriteBytes(m_ram, nRamSize);
-    rArchive.WriteBytes(m_apuRegisters, nAPURegisterCount);
     rArchive << m_controller1;
     rArchive << m_controller2;
     rArchive << m_controllerLatch1;
@@ -117,7 +114,6 @@ void SystemNES::PowerOn()
     m_controllerLatch2 = 0;
     
     memset(m_ram, 0x00, nRamSize);
-    memset(m_apuRegisters, 0x00, nAPURegisterCount);
     
     m_bPowerOn = true;
 }
@@ -200,6 +196,11 @@ void SystemNES::Tick()
         {
             m_cpu.Tick();
         }
+        
+        if((m_cycleCount % 6) == 0)
+        {
+            m_apu.Tick();
+        }
 
         // DMA handling
         if(m_DMAMode != DMA_OFF)
@@ -257,10 +258,12 @@ uint8_t SystemNES::cpuRead(uint16_t address)
             m_controllerLatch2 |= 1 << 7;
             return result;
         }
-        
-        // APU and IO registers
-        uint16_t memAddress = address - 0x4000;
-        return m_apuRegisters[memAddress];
+        else
+        {
+            // APU registers
+            uint8_t port = address - 0x4000;
+            return m_apu.cpuRead(port);
+        }
     }
     else if(address >= 0x4020 && address <= 0xFFFF && m_pCart != nullptr)
     {
@@ -286,9 +289,6 @@ void SystemNES::cpuWrite(uint16_t address, uint8_t byte)
     }
     else if(address >= 0x4000 && address <= 0x401F)
     {
-        uint16_t memAddress = address - 0x4000;
-        m_apuRegisters[memAddress] = byte;
-         
         if(address == 0x4014)
         {
             // Writing value XX (high byte) to 0x4014 will upload 256 bytes of data from
@@ -303,6 +303,11 @@ void SystemNES::cpuWrite(uint16_t address, uint8_t byte)
                 m_controllerLatch1 = m_controller1;
                 m_controllerLatch2 = m_controller2;
             }
+        }
+        else
+        {
+            uint8_t port = address - 0x4000;
+            m_apu.cpuWrite(port, byte);
         }
     }
     else if(address >= 0x4020 && address <= 0xFFFF && m_pCart != nullptr)

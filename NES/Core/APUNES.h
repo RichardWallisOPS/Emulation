@@ -18,6 +18,11 @@ public:
     
     APUNES();
     ~APUNES();
+    
+    void Tick();
+    
+    uint8_t cpuRead(uint8_t port);
+    void cpuWrite(uint8_t port, uint8_t byte);
 
 private:
 };

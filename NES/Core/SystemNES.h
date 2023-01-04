@@ -40,7 +40,6 @@ public:
     };
 
     static const uint32_t nRamSize = 0x0800;
-    static const uint32_t nAPURegisterCount = 0x20;
 
     SystemNES();
     virtual ~SystemNES();
@@ -70,7 +69,6 @@ private:
     bool        m_bPowerOn;
     uint64_t    m_cycleCount;
     uint8_t     m_ram[nRamSize];
-    uint8_t     m_apuRegisters[nAPURegisterCount];  // just cover them all we will probably break them out as required
 
     CPU6502     m_cpu;
     PPUNES      m_ppu;
