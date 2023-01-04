@@ -50,20 +50,17 @@ public:
     Archive(ArchiveMode mode = ArchiveMode_History);
     ~Archive();
     
-    ArchiveMode GetArchiveMode() const {return m_mode;}
+    ArchiveMode GetArchiveMode() const
+    {
+        return m_mode;
+    }
     void Reset()
     {
         m_readHead = m_writeHead = 0;
-        m_bError = false;
     }
     void ResetRead()
     {
         m_readHead = 0;
-    }
-    
-    void SetError()
-    {
-        m_bError = true;
     }
     
     size_t ByteCount() const {return m_writeHead;}
@@ -75,62 +72,50 @@ public:
     template<typename T>
     void operator<<(T const& object)
     {
-        if(!m_bError)
+        size_t objSize = sizeof(object);
+        
+        if(objSize + m_writeHead >= m_memSize)
         {
-            size_t objSize = sizeof(object);
-            
-            if(objSize + m_writeHead >= m_memSize)
-            {
-                IncreaseAllocation();
-            }
-            
-            T* pWriteObjectPtr = (T*)(&m_pMem[m_writeHead]);
-            *pWriteObjectPtr = object;
-            
-            m_writeHead += objSize;
+            IncreaseAllocation();
         }
+        
+        T* pWriteObjectPtr = (T*)(&m_pMem[m_writeHead]);
+        *pWriteObjectPtr = object;
+        
+        m_writeHead += objSize;
     }
     
     void WriteBytes(void* pBytes, size_t count)
     {
-        if(!m_bError)
+        if(count + m_writeHead >= m_memSize)
         {
-            if(count + m_writeHead >= m_memSize)
-            {
-                IncreaseAllocation();
-            }
-            
-            memcpy(&m_pMem[m_writeHead], pBytes, count);
-            
-            m_writeHead += count;
+            IncreaseAllocation();
         }
+        
+        memcpy(&m_pMem[m_writeHead], pBytes, count);
+        
+        m_writeHead += count;
     }
     
     // Loading
     template<typename T>
     void operator>>(T& object)
     {
-        if(!m_bError)
+        size_t objSize = sizeof(object);
+        if(objSize + m_readHead <= m_writeHead)
         {
-            size_t objSize = sizeof(object);
-            if(objSize + m_readHead <= m_writeHead)
-            {
-                T* pReadObjectPtr = (T*)(&m_pMem[m_readHead]);
-                object = *pReadObjectPtr;
-                m_readHead += objSize;
-            }
+            T* pReadObjectPtr = (T*)(&m_pMem[m_readHead]);
+            object = *pReadObjectPtr;
+            m_readHead += objSize;
         }
     }
     
     void ReadBytes(void* pBytes, size_t count)
     {
-        if(!m_bError)
+        if(count + m_readHead <= m_writeHead)
         {
-            if(count + m_readHead <= m_writeHead)
-            {
-                memcpy(pBytes, &m_pMem[m_readHead], count);
-                m_readHead += count;
-            }
+            memcpy(pBytes, &m_pMem[m_readHead], count);
+            m_readHead += count;
         }
     }
     
@@ -138,21 +123,17 @@ private:
 
     void IncreaseAllocation()
     {
-        if(!m_bError)
-        {
-            uint8_t* pOldMem = m_pMem;
-                
-            m_memSize = m_memSize * 2;
-            m_pMem = new uint8_t[m_memSize];
+        uint8_t* pOldMem = m_pMem;
             
-            memcpy(m_pMem, pOldMem, m_writeHead);
-            
-            delete [] pOldMem;
-        }
+        m_memSize = m_memSize * 2;
+        m_pMem = new uint8_t[m_memSize];
+        
+        memcpy(m_pMem, pOldMem, m_writeHead);
+        
+        delete [] pOldMem;
     }
 
 private:
-    bool        m_bError;
     ArchiveMode m_mode;
     
     uint8_t* m_pMem;
@@ -165,7 +146,6 @@ private:
 class Serialisable
 {
 public:
-    
     virtual void Load(Archive& rArchive) {}
     virtual void Save(Archive& rArchive) {}
 };

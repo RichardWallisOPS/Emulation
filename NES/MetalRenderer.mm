@@ -88,16 +88,22 @@ uint8_t m_keyboardController[2] = {0 , 0};
             Archive archive(ArchiveMode_Persistent);
             NSString* cartPath = arguments[1];
             NSString* loadPath = [cartPath stringByAppendingString:@".SAVE"];
-            archive.Load([loadPath cStringUsingEncoding:NSUTF8StringEncoding]);
-            g_NESConsole.Load(archive);
             
-            // Clear history on load
-            g_Rewind = false;
-            m_archiveIndex = 0;
-            m_rewindStartIndex = 0;
-            for(size_t i = 0;i < m_archiveCount;++i)
+            if(archive.Load([loadPath cStringUsingEncoding:NSUTF8StringEncoding]))
             {
-                m_ArchiveBuffer[i].Reset();
+                if(archive.ByteCount() > 0)
+                {
+                    g_NESConsole.Load(archive);
+                    
+                    // Clear history on load
+                    g_Rewind = false;
+                    m_archiveIndex = 0;
+                    m_rewindStartIndex = 0;
+                    for(size_t i = 0;i < m_archiveCount;++i)
+                    {
+                        m_ArchiveBuffer[i].Reset();
+                    }
+                }
             }
         }
     }
