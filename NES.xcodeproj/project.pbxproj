@@ -29,7 +29,7 @@
 		A1D57EF31DDB715200CA09B7 /* ViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = A1D57EF21DDB715200CA09B7 /* ViewController.m */; };
 		A1D57EF51DDB715200CA09B7 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A1D57EF41DDB715200CA09B7 /* Assets.xcassets */; };
 		A1D57EF81DDB715200CA09B7 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = A1D57EF61DDB715200CA09B7 /* Main.storyboard */; };
-		A1ED07801DDBA72C00697B8C /* MetalRenderer.mm in Sources */ = {isa = PBXBuildFile; fileRef = A1ED077F1DDBA72C00697B8C /* MetalRenderer.mm */; };
+		A1ED07801DDBA72C00697B8C /* EmulationController.mm in Sources */ = {isa = PBXBuildFile; fileRef = A1ED077F1DDBA72C00697B8C /* EmulationController.mm */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -75,8 +75,8 @@
 		A1D57EF41DDB715200CA09B7 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		A1D57EF71DDB715200CA09B7 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/Main.storyboard; sourceTree = "<group>"; };
 		A1D57EF91DDB715200CA09B7 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
-		A1ED077E1DDBA71800697B8C /* MetalRenderer.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = MetalRenderer.h; sourceTree = "<group>"; };
-		A1ED077F1DDBA72C00697B8C /* MetalRenderer.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; path = MetalRenderer.mm; sourceTree = "<group>"; };
+		A1ED077E1DDBA71800697B8C /* EmulationController.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = EmulationController.h; sourceTree = "<group>"; };
+		A1ED077F1DDBA72C00697B8C /* EmulationController.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; path = EmulationController.mm; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -165,8 +165,8 @@
 				A17210F029241C180055A57A /* Core */,
 				A1718B462922D7B8007BA5CD /* RenderDefs.h */,
 				84907F3C20D902CD005E174C /* shaders.metal */,
-				A1ED077E1DDBA71800697B8C /* MetalRenderer.h */,
-				A1ED077F1DDBA72C00697B8C /* MetalRenderer.mm */,
+				A1ED077E1DDBA71800697B8C /* EmulationController.h */,
+				A1ED077F1DDBA72C00697B8C /* EmulationController.mm */,
 				A1D57EEB1DDB715200CA09B7 /* AppDelegate.h */,
 				A1D57EEC1DDB715200CA09B7 /* AppDelegate.m */,
 				A1D57EF11DDB715200CA09B7 /* ViewController.h */,
@@ -260,7 +260,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				A1ED07801DDBA72C00697B8C /* MetalRenderer.mm in Sources */,
+				A1ED07801DDBA72C00697B8C /* EmulationController.mm in Sources */,
 				A1733DB4294BBE9200D1B296 /* CartMapper_66.cpp in Sources */,
 				A1335F2B294E64840013B0DE /* CartMapper_3.cpp in Sources */,
 				A1526480292A9DD60015068B /* CPU6502-ITable.cpp in Sources */,

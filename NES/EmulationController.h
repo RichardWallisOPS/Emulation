@@ -1,5 +1,5 @@
 //
-//  MetalRenderer.h
+//  EmulationController.h
 //
 //  Created by richardwallis on 15/11/2022.
 //
@@ -10,7 +10,7 @@
 @interface EmulationMetalView : MTKView
 @end
 
-@interface MetalRenderer : NSObject <MTKViewDelegate>
+@interface EmulationController : NSObject <MTKViewDelegate>
 
 - (instancetype) initWithView:(EmulationMetalView*)metalView;
 

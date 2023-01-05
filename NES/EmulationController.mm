@@ -1,10 +1,10 @@
 ///
-//  MetalRenderer.m
+//  EmulationController.m
 //
 //  Created by richardwallis on 15/11/2022.
 //
 
-#import "MetalRenderer.h"
+#import "EmulationController.h"
 #import "Controller.h"
 #import "RenderDefs.h"
 #include "SystemNES.h"
@@ -184,7 +184,7 @@ uint8_t m_keyboardController[2] = {0 , 0};
 
 @end
 
-@interface MetalRenderer()
+@interface EmulationController()
 
 @property (nonatomic,readwrite) id<MTLDevice>       device;
 @property (nonatomic,readwrite) id<MTLCommandQueue> cmdQueue;
@@ -192,7 +192,7 @@ uint8_t m_keyboardController[2] = {0 , 0};
 @end
 
 
-@implementation MetalRenderer
+@implementation EmulationController
 
 Vertex const g_quadVerts[] = {  {{-1.f,-1.f,0.f,1.f},   {0.f,1.f}},
                                 {{1.f,1.f,0.f,1.f},     {1.f,0.f}},

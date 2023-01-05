@@ -5,12 +5,12 @@
 //
 
 #import "ViewController.h"
-#import "MetalRenderer.h"
+#import "EmulationController.h"
 
 @interface ViewController ()
 
-@property (nonatomic,readwrite) MetalRenderer*      renderer;
-@property (nonatomic,readwrite) EmulationMetalView* metalView;
+@property (nonatomic,readwrite) EmulationController*        systemController;
+@property (nonatomic,readwrite) EmulationMetalView*         metalView;
 
 @end
 
@@ -25,17 +25,13 @@
 
 - (void) viewWillAppear
 {
-    if(self.renderer == nil)
+    if(self.systemController == nil)
     {
         [self.view addSubview:self.metalView];
         self.metalView.frame = self.view.frame;
         
-        self.renderer = [[MetalRenderer alloc] initWithView:self.metalView];
-        self.metalView.delegate = self.renderer;
-        
-#if DEBUG
-        NSAssert(self.renderer != nil, @"Can't create Metal Renderer");
-#endif
+        self.systemController = [[EmulationController alloc] initWithView:self.metalView];
+        self.metalView.delegate = self.systemController;
     }
 }
 
