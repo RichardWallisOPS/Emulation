@@ -9,6 +9,7 @@
 #import "RenderDefs.h"
 #include "SystemNES.h"
 #include "Serialise.h"
+#import "AVFAudio/AVFAudio.h"
 
 // The console we are emulating
 SystemNES g_NESConsole;
@@ -186,9 +187,15 @@ uint8_t m_keyboardController[2] = {0 , 0};
 
 @interface EmulationController()
 
+// Graphics
 @property (nonatomic,readwrite) id<MTLDevice>       device;
 @property (nonatomic,readwrite) id<MTLCommandQueue> cmdQueue;
 @property (nonatomic,readwrite) id<MTLRenderPipelineState>  pipelineEmulationOutputToFrameBufferTexture;
+
+// Audio
+@property (nonatomic,readwrite) AVAudioEngine*      audioEngine;
+@property (nonatomic,readwrite) AVAudioSourceNode*  audioSourceNode;
+
 @end
 
 
@@ -276,6 +283,60 @@ id<MTLTexture>  m_emulationOutput[m_renderTextureCount];
                     g_NESConsole.PowerOn();
                 }
             }
+        }
+        
+        {
+            self.audioEngine = [AVAudioEngine new];
+            
+            AVAudioNode* outputNode = self.audioEngine.outputNode;
+            AVAudioFormat* outputFormat = [outputNode inputFormatForBus:0];
+            AVAudioFormat* inputFormat = [[AVAudioFormat alloc] initWithCommonFormat:outputFormat.commonFormat // CHECK: We want AVAudioPCMFormatFloat32
+                                                                          sampleRate:outputFormat.sampleRate
+                                                                            channels:1
+                                                                         interleaved:outputFormat.isInterleaved];
+                                                                         
+                                                                         
+
+            // TODO: Set or get buffer size so all systems know the amount of samples required and its not assumed.
+            static float s_fPhase = 0.f;
+            static float s_fFrequency = 440.f;
+            static float s_fPhaseIncrement = ((2.0 * M_PI) / outputFormat.sampleRate) * s_fFrequency;
+            self.audioSourceNode = [[AVAudioSourceNode alloc] initWithRenderBlock:^OSStatus(BOOL* pIsSilence, const AudioTimeStamp* pTimestamp, AVAudioFrameCount frameCount, AudioBufferList* pOutputData)
+            {
+                // TODO: linkup with APU
+                if(pOutputData->mNumberBuffers > 0)
+                {
+                    AudioBuffer* pAudioBuffer = &pOutputData->mBuffers[0];
+                    
+                    // Buffer size and element count
+                    //pAudioBuffer->mDataByteSize / sizeof(float);
+                    
+                    {
+                        float* pFloatBuffer = (float*)pAudioBuffer->mData;
+                        for(size_t frameIdx = 0;frameIdx < frameCount;++frameIdx)
+                        {
+                            pFloatBuffer[frameIdx] = sin(s_fPhase);
+                            
+                            s_fPhase += s_fPhaseIncrement;
+                            if(s_fPhase > 2.0 * M_PI)
+                            {
+                                s_fPhase -= 2.0 * M_PI;
+                            }
+                        }
+                    }
+                }
+                
+                return 0;
+            }];
+            
+
+            [self.audioEngine attachNode:self.audioSourceNode];
+            [self.audioEngine connect:self.audioSourceNode to:self.audioEngine.mainMixerNode format:inputFormat];
+            [self.audioEngine connect:self.audioEngine.mainMixerNode to:outputNode format:outputFormat];
+            self.audioEngine.mainMixerNode.outputVolume = 0.5f;
+            
+            //BOOL bStart = [self.audioEngine startAndReturnError:nil];
+            //NSLog(@"Starting AudioEngine = %d", bStart ? 1 : 0);
         }
     }
     

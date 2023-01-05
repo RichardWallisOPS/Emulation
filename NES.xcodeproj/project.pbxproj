@@ -23,6 +23,7 @@
 		A172111A292434130055A57A /* Cartridge.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A1721119292434130055A57A /* Cartridge.cpp */; };
 		A1733DB4294BBE9200D1B296 /* CartMapper_66.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A1733DB2294BBE9200D1B296 /* CartMapper_66.cpp */; };
 		A175D4C3294A019F0073E3D6 /* CartMapperFactory.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A175D4C2294A019F0073E3D6 /* CartMapperFactory.cpp */; };
+		A179F4582967682D00F613AD /* AVFAudio.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A179F4572967682D00F613AD /* AVFAudio.framework */; };
 		A19FF263294B5BA800B4DCD1 /* CartMapper_1.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A19FF262294B5BA800B4DCD1 /* CartMapper_1.cpp */; };
 		A1D57EED1DDB715200CA09B7 /* AppDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = A1D57EEC1DDB715200CA09B7 /* AppDelegate.m */; };
 		A1D57EF01DDB715200CA09B7 /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = A1D57EEF1DDB715200CA09B7 /* main.m */; };
@@ -64,6 +65,7 @@
 		A1733DB3294BBE9200D1B296 /* CartMapper_66.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = CartMapper_66.h; sourceTree = "<group>"; };
 		A175D4C1294A01830073E3D6 /* CartMapperFactory.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = CartMapperFactory.h; sourceTree = "<group>"; };
 		A175D4C2294A019F0073E3D6 /* CartMapperFactory.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = CartMapperFactory.cpp; sourceTree = "<group>"; };
+		A179F4572967682D00F613AD /* AVFAudio.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AVFAudio.framework; path = System/Library/Frameworks/AVFAudio.framework; sourceTree = SDKROOT; };
 		A19FF261294B5B8700B4DCD1 /* CartMapper_1.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = CartMapper_1.h; sourceTree = "<group>"; };
 		A19FF262294B5BA800B4DCD1 /* CartMapper_1.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = CartMapper_1.cpp; sourceTree = "<group>"; };
 		A1D57EE81DDB715200CA09B7 /* NES.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = NES.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -84,6 +86,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				A179F4582967682D00F613AD /* AVFAudio.framework in Frameworks */,
 				A14F253929531B4D007ED30F /* GameController.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -115,6 +118,7 @@
 		A14F253729531B4C007ED30F /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				A179F4572967682D00F613AD /* AVFAudio.framework */,
 				A14F253829531B4D007ED30F /* GameController.framework */,
 			);
 			name = Frameworks;
