@@ -188,6 +188,7 @@ void SystemNES::Tick()
     // PPU clock    = 21.477272 /  4 = 5.369318 MHz
     // CPU clock    = 21.477272 / 12 = 1.789773 MHz
     // 3 PPU clock ticks to 1 CPU clock tick
+    // 2 CPU ticks to 1 APU tick - but ticking at same rate due to its internal requirements
     if(m_bPowerOn)
     {
         ++m_cycleCount;
@@ -198,7 +199,7 @@ void SystemNES::Tick()
             m_cpu.Tick();
         }
         
-        if((m_cycleCount % 6) == 0)
+        if((m_cycleCount % 3) == 0)
         {
             m_apu.Tick();
         }

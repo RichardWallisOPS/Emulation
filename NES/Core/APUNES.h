@@ -27,6 +27,9 @@ public:
 
 private:
     SystemIOBus& m_bus;
+    uint16_t m_frameCounter;
+    
+    uint8_t m_frameCountModeAndInterrupt;
 };
 
 #endif /* APUNES_h */
