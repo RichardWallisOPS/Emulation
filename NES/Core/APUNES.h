@@ -9,6 +9,7 @@
 #define APUNES_h
 
 #include <cstdint>
+#include "IOBus.h"
 #include "Serialise.h"
 
 class APUNES : public Serialisable
@@ -16,7 +17,7 @@ class APUNES : public Serialisable
 public:
     SERIALISABLE_DECL
     
-    APUNES();
+    APUNES(SystemIOBus& bus);
     ~APUNES();
     
     void Tick();
@@ -25,6 +26,7 @@ public:
     void cpuWrite(uint16_t address, uint8_t byte);
 
 private:
+    SystemIOBus& m_bus;
 };
 
 #endif /* APUNES_h */

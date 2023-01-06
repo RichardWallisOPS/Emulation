@@ -40,7 +40,8 @@ enum RegisterID : uint16_t
     JOY2        = 0x4017    // Write sets APU frame counter control
 };
 
-APUNES::APUNES()
+APUNES::APUNES(SystemIOBus& bus)
+: m_bus(bus)
 {
 
 }
