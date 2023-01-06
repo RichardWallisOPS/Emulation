@@ -212,7 +212,8 @@ void SystemNES::Tick()
             }
             else if(m_DMAMode == DMA_WRITE)
             {
-                m_ppu.cpuWrite(OAMDATA, m_dmaData);
+                m_ppu.cpuWrite(0x2004, m_dmaData);
+                
                 if((m_dmaAddress & 0xFF) != 0xFF)
                 {
                     m_DMAMode = DMA_READ;
@@ -237,9 +238,7 @@ uint8_t SystemNES::cpuRead(uint16_t address)
     }
     else if(address >= 0x2000 && address <= 0x3FFF)
     {
-        // 8 port addresses from 0x2000 - 0x3FFF repeating every 8 bytes
-        uint8_t port = (address - 0x2000) % 8;
-        return m_ppu.cpuRead(port);
+        return m_ppu.cpuRead(address);
     }
     else if(address >= 0x4000 && address <= 0x401F)
     {
@@ -261,8 +260,7 @@ uint8_t SystemNES::cpuRead(uint16_t address)
         else
         {
             // APU registers
-            uint8_t port = address - 0x4000;
-            return m_apu.cpuRead(port);
+            return m_apu.cpuRead(address);
         }
     }
     else if(address >= 0x4020 && address <= 0xFFFF && m_pCart != nullptr)
@@ -284,8 +282,7 @@ void SystemNES::cpuWrite(uint16_t address, uint8_t byte)
     }
     else if(address >= 0x2000 && address <= 0x3FFF)
     {
-        uint8_t port = (address - 0x2000) % 8;
-        m_ppu.cpuWrite(port, byte);
+        m_ppu.cpuWrite(address, byte);
     }
     else if(address >= 0x4000 && address <= 0x401F)
     {
@@ -306,8 +303,7 @@ void SystemNES::cpuWrite(uint16_t address, uint8_t byte)
         }
         else
         {
-            uint8_t port = address - 0x4000;
-            m_apu.cpuWrite(port, byte);
+            m_apu.cpuWrite(address, byte);
         }
     }
     else if(address >= 0x4020 && address <= 0xFFFF && m_pCart != nullptr)

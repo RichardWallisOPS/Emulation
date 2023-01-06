@@ -21,8 +21,8 @@ public:
     
     void Tick();
     
-    uint8_t cpuRead(uint8_t port);
-    void cpuWrite(uint8_t port, uint8_t byte);
+    uint8_t cpuRead(uint16_t address);
+    void cpuWrite(uint16_t address, uint8_t byte);
 
 private:
 };

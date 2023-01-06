@@ -286,6 +286,9 @@ id<MTLTexture>  m_emulationOutput[m_renderTextureCount];
         }
         
         {
+            // https://developer.apple.com/documentation/avfaudio/avaudioengine?language=objc
+            // https://developer.apple.com/documentation/avfaudio/audio_engine/building_a_signal_generator
+            // https://developer.apple.com/documentation/avfaudio/avaudiosourcenode?language=objc
             self.audioEngine = [AVAudioEngine new];
             
             AVAudioNode* outputNode = self.audioEngine.outputNode;

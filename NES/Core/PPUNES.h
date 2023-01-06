@@ -12,19 +12,6 @@
 #include "IOBus.h"
 #include "Serialise.h"
 
-enum PortRegisterID :uint8_t
-{
-    PPUCTRL = 0,        // 0x2000
-    PPUMASK,            // 0x2001
-    PPUSTATUS,          // 0x2002
-    OAMADDR,            // 0x2003
-    OAMDATA,            // 0x2004
-    PPUSCROLL,          // 0x2005
-    PPUADDR,            // 0x2006
-    PPUDATA,            // 0x2007
-    PortRegister_Count
-};
-
 class PPUNES : public Serialisable
 {
 public:
@@ -42,8 +29,8 @@ public:
     void Reset();
     void Tick();
     
-    uint8_t cpuRead(uint8_t port);
-    void cpuWrite(uint8_t port, uint8_t byte);
+    uint8_t cpuRead(uint16_t address);
+    void cpuWrite(uint16_t address, uint8_t byte);
     
     // Expects a 256x240 RGBA8 pixel foramt data pointer
     void SetVideoOutputDataPtr(uint32_t* pVideoOutData);

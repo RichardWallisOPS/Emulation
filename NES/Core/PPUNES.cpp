@@ -45,6 +45,22 @@ enum FlagStatus : uint8_t
     STATUS_VBLANK           = 1 << 7
 };
 
+// Since 0x2000 - 0x2007 is mirrored every 8 bytes to 0x3FFF
+// Make this simpler by using 0-7 wrapping
+enum PortRegisterID : uint16_t
+{
+    PPUCTRL = 0,        // 0x2000
+    PPUMASK,            // 0x2001
+    PPUSTATUS,          // 0x2002
+    OAMADDR,            // 0x2003
+    OAMDATA,            // 0x2004
+    PPUSCROLL,          // 0x2005
+    PPUADDR,            // 0x2006
+    PPUDATA,            // 0x2007
+    PortRegister_Count,
+    PortRegister_BaseAddress = 0x2000
+};
+
 PPUNES::PPUNES(SystemIOBus& bus)
 : m_bus(bus)
 , m_mirrorMode(VRAM_MIRROR_H)
@@ -951,152 +967,153 @@ uint16_t PPUNES::absoluteAddressToVRAMAddress(uint16_t address)
     return address;
 }
 
-uint8_t PPUNES::cpuRead(uint8_t port)
+uint8_t PPUNES::cpuRead(uint16_t address)
 {
     uint8_t data = m_portLatch;
-    if(port < PortRegister_Count)
+
+    // 8 port addresses from 0x2000 - 0x3FFF repeating every 8 bytes
+    const uint16_t port = (address - PortRegister_BaseAddress) % PortRegister_Count;
+    
+    switch(port)
     {
-        switch(port)
+        case PPUCTRL:   // 2000
+            break;
+        case PPUMASK:   // 2001
+            break;
+        case PPUSTATUS: // 2002
         {
-            case PPUCTRL:   // 2000
-                break;
-            case PPUMASK:   // 2001
-                break;
-            case PPUSTATUS: // 2002
+            data = m_portLatch = (m_status & 0b11100000) | (m_portLatch & 0b00011111);
+            ClearFlag(STATUS_VBLANK, m_status);
+            m_ppuWriteToggle = 0;
+            break;
+        }
+        case OAMADDR:   // 2003
+            break;
+        case OAMDATA:   // 2004
+        {
+            if(m_scanlineDot >= 1 && m_scanlineDot <= 64)
             {
-                data = m_portLatch = (m_status & 0b11100000) | (m_portLatch & 0b00011111);
-                ClearFlag(STATUS_VBLANK, m_status);
-                m_ppuWriteToggle = 0;
-                break;
+                // during init of sprite evaluation
+                data = m_portLatch = 0XFF;
             }
-            case OAMADDR:   // 2003
-                break;
-            case OAMDATA:   // 2004
+            else
             {
-                if(m_scanlineDot >= 1 && m_scanlineDot <= 64)
-                {
-                    // during init of sprite evaluation
-                    data = m_portLatch = 0XFF;
-                }
-                else
-                {
-                    data = m_portLatch = m_primaryOAM[m_oamAddress];
-                }
-                break;
+                data = m_portLatch = m_primaryOAM[m_oamAddress];
             }
-            case PPUSCROLL: // 2005
-                break;
-            case PPUADDR:   // 2006
-                break;
-            case PPUDATA:   // 2007
+            break;
+        }
+        case PPUSCROLL: // 2005
+            break;
+        case PPUADDR:   // 2006
+            break;
+        case PPUDATA:   // 2007
+        {
+            // return value is last read
+            data = m_portLatch = m_ppuDataBuffer;
+            
+            //next read will get this
+            m_ppuDataBuffer = ppuReadAddress(m_ppuAddress);
+            
+            // pallette info is returned right away
+            if(m_ppuAddress >= 0x3F00 && m_ppuAddress <= 0x3FFF)
             {
-                // return value is last read
                 data = m_portLatch = m_ppuDataBuffer;
-                
-                //next read will get this
-                m_ppuDataBuffer = ppuReadAddress(m_ppuAddress);
-                
-                // pallette info is returned right away
-                if(m_ppuAddress >= 0x3F00 && m_ppuAddress <= 0x3FFF)
-                {
-                    data = m_portLatch = m_ppuDataBuffer;
-                    m_ppuDataBuffer = ppuReadAddress(m_ppuAddress - 0x1000);    // Weird
-                }
-                
-                m_ppuAddress += TestFlag(CTRL_VRAM_ADDRESS_INC, m_ctrl) ? 32 : 1;
-                break;
+                m_ppuDataBuffer = ppuReadAddress(m_ppuAddress - 0x1000);    // Weird
             }
+            
+            m_ppuAddress += TestFlag(CTRL_VRAM_ADDRESS_INC, m_ctrl) ? 32 : 1;
+            break;
         }
     }
     return data;
 }
 
-void PPUNES::cpuWrite(uint8_t port, uint8_t byte)
+void PPUNES::cpuWrite(uint16_t address, uint8_t byte)
 {
-    if(port < PortRegister_Count)
+    m_portLatch = byte;
+    
+    // 8 port addresses from 0x2000 - 0x3FFF repeating every 8 bytes
+    const uint16_t port = (address - PortRegister_BaseAddress) % PortRegister_Count;
+    
+    switch(port)
     {
-        m_portLatch = byte;
-        
-        switch(port)
+        case PPUCTRL:   // 2000
         {
-            case PPUCTRL:   // 2000
-            {
-                bool bWasGenVblank = TestFlag(CTRL_GEN_VBLANK_NMI, m_ctrl);
-                
-                m_ctrl = byte;
+            bool bWasGenVblank = TestFlag(CTRL_GEN_VBLANK_NMI, m_ctrl);
+            
+            m_ctrl = byte;
 
-                // if in vblank and NMI request toggled from 0 - 1 gen the NMI now
-                if(TestFlag(STATUS_VBLANK, m_status))
+            // if in vblank and NMI request toggled from 0 - 1 gen the NMI now
+            if(TestFlag(STATUS_VBLANK, m_status))
+            {
+                if(bWasGenVblank == false && TestFlag(CTRL_GEN_VBLANK_NMI, m_ctrl))
                 {
-                    if(bWasGenVblank == false && TestFlag(CTRL_GEN_VBLANK_NMI, m_ctrl))
-                    {
-                        m_bus.SignalNMI(true);
-                    }
+                    m_bus.SignalNMI(true);
                 }
-                
-                // add nametable select to ppu address
-                m_ppuTAddress &= ~(0x3 << 10);
-                m_ppuTAddress |= uint16_t((byte & 0x3)) << 10;
+            }
+            
+            // add nametable select to ppu address
+            m_ppuTAddress &= ~(0x3 << 10);
+            m_ppuTAddress |= uint16_t((byte & 0x3)) << 10;
 
-                break;
-            }
-            case PPUMASK:   // 2001
-                m_mask = byte;
-                break;
-            case PPUSTATUS: // 2002
-                // read only
-                break;
-            case OAMADDR:   // 2003
-                m_oamAddress = byte;
-                break;
-            case OAMDATA:   // 2004
+            break;
+        }
+        case PPUMASK:   // 2001
+            m_mask = byte;
+            break;
+        case PPUSTATUS: // 2002
+            // read only
+            break;
+        case OAMADDR:   // 2003
+            m_oamAddress = byte;
+            break;
+        case OAMDATA:   // 2004
+        {
+            m_primaryOAM[m_oamAddress++] = byte;
+            break;
+        }
+        case PPUSCROLL: // 2005
+        {
+            if(m_ppuWriteToggle == 0)
             {
-                m_primaryOAM[m_oamAddress++] = byte;
-                break;
+                //ScrollX
+                m_ppuTAddress &= ~(uint16_t(0b11111));
+                m_ppuTAddress |= uint16_t(byte) >> 3;       // courseX;
+                m_fineX = byte & 0b00000111;                // fineX
             }
-            case PPUSCROLL: // 2005
+            else
             {
-                if(m_ppuWriteToggle == 0)
-                {
-                    //ScrollX
-                    m_ppuTAddress &= ~(uint16_t(0b11111));
-                    m_ppuTAddress |= uint16_t(byte) >> 3;       // courseX;
-                    m_fineX = byte & 0b00000111;                // fineX
-                }
-                else
-                {
-                    //ScrollY
-                    m_ppuTAddress &= ~(uint16_t(0b11111000) << 2);
-                    m_ppuTAddress &= ~(uint16_t(0b00000111) << 12);
-                    m_ppuTAddress |= (uint16_t(byte) & 0b11111000) << 2;     // courseY
-                    m_ppuTAddress |= (uint16_t(byte) & 0b00000111) << 12;    // fineY
-                }
-                m_ppuWriteToggle = m_ppuWriteToggle == 0 ? 1 : 0;
-                break;
+                //ScrollY
+                m_ppuTAddress &= ~(uint16_t(0b11111000) << 2);
+                m_ppuTAddress &= ~(uint16_t(0b00000111) << 12);
+                m_ppuTAddress |= (uint16_t(byte) & 0b11111000) << 2;     // courseY
+                m_ppuTAddress |= (uint16_t(byte) & 0b00000111) << 12;    // fineY
             }
-            case PPUADDR: // 2006
+            m_ppuWriteToggle = m_ppuWriteToggle == 0 ? 1 : 0;
+            break;
+        }
+        case PPUADDR: // 2006
+        {
+            if(m_ppuWriteToggle == 0)
             {
-                if(m_ppuWriteToggle == 0)
-                {
-                    m_ppuTAddress &= ~(uint16_t(0xFF00));
-                    m_ppuTAddress |= (uint16_t(byte) << 8) & 0x3F00;
-                }
-                else
-                {
-                    m_ppuTAddress &= (uint16_t(0xFF00));
-                    m_ppuTAddress |= uint16_t(byte);
-                    m_ppuAddress = m_ppuTAddress;
-                    ppuReadAddress(m_ppuAddress);   // affects address line so could affect cart mappers
-                }
-                m_ppuWriteToggle = m_ppuWriteToggle == 0 ? 1 : 0;
-                break;
+                m_ppuTAddress &= ~(uint16_t(0xFF00));
+                m_ppuTAddress |= (uint16_t(byte) << 8) & 0x3F00;
             }
-            case PPUDATA:   // 2007
+            else
             {
-                ppuWriteAddress(m_ppuAddress, byte);
-                m_ppuAddress += TestFlag(CTRL_VRAM_ADDRESS_INC, m_ctrl) ? 32 : 1;
-                break;
+                m_ppuTAddress &= (uint16_t(0xFF00));
+                m_ppuTAddress |= uint16_t(byte);
+                m_ppuAddress = m_ppuTAddress;
+                ppuReadAddress(m_ppuAddress);   // affects address line so could affect cart mappers
             }
+            m_ppuWriteToggle = m_ppuWriteToggle == 0 ? 1 : 0;
+            break;
+        }
+        case PPUDATA:   // 2007
+        {
+            ppuWriteAddress(m_ppuAddress, byte);
+            m_ppuAddress += TestFlag(CTRL_VRAM_ADDRESS_INC, m_ctrl) ? 32 : 1;
+            break;
         }
     }
 }
