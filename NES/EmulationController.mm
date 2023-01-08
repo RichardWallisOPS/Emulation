@@ -405,6 +405,7 @@ id<MTLTexture>  m_emulationOutput[m_renderTextureCount];
         }
         
         // Tick emulation
+        // 341 x 262 = [scanline time + hBlank time in scanline dots] X [scanline count + vBlank time in scanlines]
         const size_t nNumPPUTicksPerFrame = 89342;
         for(size_t i = 0;i < nNumPPUTicksPerFrame;++i)
         {

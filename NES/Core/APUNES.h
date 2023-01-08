@@ -68,6 +68,9 @@ class APUPulseChannel
 {
 public:
     APUPulseChannel();
+    
+    uint8_t IsEnabled() const;
+    void SetEnabled(uint8_t bEnabled);
 
     uint8_t OutputValue() const;
     void SetRegister(uint16_t reg, uint8_t byte);
@@ -80,6 +83,8 @@ public:
     void RotateDutySequence();
     
 protected:
+
+    uint8_t m_enabled;
 
     uint8_t m_dutyCycle;
     uint8_t m_lengthCounterHalt;

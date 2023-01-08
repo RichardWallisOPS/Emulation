@@ -43,7 +43,8 @@ enum RegisterID : uint16_t
 uint8_t LENGTH_COUNTER_LUT[] = { 0,254, 20,  2, 40,  4, 80,  6, 160,  8, 60, 10, 14, 12, 26, 14, 12, 16, 24, 18, 48, 20, 96, 22, 192, 24, 72, 26, 16, 28, 32, 30 };
 
 APUPulseChannel::APUPulseChannel()
-: m_dutyCycle(0)
+: m_enabled(0)
+, m_dutyCycle(0)
 , m_lengthCounterHalt(0)
 , m_constantVolumeEnvelope(0)
 , m_VolumeEnvelopeDividerPeriod(0)
@@ -56,6 +57,20 @@ APUPulseChannel::APUPulseChannel()
 , m_lengthCounter(0)
 {
 
+}
+
+uint8_t APUPulseChannel::IsEnabled() const
+{
+    return m_enabled;
+}
+
+void APUPulseChannel::SetEnabled(uint8_t bEnabled)
+{
+    m_enabled = bEnabled;
+    if(!m_enabled)
+    {
+        m_lengthCounter = 0;
+    }
 }
 
 void APUPulseChannel::SetRegister(uint16_t reg, uint8_t byte)
@@ -110,10 +125,12 @@ void APUPulseChannel::RotateDutySequence()
 void APUPulseChannel::QuarterFrameTick()
 {
     // TODO
+    // Envelopes
 }
 
 void APUPulseChannel::HalfFrameTick()
 {
+    // Length counters & sweep units
     if(m_lengthCounter > 0 && m_lengthCounterHalt == 0)
     {
         --m_lengthCounter;
@@ -123,20 +140,23 @@ void APUPulseChannel::HalfFrameTick()
 
 void APUPulseChannel::Tick()
 {
-    if(m_timer > 0)
+    if(m_enabled)
     {
-        m_timer = m_timer - 1;
-    }
-    else
-    {
-        m_timer = m_timerValue + 1;
-        RotateDutySequence();
+        if(m_timer > 0)
+        {
+            m_timer = m_timer - 1;
+        }
+        else
+        {
+            m_timer = m_timerValue + 1;
+            RotateDutySequence();
+        }
     }
 }
 
 uint8_t APUPulseChannel::OutputValue() const
 {
-    return m_lengthCounter > 0 ? (m_sequence >> 7) * 15 : 0;
+    return m_lengthCounter > 0 && m_enabled ? (m_sequence >> 7) * 15 : 0;
 }
 
 APUNES::APUNES(SystemIOBus& bus)
@@ -217,9 +237,21 @@ void APUNES::Tick()
     
     if(m_pAudioBuffer != nullptr)
     {
-        // Down sample hack - think of a better way!
+        // TODO: Down sample hack - think of a better way!
+        // 89342 frame ticks, this is ticked every 3
+        // 89342 / 3 = 29780.6667
+        // We want 800 samples per 1/60 sec (48000 KHz / 60 fps = 800 samples)
+        // 29780.6667 / 800 = 37.225
+        // So we can sample ever 37.225 ticks
         ++m_audioOutDataCounter;
-        if(m_audioOutDataCounter == 37)
+        
+        // If we have hit 37 (or sometimes 38 for the .225 part) create a sample for the buffer
+        size_t sampleCouner = 37;
+        if(m_pAudioBuffer->GetSamplesWritten() % 5 == 0)
+        {
+            sampleCouner = sampleCouner + 1;
+        }
+        if(m_audioOutDataCounter == sampleCouner)
         {
             m_pAudioBuffer->AddSample(OutputValue());
             m_audioOutDataCounter = 0;
@@ -271,9 +303,12 @@ uint8_t APUNES::cpuRead(uint16_t address)
 {
     if(address == SND_CHN)
     {
-        // TODO: Sound channel and IRQ Status
+        // IF-D NT21 	DMC interrupt (I), frame interrupt (F), DMC active (D), length counter > 0 (N/T/2/1)
         uint8_t status = 0;
-
+        
+        status |= m_pulse1.IsEnabled() << 0;
+        status |= m_pulse2.IsEnabled() << 1;
+        // TODO Triangle, Noise, DMC
                 
         // Clear frame interrupt flag on read
         status |= m_frameCountModeAndInterrupt & (1 << 6);
@@ -321,7 +356,11 @@ void APUNES::cpuWrite(uint16_t address, uint8_t byte)
         case DMC_LEN:
             break;
         case SND_CHN:
-            // TODO set status and enabled flags - so we can start updating things
+            // Sset status and enabled flags
+            // ---D NT21 	Enable DMC (D), noise (N), triangle (T), and pulse channels (2/1)
+            m_pulse1.SetEnabled((byte >> 0) & 0b1);
+            m_pulse2.SetEnabled((byte >> 1) & 0b1);
+            // TODO Triangle, Noise, DMC
             break;
         case FRAME_COUNTER:
             m_frameCountModeAndInterrupt = byte;
