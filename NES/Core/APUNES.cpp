@@ -134,7 +134,6 @@ void APUPulseChannel::HalfFrameTick()
     if(m_lengthCounter > 0 && m_lengthCounterHalt == 0)
     {
         --m_lengthCounter;
-        // TODO silence
     }
 }
 
@@ -235,29 +234,6 @@ void APUNES::Tick()
     // m_triangle.Tick();
     // Noise/DMC ?
     
-    if(m_pAudioBuffer != nullptr)
-    {
-        // TODO: Down sample hack - think of a better way!
-        // 89342 frame ticks, this is ticked every 3
-        // 89342 / 3 = 29780.6667
-        // We want 800 samples per 1/60 sec (48000 KHz / 60 fps = 800 samples)
-        // 29780.6667 / 800 = 37.225
-        // So we can sample ever 37.225 ticks
-        ++m_audioOutDataCounter;
-        
-        // If we have hit 37 (or sometimes 38 for the .225 part) create a sample for the buffer
-        size_t sampleCouner = 37;
-        if(m_pAudioBuffer->GetSamplesWritten() % 5 == 0)
-        {
-            sampleCouner = sampleCouner + 1;
-        }
-        if(m_audioOutDataCounter == sampleCouner)
-        {
-            m_pAudioBuffer->AddSample(OutputValue());
-            m_audioOutDataCounter = 0;
-        }
-    }
-    
     bool bFrameModeStep4 = (m_frameCountModeAndInterrupt & (1 << 7)) == 0;
     bool bIRQInhibit = (m_frameCountModeAndInterrupt & (1 << 6)) != 0;
     
@@ -296,6 +272,28 @@ void APUNES::Tick()
     else if(frameCount == 18641)
     {
         m_frameCounter = 0;
+    }
+    
+    if(m_pAudioBuffer != nullptr)
+    {
+        // TODO: This is a bit of a down sample hack - think of a better way!
+        // 89342 frame ticks, this is ticked every 3
+        // 89342 / 3 = 29780.6667
+        // We want 800 samples per 1/60 sec (48000 KHz / 60 fps = 800 samples)
+        // 29780.6667 / 800 = 37.225
+        // So we can sample ever 37.225 ticks
+        ++m_audioOutDataCounter;
+        // If we have hit 37 (or sometimes 38 for the .225 part - every 5 samples) create a sample for the buffer
+        size_t sampleCouner = 37;
+        if(m_pAudioBuffer->GetSamplesWritten() % 5 == 0)
+        {
+            sampleCouner = sampleCouner + 1;
+        }
+        if(m_audioOutDataCounter >= sampleCouner)
+        {
+            m_audioOutDataCounter = 0;
+            m_pAudioBuffer->AddSample(OutputValue());
+        }
     }
 }
 
