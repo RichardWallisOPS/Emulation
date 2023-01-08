@@ -62,6 +62,9 @@ public:
     // assumed space for a 32bit colour 256x240 image data
     void SetVideoOutputDataPtr(uint32_t* pVideoOutData);
     
+    // Assumed space for 1 frame 1/60 worth of audio data
+    void SetAudioOutputBuffer(APUAudioBuffer* pAudioBuffer);
+    
     // port 0 = player 1
     void SetControllerBits(uint8_t port, uint8_t bits);
     

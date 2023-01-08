@@ -62,20 +62,49 @@ void APUPulseChannel::SetRegister(uint16_t reg, uint8_t byte)
 {
     if(reg == 0)
     {
-    
+        // DDLC VVVV
+        m_dutyCycle = (byte >> 6) & 0b11;
+        m_lengthCounterHalt = (byte >> 5) & 0b1;
+        m_constantVolumeEnvelope = (byte >> 4) & 0b1;;
+        m_VolumeEnvelopeDividerPeriod = byte & 0b1111;
     }
     else if(reg == 1)
     {
-    
+        // EPPP NSSS
+        m_sweepEnabled = (byte >> 7) & 0b1;
+        m_sweepPeriod = (byte >> 4) & 0b111;
+        m_sweepNegate = (byte << 3) & 0b1;
+        m_sweepShift = byte & 0b111;
     }
     else if(reg == 2)
     {
-    
+        // TTTT TTTT
+        m_timerValue = (m_timerValue & 0xFF00) | uint16_t(byte);
     }
     else if(reg == 3)
     {
-    
+        // LLLL LTTT
+        m_timerValue = (m_timerValue & 0x00FF) | (uint16_t(byte & 0b111) << 8);
+        m_lengthCounter = (byte >> 3) & 0b11111;
+        m_lengthCounter = LENGTH_COUNTER_LUT[m_lengthCounter];
+        
+        SetDutySequence();
     }
+}
+
+void APUPulseChannel::SetDutySequence()
+{
+    if(m_dutyCycle == 0)        m_sequence = 0b01000000;
+    else if(m_dutyCycle == 1)   m_sequence = 0b01100000;
+    else if(m_dutyCycle == 2)   m_sequence = 0b01111000;
+    else if(m_dutyCycle == 3)   m_sequence = 0b10011111;
+}
+
+void APUPulseChannel::RotateDutySequence()
+{
+    uint8_t highBit = m_sequence & 0b10000000;
+    m_sequence <<= 1;
+    m_sequence |= highBit >> 7;
 }
 
 void APUPulseChannel::QuarterFrameTick()
@@ -85,7 +114,7 @@ void APUPulseChannel::QuarterFrameTick()
 
 void APUPulseChannel::HalfFrameTick()
 {
-    if(m_lengthCounter > 0)
+    if(m_lengthCounter > 0 && m_lengthCounterHalt == 0)
     {
         --m_lengthCounter;
         // TODO silence
@@ -100,14 +129,22 @@ void APUPulseChannel::Tick()
     }
     else
     {
-        m_timer = m_timerValue;
+        m_timer = m_timerValue + 1;
+        RotateDutySequence();
     }
+}
+
+uint8_t APUPulseChannel::OutputValue() const
+{
+    return m_lengthCounter > 0 ? (m_sequence >> 7) * 15 : 0;
 }
 
 APUNES::APUNES(SystemIOBus& bus)
 : m_bus(bus)
 , m_frameCounter(0)
 , m_frameCountModeAndInterrupt(0)
+, m_pAudioBuffer(nullptr)
+, m_audioOutDataCounter(0)
 {
 
 }
@@ -141,6 +178,25 @@ void APUNES::HalfFrameTick()
     m_pulse2.HalfFrameTick();
 }
 
+float APUNES::OutputValue()
+{
+    float pulse1 = m_pulse1.OutputValue();
+    float pulse2 = m_pulse2.OutputValue();
+    
+    //float pulseOut = 95.88f / ((8128.f / (pulse1 + pulse2)) + 100.f);
+    //float tndOut = 0.f; // TODO
+    //return pulseOut + tndOut;
+    
+    float sample = 0.00752f * (pulse1 + pulse2);
+    
+    //return sample;
+    return (sample - 0.5f) * 2.f;
+
+//    48000 samples per second
+//    60 FPS frame rate
+//    48000 / 60 = 800 samples per frame
+}
+
 void APUNES::Tick()
 {
     ++m_frameCounter;
@@ -156,7 +212,19 @@ void APUNES::Tick()
     }
     
     // Ticked every CPU tick
-    //m_triangle.Tick();
+    // m_triangle.Tick();
+    // Noise/DMC ?
+    
+    if(m_pAudioBuffer != nullptr)
+    {
+        // Down sample hack - think of a better way!
+        ++m_audioOutDataCounter;
+        if(m_audioOutDataCounter == 37)
+        {
+            m_pAudioBuffer->AddSample(OutputValue());
+            m_audioOutDataCounter = 0;
+        }
+    }
     
     bool bFrameModeStep4 = (m_frameCountModeAndInterrupt & (1 << 7)) == 0;
     bool bIRQInhibit = (m_frameCountModeAndInterrupt & (1 << 6)) != 0;
@@ -176,7 +244,8 @@ void APUNES::Tick()
     }
     else if(frameCount == 14914 && halfFrame == 0 && bFrameModeStep4 && !bIRQInhibit)
     {
-        m_bus.SignalIRQ(true);
+        // TODO
+        //m_bus.SignalIRQ(true);
     }
     else if(frameCount == 14914 && halfFrame == 1 && bFrameModeStep4)
     {
@@ -252,10 +321,21 @@ void APUNES::cpuWrite(uint16_t address, uint8_t byte)
         case DMC_LEN:
             break;
         case SND_CHN:
-            // TODO set status so we can start updating things
+            // TODO set status and enabled flags - so we can start updating things
             break;
         case FRAME_COUNTER:
             m_frameCountModeAndInterrupt = byte;
             break;
+    }
+}
+
+void APUNES::SetAudioOutputBuffer(APUAudioBuffer* pAudioBuffer)
+{
+    m_audioOutDataCounter = 0;
+    m_pAudioBuffer = pAudioBuffer;
+    
+    if(m_pAudioBuffer != nullptr)
+    {
+        m_pAudioBuffer->Reset();
     }
 }

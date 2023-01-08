@@ -192,7 +192,9 @@ void SystemNES::Tick()
     if(m_bPowerOn)
     {
         ++m_cycleCount;
-        m_ppu.Tick();
+        {
+            m_ppu.Tick();
+        }
         
         if((m_cycleCount % 3) == 0 && m_DMAMode == DMA_OFF)
         {
@@ -335,4 +337,9 @@ void SystemNES::ppuWrite(uint16_t address, uint8_t byte)
 void SystemNES::SetVideoOutputDataPtr(uint32_t* pVideoOutData)
 {
     m_ppu.SetVideoOutputDataPtr(pVideoOutData);
+}
+
+void SystemNES::SetAudioOutputBuffer(APUAudioBuffer* pAudioBuffer)
+{
+    m_apu.SetAudioOutputBuffer(pAudioBuffer);
 }

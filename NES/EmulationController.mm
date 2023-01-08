@@ -10,6 +10,8 @@
 #include "SystemNES.h"
 #include "Serialise.h"
 #import "AVFAudio/AVFAudio.h"
+#import <AudioToolbox/AudioToolbox.h>
+#import "Foundation/Foundation.h"
 
 // The console we are emulating
 SystemNES g_NESConsole;
@@ -22,6 +24,12 @@ size_t          m_archiveIndex = 0;
 size_t          m_rewindStartIndex = 0;
 const size_t    m_kArchiveCount = 5 * 60;
 Archive         m_ArchiveBuffer[m_kArchiveCount];
+
+// Audio buffers
+size_t          m_readAudioBuffer = 0;
+size_t          m_writeAudioBuffer = 0;
+const size_t    m_audioBufferCount = 4;
+APUAudioBuffer  m_audioBuffers[m_audioBufferCount];
 
 @implementation EmulationMetalView
 
@@ -272,7 +280,7 @@ id<MTLTexture>  m_emulationOutput[m_renderTextureCount];
         self.pipelineEmulationOutputToFrameBufferTexture = [self.device newRenderPipelineStateWithDescriptor:pipelineEmulationOutputToFrameBufferTextureDesc error:nil];
         
         {
-            // TODO better file selection in UI
+            // TODO: File selection in UI
             NSProcessInfo* process = [NSProcessInfo processInfo];
             NSArray* arguments = [process arguments];
             
@@ -289,8 +297,12 @@ id<MTLTexture>  m_emulationOutput[m_renderTextureCount];
             // https://developer.apple.com/documentation/avfaudio/avaudioengine?language=objc
             // https://developer.apple.com/documentation/avfaudio/audio_engine/building_a_signal_generator
             // https://developer.apple.com/documentation/avfaudio/avaudiosourcenode?language=objc
+            
             self.audioEngine = [AVAudioEngine new];
             
+            uint32_t buffserSize = 48000 / 60;
+            AudioUnitSetProperty(self.audioEngine.inputNode.audioUnit, kAudioDevicePropertyBufferFrameSize, kAudioUnitScope_Global, 0, &buffserSize, sizeof(buffserSize));
+
             AVAudioNode* outputNode = self.audioEngine.outputNode;
             AVAudioFormat* outputFormat = [outputNode inputFormatForBus:0];
             AVAudioFormat* inputFormat = [[AVAudioFormat alloc] initWithCommonFormat:outputFormat.commonFormat // CHECK: We want AVAudioPCMFormatFloat32
@@ -300,46 +312,36 @@ id<MTLTexture>  m_emulationOutput[m_renderTextureCount];
                                                                          
                                                                          
 
-            // TODO: Set or get buffer size so all systems know the amount of samples required and its not assumed.
-            static float s_fPhase = 0.f;
-            static float s_fFrequency = 440.f;
-            static float s_fPhaseIncrement = ((2.0 * M_PI) / outputFormat.sampleRate) * s_fFrequency;
             self.audioSourceNode = [[AVAudioSourceNode alloc] initWithRenderBlock:^OSStatus(BOOL* pIsSilence, const AudioTimeStamp* pTimestamp, AVAudioFrameCount frameCount, AudioBufferList* pOutputData)
             {
-                // TODO: linkup with APU
                 if(pOutputData->mNumberBuffers > 0)
                 {
-                    AudioBuffer* pAudioBuffer = &pOutputData->mBuffers[0];
+                    AudioBuffer* pOutputAudioBuffer = &pOutputData->mBuffers[0];
+                    float* pOutputFloatBuffer = (float*)pOutputAudioBuffer->mData;
                     
-                    // Buffer size and element count
-                    //pAudioBuffer->mDataByteSize / sizeof(float);
+                    APUAudioBuffer* pInputAudioBuffer = &m_audioBuffers[m_readAudioBuffer];
+                    float* pInputFloatBuffer = pInputAudioBuffer->GetSampleBuffer();
                     
+                    size_t targetSize = pInputAudioBuffer->GetBufferSize();
+                    size_t samplesWritten = pInputAudioBuffer->GetSamplesWritten();
+                    
+                    memcpy(pOutputFloatBuffer, pInputFloatBuffer, samplesWritten * sizeof(float));
+                    
+                    while(samplesWritten < targetSize)
                     {
-                        float* pFloatBuffer = (float*)pAudioBuffer->mData;
-                        for(size_t frameIdx = 0;frameIdx < frameCount;++frameIdx)
-                        {
-                            pFloatBuffer[frameIdx] = sin(s_fPhase);
-                            
-                            s_fPhase += s_fPhaseIncrement;
-                            if(s_fPhase > 2.0 * M_PI)
-                            {
-                                s_fPhase -= 2.0 * M_PI;
-                            }
-                        }
+                        pOutputFloatBuffer[samplesWritten] = pOutputFloatBuffer[samplesWritten - 1];
+                        ++samplesWritten;
                     }
+
+                    m_readAudioBuffer = (m_readAudioBuffer + 1) % m_audioBufferCount;
                 }
-                
                 return 0;
             }];
-            
 
             [self.audioEngine attachNode:self.audioSourceNode];
             [self.audioEngine connect:self.audioSourceNode to:self.audioEngine.mainMixerNode format:inputFormat];
             [self.audioEngine connect:self.audioEngine.mainMixerNode to:outputNode format:outputFormat];
             self.audioEngine.mainMixerNode.outputVolume = 0.5f;
-            
-            //BOOL bStart = [self.audioEngine startAndReturnError:nil];
-            //NSLog(@"Starting AudioEngine = %d", bStart ? 1 : 0);
         }
     }
     
@@ -395,11 +397,25 @@ id<MTLTexture>  m_emulationOutput[m_renderTextureCount];
     
     // Emulation ticks
     {
-        g_NESConsole.SetVideoOutputDataPtr((uint32_t*)currentTextureBacking.contents);
+        // Set ouput buffers
+        {
+            g_NESConsole.SetVideoOutputDataPtr((uint32_t*)currentTextureBacking.contents);
+            g_NESConsole.SetAudioOutputBuffer(&m_audioBuffers[m_writeAudioBuffer]);
+            m_writeAudioBuffer = (m_writeAudioBuffer + 1) % m_audioBufferCount;
+        }
+        
+        // Tick emulation
         const size_t nNumPPUTicksPerFrame = 89342;
         for(size_t i = 0;i < nNumPPUTicksPerFrame;++i)
         {
             g_NESConsole.Tick();
+        }
+        
+        // TODO Move this
+        if(!self.audioEngine.isRunning && m_writeAudioBuffer > 0)
+        {
+            BOOL bStart = [self.audioEngine startAndReturnError:nil];
+            NSLog(@"Starting AudioEngine = %d", bStart ? 1 : 0);
         }
     }
     
