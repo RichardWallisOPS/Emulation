@@ -412,7 +412,7 @@ id<MTLTexture>  m_emulationOutput[m_renderTextureCount];
             g_NESConsole.Tick();
         }
         
-        // TODO Move this
+        // TODO Move this and use audioEngine.pause
         if(!self.audioEngine.isRunning && m_writeAudioBuffer > 0)
         {
             BOOL bStart = [self.audioEngine startAndReturnError:nil];

@@ -64,9 +64,11 @@ private:
     size_t m_samplesWritten;
 };
 
-class APUPulseChannel
+class APUPulseChannel : public Serialisable
 {
 public:
+    SERIALISABLE_DECL
+
     APUPulseChannel();
     
     uint8_t IsEnabled() const;

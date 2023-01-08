@@ -59,6 +59,40 @@ APUPulseChannel::APUPulseChannel()
 
 }
 
+void APUPulseChannel::Load(Archive& rArchive)
+{
+    rArchive >> m_enabled;
+    rArchive >> m_dutyCycle;
+    rArchive >> m_lengthCounterHalt;
+    rArchive >> m_constantVolumeEnvelope;
+    rArchive >> m_VolumeEnvelopeDividerPeriod;
+    rArchive >> m_sweepEnabled;
+    rArchive >> m_sweepPeriod;
+    rArchive >> m_sweepNegate;
+    rArchive >> m_sweepShift;
+    rArchive >> m_timer;
+    rArchive >> m_timerValue;
+    rArchive >> m_lengthCounter;
+    rArchive >> m_sequence;
+}
+
+void APUPulseChannel::Save(Archive& rArchive)
+{
+    rArchive << m_enabled;
+    rArchive << m_dutyCycle;
+    rArchive << m_lengthCounterHalt;
+    rArchive << m_constantVolumeEnvelope;
+    rArchive << m_VolumeEnvelopeDividerPeriod;
+    rArchive << m_sweepEnabled;
+    rArchive << m_sweepPeriod;
+    rArchive << m_sweepNegate;
+    rArchive << m_sweepShift;
+    rArchive << m_timer;
+    rArchive << m_timerValue;
+    rArchive << m_lengthCounter;
+    rArchive << m_sequence;
+}
+
 uint8_t APUPulseChannel::IsEnabled() const
 {
     return m_enabled;
@@ -175,12 +209,20 @@ APUNES::~APUNES()
 
 void APUNES::Load(Archive& rArchive)
 {
-
+    rArchive >> m_frameCounter;
+    rArchive >> m_frameCountModeAndInterrupt;
+    
+    rArchive >> m_pulse1;
+    rArchive >> m_pulse2;
 }
 
 void APUNES::Save(Archive& rArchive)
 {
-
+    rArchive << m_frameCounter;
+    rArchive << m_frameCountModeAndInterrupt;
+    
+    rArchive << m_pulse1;
+    rArchive << m_pulse2;
 }
 
 void APUNES::QuarterFrameTick()
