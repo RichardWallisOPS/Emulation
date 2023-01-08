@@ -89,9 +89,9 @@ protected:
     uint8_t m_enabled;
 
     uint8_t m_dutyCycle;
-    uint8_t m_lengthCounterHalt;
-    uint8_t m_constantVolumeEnvelope;
-    uint8_t m_VolumeEnvelopeDividerPeriod;
+    uint8_t m_lengthCounterHaltOrEnvelopeLoop;
+    uint8_t m_volume_ConstantOrEnvelope;
+    uint8_t m_volume_LevelOrEnvelopeDividerPeriod;
 
     uint8_t m_sweepEnabled;
     uint8_t m_sweepPeriod;
@@ -128,12 +128,15 @@ public:
 private:
     SystemIOBus& m_bus;
     
+    // Main system
     uint16_t m_frameCounter;
     uint8_t m_frameCountModeAndInterrupt;
     
+    // Channels
     APUPulseChannel m_pulse1;
     APUPulseChannel m_pulse2;
     
+    // Output
     APUAudioBuffer* m_pAudioBuffer;
     size_t m_audioOutDataCounter;
 };

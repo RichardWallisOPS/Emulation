@@ -45,9 +45,9 @@ uint8_t LENGTH_COUNTER_LUT[] = { 0,254, 20,  2, 40,  4, 80,  6, 160,  8, 60, 10,
 APUPulseChannel::APUPulseChannel()
 : m_enabled(0)
 , m_dutyCycle(0)
-, m_lengthCounterHalt(0)
-, m_constantVolumeEnvelope(0)
-, m_VolumeEnvelopeDividerPeriod(0)
+, m_lengthCounterHaltOrEnvelopeLoop(0)
+, m_volume_ConstantOrEnvelope(0)
+, m_volume_LevelOrEnvelopeDividerPeriod(0)
 , m_sweepEnabled(0)
 , m_sweepPeriod(0)
 , m_sweepNegate(0)
@@ -61,36 +61,12 @@ APUPulseChannel::APUPulseChannel()
 
 void APUPulseChannel::Load(Archive& rArchive)
 {
-    rArchive >> m_enabled;
-    rArchive >> m_dutyCycle;
-    rArchive >> m_lengthCounterHalt;
-    rArchive >> m_constantVolumeEnvelope;
-    rArchive >> m_VolumeEnvelopeDividerPeriod;
-    rArchive >> m_sweepEnabled;
-    rArchive >> m_sweepPeriod;
-    rArchive >> m_sweepNegate;
-    rArchive >> m_sweepShift;
-    rArchive >> m_timer;
-    rArchive >> m_timerValue;
-    rArchive >> m_lengthCounter;
-    rArchive >> m_sequence;
+
 }
 
 void APUPulseChannel::Save(Archive& rArchive)
 {
-    rArchive << m_enabled;
-    rArchive << m_dutyCycle;
-    rArchive << m_lengthCounterHalt;
-    rArchive << m_constantVolumeEnvelope;
-    rArchive << m_VolumeEnvelopeDividerPeriod;
-    rArchive << m_sweepEnabled;
-    rArchive << m_sweepPeriod;
-    rArchive << m_sweepNegate;
-    rArchive << m_sweepShift;
-    rArchive << m_timer;
-    rArchive << m_timerValue;
-    rArchive << m_lengthCounter;
-    rArchive << m_sequence;
+
 }
 
 uint8_t APUPulseChannel::IsEnabled() const
@@ -113,9 +89,9 @@ void APUPulseChannel::SetRegister(uint16_t reg, uint8_t byte)
     {
         // DDLC VVVV
         m_dutyCycle = (byte >> 6) & 0b11;
-        m_lengthCounterHalt = (byte >> 5) & 0b1;
-        m_constantVolumeEnvelope = (byte >> 4) & 0b1;;
-        m_VolumeEnvelopeDividerPeriod = byte & 0b1111;
+        m_lengthCounterHaltOrEnvelopeLoop = (byte >> 5) & 0b1;
+        m_volume_ConstantOrEnvelope = (byte >> 4) & 0b1;;
+        m_volume_LevelOrEnvelopeDividerPeriod = byte & 0b1111;
     }
     else if(reg == 1)
     {
@@ -158,14 +134,14 @@ void APUPulseChannel::RotateDutySequence()
 
 void APUPulseChannel::QuarterFrameTick()
 {
-    // TODO
     // Envelopes
+    //m_VolumeEnvelopeDividerPeriod + 1;
 }
 
 void APUPulseChannel::HalfFrameTick()
 {
     // Length counters & sweep units
-    if(m_lengthCounter > 0 && m_lengthCounterHalt == 0)
+    if(m_lengthCounter > 0 && m_lengthCounterHaltOrEnvelopeLoop == 0)
     {
         --m_lengthCounter;
     }
@@ -189,7 +165,7 @@ void APUPulseChannel::Tick()
 
 uint8_t APUPulseChannel::OutputValue() const
 {
-    return m_lengthCounter > 0 && m_enabled ? (m_sequence >> 7) * 15 : 0;
+    return m_lengthCounter > 0 && m_enabled ? (m_sequence >> 7) * m_volume_LevelOrEnvelopeDividerPeriod : 0;
 }
 
 APUNES::APUNES(SystemIOBus& bus)
@@ -198,31 +174,19 @@ APUNES::APUNES(SystemIOBus& bus)
 , m_frameCountModeAndInterrupt(0)
 , m_pAudioBuffer(nullptr)
 , m_audioOutDataCounter(0)
-{
-
-}
+{}
 
 APUNES::~APUNES()
-{
-
-}
+{}
 
 void APUNES::Load(Archive& rArchive)
 {
-    rArchive >> m_frameCounter;
-    rArchive >> m_frameCountModeAndInterrupt;
-    
-    rArchive >> m_pulse1;
-    rArchive >> m_pulse2;
+
 }
 
 void APUNES::Save(Archive& rArchive)
 {
-    rArchive << m_frameCounter;
-    rArchive << m_frameCountModeAndInterrupt;
-    
-    rArchive << m_pulse1;
-    rArchive << m_pulse2;
+
 }
 
 void APUNES::QuarterFrameTick()
@@ -241,21 +205,16 @@ void APUNES::HalfFrameTick()
 
 float APUNES::OutputValue()
 {
-    float pulse1 = m_pulse1.OutputValue();
-    float pulse2 = m_pulse2.OutputValue();
+    float fPulse1 = m_pulse1.OutputValue();
+    float fPulse2 = m_pulse2.OutputValue();
     
-    //float pulseOut = 95.88f / ((8128.f / (pulse1 + pulse2)) + 100.f);
-    //float tndOut = 0.f; // TODO
-    //return pulseOut + tndOut;
+//    float fPulseOut = 95.88f / ((8128.f / (fPulse1 + fPulse2)) + 100.f);
+//    float FTNDOut = 0.f; // TODO
+//    return fPulseOut + FTNDOut;
     
-    float sample = 0.00752f * (pulse1 + pulse2);
-    
-    //return sample;
-    return (sample - 0.5f) * 2.f;
-
-//    48000 samples per second
-//    60 FPS frame rate
-//    48000 / 60 = 800 samples per frame
+    float fSample = 0.00752f * (fPulse1 + fPulse2);
+    return fSample;
+    //return (fSample - 0.5f) * 2.f;
 }
 
 void APUNES::Tick()
