@@ -43,8 +43,7 @@ enum RegisterID : uint16_t
 uint8_t LENGTH_COUNTER_LUT[] = { 0,254, 20,  2, 40,  4, 80,  6, 160,  8, 60, 10, 14, 12, 26, 14, 12, 16, 24, 18, 48, 20, 96, 22, 192, 24, 72, 26, 16, 28, 32, 30 };
 
 APUPulseChannel::APUPulseChannel()
-: m_enabled(0)
-, m_dutyCycle(0)
+: m_dutyCycle(0)
 , m_lengthCounterHaltOrEnvelopeLoop(0)
 , m_volume_ConstantOrEnvelope(0)
 , m_volume_LevelOrEnvelopeDividerPeriod(0)
@@ -55,6 +54,9 @@ APUPulseChannel::APUPulseChannel()
 , m_timer(0)
 , m_timerValue(0)
 , m_lengthCounter(0)
+, m_envelopeStartFlag(0)
+, m_envelopeDivider(0)
+, m_envelopeDecayLevelCounter(0)
 {
 
 }
@@ -71,13 +73,12 @@ void APUPulseChannel::Save(Archive& rArchive)
 
 uint8_t APUPulseChannel::IsEnabled() const
 {
-    return m_enabled;
+    return m_lengthCounter > 0;
 }
 
 void APUPulseChannel::SetEnabled(uint8_t bEnabled)
 {
-    m_enabled = bEnabled;
-    if(!m_enabled)
+    if(!bEnabled)
     {
         m_lengthCounter = 0;
     }
@@ -112,35 +113,29 @@ void APUPulseChannel::SetRegister(uint16_t reg, uint8_t byte)
         m_timerValue = (m_timerValue & 0x00FF) | (uint16_t(byte & 0b111) << 8);
         m_lengthCounter = (byte >> 3) & 0b11111;
         m_lengthCounter = LENGTH_COUNTER_LUT[m_lengthCounter];
-        
+        m_envelopeStartFlag = 1;
         SetDutySequence();
     }
 }
 
 void APUPulseChannel::SetDutySequence()
 {
-    if(m_dutyCycle == 0)        m_sequence = 0b01000000;
-    else if(m_dutyCycle == 1)   m_sequence = 0b01100000;
-    else if(m_dutyCycle == 2)   m_sequence = 0b01111000;
-    else if(m_dutyCycle == 3)   m_sequence = 0b10011111;
+    if(m_dutyCycle == 0)        m_currDutySequence = 0b01000000;
+    else if(m_dutyCycle == 1)   m_currDutySequence = 0b01100000;
+    else if(m_dutyCycle == 2)   m_currDutySequence = 0b01111000;
+    else if(m_dutyCycle == 3)   m_currDutySequence = 0b10011111;
 }
 
 void APUPulseChannel::RotateDutySequence()
 {
-    uint8_t highBit = m_sequence & 0b10000000;
-    m_sequence <<= 1;
-    m_sequence |= highBit >> 7;
-}
-
-void APUPulseChannel::QuarterFrameTick()
-{
-    // Envelopes
-    //m_VolumeEnvelopeDividerPeriod + 1;
+    uint8_t highBit = m_currDutySequence & 0b10000000;
+    m_currDutySequence <<= 1;
+    m_currDutySequence |= highBit >> 7;
 }
 
 void APUPulseChannel::HalfFrameTick()
 {
-    // Length counters & sweep units
+    // Length counter & sweep (TODO)
     if(m_lengthCounter > 0 && m_lengthCounterHaltOrEnvelopeLoop == 0)
     {
         --m_lengthCounter;
@@ -149,7 +144,7 @@ void APUPulseChannel::HalfFrameTick()
 
 void APUPulseChannel::Tick()
 {
-    if(m_enabled)
+    if(IsEnabled())
     {
         if(m_timer > 0)
         {
@@ -163,9 +158,58 @@ void APUPulseChannel::Tick()
     }
 }
 
+void APUPulseChannel::QuarterFrameTick()
+{
+    // Envelope
+    if(m_envelopeStartFlag == 1)
+    {
+        m_envelopeStartFlag = 0;
+        m_envelopeDecayLevelCounter = 15;
+        m_envelopeDivider = m_volume_LevelOrEnvelopeDividerPeriod + 1;
+    }
+    else
+    {
+        if(m_envelopeDivider > 0)
+        {
+            --m_envelopeDivider;
+        }
+        else
+        {
+            m_envelopeDivider = m_volume_LevelOrEnvelopeDividerPeriod + 1;
+
+            if(m_envelopeDecayLevelCounter > 0)
+            {
+                --m_envelopeDecayLevelCounter;
+            }
+            else if(m_lengthCounterHaltOrEnvelopeLoop == 1)
+            {
+                m_envelopeDecayLevelCounter = 15;
+            }
+        }
+    }
+}
+
 uint8_t APUPulseChannel::OutputValue() const
 {
-    return m_lengthCounter > 0 && m_enabled ? (m_sequence >> 7) * m_volume_LevelOrEnvelopeDividerPeriod : 0;
+    uint8_t output = 0;
+    
+    if(m_lengthCounter > 0)
+    {
+        // Output is current MSB
+        output = (m_currDutySequence >> 7) & 0b1;
+        
+        // Multipled by constant volume or envelope decay level
+        if(m_volume_ConstantOrEnvelope == 1)
+        {
+            output *= m_volume_LevelOrEnvelopeDividerPeriod;
+        }
+        else
+        {
+            output *= m_envelopeDecayLevelCounter;
+        }
+    }
+    
+    return output;
 }
 
 APUNES::APUNES(SystemIOBus& bus)

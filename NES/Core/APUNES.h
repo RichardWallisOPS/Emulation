@@ -86,8 +86,6 @@ public:
     
 protected:
 
-    uint8_t m_enabled;
-
     uint8_t m_dutyCycle;
     uint8_t m_lengthCounterHaltOrEnvelopeLoop;
     uint8_t m_volume_ConstantOrEnvelope;
@@ -103,7 +101,11 @@ protected:
     
     uint8_t m_lengthCounter;
     
-    uint8_t m_sequence;
+    uint8_t m_currDutySequence;
+    
+    uint8_t m_envelopeStartFlag;
+    uint8_t m_envelopeDivider;
+    uint8_t m_envelopeDecayLevelCounter;
 };
 
 class APUNES : public Serialisable
