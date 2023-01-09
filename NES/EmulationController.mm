@@ -26,9 +26,9 @@ const size_t    m_kArchiveCount = 5 * 60;
 Archive         m_ArchiveBuffer[m_kArchiveCount];
 
 // Audio buffers
-size_t          m_readAudioBuffer = 0;
-size_t          m_writeAudioBuffer = 0;
-const size_t    m_audioBufferCount = 4;
+volatile size_t m_readAudioBuffer = 0;
+volatile size_t m_writeAudioBuffer = 0;
+const size_t    m_audioBufferCount = 6;
 APUAudioBuffer  m_audioBuffers[m_audioBufferCount];
 
 @implementation EmulationMetalView
@@ -413,10 +413,12 @@ id<MTLTexture>  m_emulationOutput[m_renderTextureCount];
         }
         
         // TODO Move this and use audioEngine.pause
-        if(!self.audioEngine.isRunning && m_writeAudioBuffer > 0)
+        if(!self.audioEngine.isRunning && m_writeAudioBuffer > 2)
         {
-            BOOL bStart = [self.audioEngine startAndReturnError:nil];
-            NSLog(@"Starting AudioEngine = %d", bStart ? 1 : 0);
+            if(![self.audioEngine startAndReturnError:nil])
+            {
+                NSLog(@"Failed to start audio engine");
+            }
         }
     }
     

@@ -69,7 +69,7 @@ class APUPulseChannel : public Serialisable
 public:
     SERIALISABLE_DECL
 
-    APUPulseChannel();
+    APUPulseChannel(uint16_t sweepNegateComplement);
     
     uint8_t IsEnabled() const;
     void SetEnabled(uint8_t bEnabled);
@@ -86,6 +86,7 @@ public:
     
 protected:
 
+    // Registers
     uint8_t m_dutyCycle;
     uint8_t m_lengthCounterHaltOrEnvelopeLoop;
     uint8_t m_volume_ConstantOrEnvelope;
@@ -95,17 +96,25 @@ protected:
     uint8_t m_sweepPeriod;
     uint8_t m_sweepNegate;
     uint8_t m_sweepShift;
+    uint16_t m_sweepNegateComplement;
 
+    // Timer for next duty cycle rotation
     uint16_t m_timer;
     uint16_t m_timerValue;
     
-    uint8_t m_lengthCounter;
-    
+    // Current in progress rotated duty sequence
     uint8_t m_currDutySequence;
     
+    // Main counter
+    uint8_t m_lengthCounter;
+        
+    // Current Envelope state
     uint8_t m_envelopeStartFlag;
     uint8_t m_envelopeDivider;
     uint8_t m_envelopeDecayLevelCounter;
+    
+    uint8_t m_sweepReloadFlag;
+    uint8_t m_sweepDivider;
 };
 
 class APUNES : public Serialisable

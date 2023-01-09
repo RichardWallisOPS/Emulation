@@ -42,7 +42,7 @@ enum RegisterID : uint16_t
 
 uint8_t LENGTH_COUNTER_LUT[] = { 0,254, 20,  2, 40,  4, 80,  6, 160,  8, 60, 10, 14, 12, 26, 14, 12, 16, 24, 18, 48, 20, 96, 22, 192, 24, 72, 26, 16, 28, 32, 30 };
 
-APUPulseChannel::APUPulseChannel()
+APUPulseChannel::APUPulseChannel(uint16_t sweepNegateComplement)
 : m_dutyCycle(0)
 , m_lengthCounterHaltOrEnvelopeLoop(0)
 , m_volume_ConstantOrEnvelope(0)
@@ -51,12 +51,16 @@ APUPulseChannel::APUPulseChannel()
 , m_sweepPeriod(0)
 , m_sweepNegate(0)
 , m_sweepShift(0)
+, m_sweepNegateComplement(sweepNegateComplement)
 , m_timer(0)
 , m_timerValue(0)
+, m_currDutySequence(0)
 , m_lengthCounter(0)
 , m_envelopeStartFlag(0)
 , m_envelopeDivider(0)
 , m_envelopeDecayLevelCounter(0)
+, m_sweepReloadFlag(0)
+, m_sweepDivider(0)
 {
 
 }
@@ -99,8 +103,9 @@ void APUPulseChannel::SetRegister(uint16_t reg, uint8_t byte)
         // EPPP NSSS
         m_sweepEnabled = (byte >> 7) & 0b1;
         m_sweepPeriod = (byte >> 4) & 0b111;
-        m_sweepNegate = (byte << 3) & 0b1;
+        m_sweepNegate = (byte >> 3) & 0b1;
         m_sweepShift = byte & 0b111;
+        m_sweepReloadFlag = 1;
     }
     else if(reg == 2)
     {
@@ -131,31 +136,6 @@ void APUPulseChannel::RotateDutySequence()
     uint8_t highBit = m_currDutySequence & 0b10000000;
     m_currDutySequence <<= 1;
     m_currDutySequence |= highBit >> 7;
-}
-
-void APUPulseChannel::HalfFrameTick()
-{
-    // Length counter & sweep (TODO)
-    if(m_lengthCounter > 0 && m_lengthCounterHaltOrEnvelopeLoop == 0)
-    {
-        --m_lengthCounter;
-    }
-}
-
-void APUPulseChannel::Tick()
-{
-    if(IsEnabled())
-    {
-        if(m_timer > 0)
-        {
-            m_timer = m_timer - 1;
-        }
-        else
-        {
-            m_timer = m_timerValue + 1;
-            RotateDutySequence();
-        }
-    }
 }
 
 void APUPulseChannel::QuarterFrameTick()
@@ -189,6 +169,67 @@ void APUPulseChannel::QuarterFrameTick()
     }
 }
 
+void APUPulseChannel::HalfFrameTick()
+{
+    // Length counter & sweep
+    if(m_lengthCounter > 0 && m_lengthCounterHaltOrEnvelopeLoop == 0)
+    {
+        --m_lengthCounter;
+    }
+    
+    // timer or timerValue?
+    uint16_t targetPeriod = m_timer;
+    {
+        uint16_t changeAmount = targetPeriod >> m_sweepShift;
+        if(m_sweepNegate)
+        {
+            if((changeAmount + m_sweepNegateComplement) > targetPeriod)
+            {
+                targetPeriod = 0;
+            }
+            else
+            {
+                targetPeriod = (changeAmount + m_sweepNegateComplement);
+            }
+        }
+        else
+        {
+            targetPeriod += changeAmount;
+        }
+    }
+    
+    if(m_sweepEnabled && m_sweepDivider == 0)
+    {
+        //m_timer = targetPeriod;
+    }
+    
+    if(m_sweepDivider == 0 || m_sweepReloadFlag == 1)
+    {
+        m_sweepDivider = m_sweepPeriod + 1;
+        m_sweepReloadFlag = 0;
+    }
+    else
+    {
+        --m_sweepDivider;
+    }
+}
+
+void APUPulseChannel::Tick()
+{
+    if(IsEnabled())
+    {
+        if(m_timer > 0)
+        {
+            m_timer = m_timer - 1;
+        }
+        else
+        {
+            m_timer = m_timerValue + 1;
+            RotateDutySequence();
+        }
+    }
+}
+
 uint8_t APUPulseChannel::OutputValue() const
 {
     uint8_t output = 0;
@@ -215,6 +256,8 @@ uint8_t APUPulseChannel::OutputValue() const
 APUNES::APUNES(SystemIOBus& bus)
 : m_bus(bus)
 , m_frameCounter(0)
+, m_pulse1(1)
+, m_pulse2(0)
 , m_frameCountModeAndInterrupt(0)
 , m_pAudioBuffer(nullptr)
 , m_audioOutDataCounter(0)
