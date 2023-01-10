@@ -286,14 +286,7 @@ void APUTriangleChannel::SetEnabled(uint8_t bEnabled)
 
 uint8_t APUTriangleChannel::OutputValue() const
 {
-    uint8_t outputValue = 0;
-    
-    if(m_lengthCounter > 0)
-    {
-        outputValue = TRIANGLE_SEQUENCE[m_sequenceIndex];
-    }
-    
-    return outputValue;
+    return TRIANGLE_SEQUENCE[m_sequenceIndex];
 }
 
 void APUTriangleChannel::SetRegister(uint16_t reg, uint8_t byte)
@@ -350,7 +343,7 @@ void APUTriangleChannel::HalfFrameTick()
 
 void APUTriangleChannel::Tick()
 {
-    if(IsEnabled() && m_linearCounter > 0)
+    if(m_lengthCounter > 0 && m_linearCounter > 0)
     {
         if(m_timer > 0)
         {
@@ -363,7 +356,6 @@ void APUTriangleChannel::Tick()
         }
     }
 }
-
 
 APUNES::APUNES(SystemIOBus& bus)
 : m_bus(bus)
@@ -390,11 +382,15 @@ void APUNES::Save(Archive& rArchive)
 
 float APUNES::OutputValue()
 {
-    float fPulse1 = 0.f;//m_pulse1.OutputValue();
-    float fPulse2 = 0.f;//m_pulse2.OutputValue();
+    float fPulse1 = m_pulse1.OutputValue();
+    float fPulse2 = m_pulse2.OutputValue();
     float fTriangle = m_triangle.OutputValue();
     float fNoise = 0.f;
     float fDMC = 0.f;
+    
+    //fPulse1 = 0.f;
+    //fPulse2 = 0.f;
+    //fTriangle = 0.f;
     
     float fPulse = 0.f;
     float fTND = 0.f;
