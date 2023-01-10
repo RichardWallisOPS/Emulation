@@ -183,13 +183,14 @@ void APUPulseChannel::HalfFrameTick()
         uint16_t changeAmount = targetPeriod >> m_sweepShift;
         if(m_sweepNegate)
         {
-            if((changeAmount + m_sweepNegateComplement) > targetPeriod)
+            changeAmount += m_sweepNegateComplement;
+            if(changeAmount > targetPeriod)
             {
                 targetPeriod = 0;
             }
             else
             {
-                targetPeriod = (changeAmount + m_sweepNegateComplement);
+                targetPeriod -= changeAmount;
             }
         }
         else
@@ -200,7 +201,7 @@ void APUPulseChannel::HalfFrameTick()
     
     if(m_sweepEnabled && m_sweepDivider == 0)
     {
-        //m_timer = targetPeriod;
+        m_timer = targetPeriod;
     }
     
     if(m_sweepDivider == 0 || m_sweepReloadFlag == 1)
