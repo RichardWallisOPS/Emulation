@@ -391,24 +391,15 @@ float APUNES::OutputValue()
     //fPulse1 = 0.f;
     //fPulse2 = 0.f;
     //fTriangle = 0.f;
+    //fNoise = 0.f;
+    //fDMC = 0.f;
     
-    float fPulse = 0.f;
-    float fTND = 0.f;
-    
-#if 0
-    {
-        fPulse = 95.88f / ((8128.f / (fPulse1 + fPulse2)) + 100.f);
-        fTND = 1.f / (((fTriangle / 8227.f) + (fNoise / 12241.f) + (fDMC / 22638.f)) + 100.f);
-    }
-#else
-    {
-        fPulse = 0.00752f * (fPulse1 + fPulse2);
-        fTND = 0.00851 * fTriangle + 0.00494 * fNoise + 0.00335 * fDMC;
-    }
-#endif
+    float fPulse = 0.00752f * (fPulse1 + fPulse2);
+    float fTND = 0.00851 * fTriangle + 0.00494 * fNoise + 0.00335 * fDMC;
 
     float fSample = fPulse + fTND;
-    return (fSample - 0.5f) * 2.f;
+    return fSample;
+    //return (fSample - 0.5f) * 2.f;
 }
 
 void APUNES::QuarterFrameTick()
