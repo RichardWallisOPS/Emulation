@@ -144,7 +144,11 @@ private:
     
     // Linear counter
     uint8_t m_linearCounter;
-    uint8_t m_linearCounterReaload;
+    uint8_t m_linearCounterReloadValue;
+    uint8_t m_linearCounterReloadFlag;
+    uint8_t m_controlFlag;
+    
+    uint8_t m_sequenceIndex;
 };
 
 class APUNES : public Serialisable

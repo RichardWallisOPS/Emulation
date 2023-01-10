@@ -40,7 +40,8 @@ enum RegisterID : uint16_t
     FRAME_COUNTER   = 0x4017,
 };
 
-uint8_t LENGTH_COUNTER_LUT[] = { 0,254, 20,  2, 40,  4, 80,  6, 160,  8, 60, 10, 14, 12, 26, 14, 12, 16, 24, 18, 48, 20, 96, 22, 192, 24, 72, 26, 16, 28, 32, 30 };
+const uint8_t LENGTH_COUNTER_LUT[] = { 0,254, 20,  2, 40,  4, 80,  6, 160,  8, 60, 10, 14, 12, 26, 14, 12, 16, 24, 18, 48, 20, 96, 22, 192, 24, 72, 26, 16, 28, 32, 30 };
+const uint8_t TRIANGLE_SEQUENCE[] = {15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15};
 
 APUPulseChannel::APUPulseChannel(uint16_t sweepNegateComplement)
 : m_dutyCycle(0)
@@ -138,7 +139,6 @@ void APUPulseChannel::RotateDutySequence()
 
 void APUPulseChannel::QuarterFrameTick()
 {
-    // Envelope
     if(m_envelopeStartFlag == 1)
     {
         m_envelopeStartFlag = 0;
@@ -169,7 +169,6 @@ void APUPulseChannel::QuarterFrameTick()
 
 void APUPulseChannel::HalfFrameTick()
 {
-    // Length counter & sweep
     if(m_lengthCounter > 0 && m_lengthCounterHaltOrEnvelopeLoop == 0)
     {
         --m_lengthCounter;
@@ -256,10 +255,11 @@ APUTriangleChannel::APUTriangleChannel()
 , m_timerValue(0)
 , m_lengthCounter(0)
 , m_linearCounter(0)
-, m_linearCounterReaload(0)
-{
-
-}
+, m_linearCounterReloadValue(0)
+, m_linearCounterReloadFlag(0)
+, m_controlFlag(0)
+, m_sequenceIndex(0)
+{}
 
 void APUTriangleChannel::Load(Archive& rArchive)
 {
@@ -286,28 +286,84 @@ void APUTriangleChannel::SetEnabled(uint8_t bEnabled)
 
 uint8_t APUTriangleChannel::OutputValue() const
 {
-    return 0;
+    uint8_t outputValue = 0;
+    
+    if(m_lengthCounter > 0)
+    {
+        outputValue = TRIANGLE_SEQUENCE[m_sequenceIndex];
+    }
+    
+    return outputValue;
 }
 
 void APUTriangleChannel::SetRegister(uint16_t reg, uint8_t byte)
 {
-
-}
-
-void APUTriangleChannel::Tick()
-{
-
+    if(reg == 0)
+    {
+        // CRRR RRRR
+        m_controlFlag = (byte >> 7) & 0b1;
+        m_linearCounterReloadValue = byte & 0b01111111;
+    }
+    else if(reg == 1)
+    {
+        // Nothing
+    }
+    else if(reg == 2)
+    {
+        // TTTT TTTT
+        m_timerValue = (m_timerValue & 0xFF00) | uint16_t(byte);
+    }
+    else if(reg == 3)
+    {
+        // LLLL LTTT
+        m_timerValue = (m_timerValue & 0x00FF) | (uint16_t(byte & 0b111) << 8);
+        m_lengthCounter = (byte >> 3) & 0b11111;
+        m_lengthCounter = LENGTH_COUNTER_LUT[m_lengthCounter];
+        m_linearCounterReloadFlag = 1;
+    }
 }
 
 void APUTriangleChannel::QuarterFrameTick()
 {
-
+    if(m_linearCounterReloadFlag == 1)
+    {
+        m_linearCounter = m_linearCounterReloadValue;
+    }
+    else if(m_linearCounter > 0)
+    {
+        --m_linearCounter;
+    }
+    
+    if(m_controlFlag == 0)
+    {
+        m_linearCounterReloadFlag = 0;
+    }
 }
 
 void APUTriangleChannel::HalfFrameTick()
 {
-
+    if(m_lengthCounter > 0)
+    {
+        --m_lengthCounter;
+    }
 }
+
+void APUTriangleChannel::Tick()
+{
+    if(IsEnabled() && m_linearCounter > 0)
+    {
+        if(m_timer > 0)
+        {
+            m_timer = m_timer - 1;
+        }
+        else
+        {
+            m_timer = m_timerValue + 1;
+            m_sequenceIndex = (m_sequenceIndex + 1) % sizeof(TRIANGLE_SEQUENCE);
+        }
+    }
+}
+
 
 APUNES::APUNES(SystemIOBus& bus)
 : m_bus(bus)
@@ -332,6 +388,33 @@ void APUNES::Save(Archive& rArchive)
 
 }
 
+float APUNES::OutputValue()
+{
+    float fPulse1 = 0.f;//m_pulse1.OutputValue();
+    float fPulse2 = 0.f;//m_pulse2.OutputValue();
+    float fTriangle = m_triangle.OutputValue();
+    float fNoise = 0.f;
+    float fDMC = 0.f;
+    
+    float fPulse = 0.f;
+    float fTND = 0.f;
+    
+#if 0
+    {
+        fPulse = 95.88f / ((8128.f / (fPulse1 + fPulse2)) + 100.f);
+        fTND = 1.f / (((fTriangle / 8227.f) + (fNoise / 12241.f) + (fDMC / 22638.f)) + 100.f);
+    }
+#else
+    {
+        fPulse = 0.00752f * (fPulse1 + fPulse2);
+        fTND = 0.00851 * fTriangle + 0.00494 * fNoise + 0.00335 * fDMC;
+    }
+#endif
+
+    float fSample = fPulse + fTND;
+    return (fSample - 0.5f) * 2.f;
+}
+
 void APUNES::QuarterFrameTick()
 {
     // Envelopes & triangle's linear counter
@@ -346,33 +429,6 @@ void APUNES::HalfFrameTick()
     m_pulse1.HalfFrameTick();
     m_pulse2.HalfFrameTick();
     m_triangle.HalfFrameTick();
-}
-
-float APUNES::OutputValue()
-{
-    float fPulse1 = m_pulse1.OutputValue();
-    float fPulse2 = m_pulse2.OutputValue();
-    float fTriangle = m_triangle.OutputValue();
-    float fNoise = 0.f;
-    float fDMC = 0.f;
-    
-    float fPulse = 0.f;
-    float fTND = 0.f;
-    
-#if 1
-    {
-        fPulse = 95.88f / ((8128.f / (fPulse1 + fPulse2)) + 100.f);
-        fTND = 1.f / (((fTriangle / 8227.f) + (fNoise / 12241.f) + (fDMC / 22638.f)) + 100.f);
-    }
-#else
-    {
-        fPulse = 0.00752f * (fPulse1 + fPulse2);
-        fTND = 0.00851 * fTriangle + 0.00494 * fNoise + 0.00335 * fDMC;
-    }
-#endif
-
-    float fSample = fPulse + fTND;
-    return (fSample - 0.5f) * 2.f;
 }
 
 void APUNES::Tick()
@@ -465,6 +521,8 @@ uint8_t APUNES::cpuRead(uint16_t address)
         status |= m_pulse1.IsEnabled() << 0;
         status |= m_pulse2.IsEnabled() << 1;
         status |= m_triangle.IsEnabled() << 2;
+        
+        // TODO: Noise, DMC
                 
         // Clear frame interrupt flag on read
         status |= m_frameCountModeAndInterrupt & (1 << 6);
@@ -515,7 +573,8 @@ void APUNES::cpuWrite(uint16_t address, uint8_t byte)
             // ---D NT21 	Enable DMC (D), noise (N), triangle (T), and pulse channels (2/1)
             m_pulse1.SetEnabled((byte >> 0) & 0b1);
             m_pulse2.SetEnabled((byte >> 1) & 0b1);
-            // TODO Triangle, Noise, DMC
+            m_triangle.SetEnabled((byte >> 2) & 0b1);
+            // TODO: Noise, DMC
             break;
         case FRAME_COUNTER:
             m_frameCountModeAndInterrupt = byte;
