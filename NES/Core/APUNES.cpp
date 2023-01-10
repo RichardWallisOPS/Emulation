@@ -61,9 +61,7 @@ APUPulseChannel::APUPulseChannel(uint16_t sweepNegateComplement)
 , m_envelopeDecayLevelCounter(0)
 , m_sweepReloadFlag(0)
 , m_sweepDivider(0)
-{
-
-}
+{}
 
 void APUPulseChannel::Load(Archive& rArchive)
 {
@@ -178,30 +176,30 @@ void APUPulseChannel::HalfFrameTick()
     }
     
     // timer or timerValue?
-    uint16_t targetPeriod = m_timer;
+    if(m_sweepEnabled)
     {
-        uint16_t changeAmount = targetPeriod >> m_sweepShift;
+        uint16_t changeAmount = m_timerValue >> m_sweepShift;
         if(m_sweepNegate)
         {
             changeAmount += m_sweepNegateComplement;
-            if(changeAmount > targetPeriod)
+            if(changeAmount > m_timerValue)
             {
-                targetPeriod = 0;
+                m_timerValue = 0;
             }
             else
             {
-                targetPeriod -= changeAmount;
+                m_timerValue -= changeAmount;
             }
         }
         else
         {
-            targetPeriod += changeAmount;
+            m_timerValue += changeAmount;
         }
     }
     
     if(m_sweepEnabled && m_sweepDivider == 0)
     {
-        m_timer = targetPeriod;
+        m_timer = m_timerValue;
     }
     
     if(m_sweepDivider == 0 || m_sweepReloadFlag == 1)
