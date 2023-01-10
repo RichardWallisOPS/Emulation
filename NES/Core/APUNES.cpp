@@ -175,7 +175,6 @@ void APUPulseChannel::HalfFrameTick()
         --m_lengthCounter;
     }
     
-    // timer or timerValue?
     if(m_sweepEnabled)
     {
         uint16_t changeAmount = m_timerValue >> m_sweepShift;
@@ -252,6 +251,64 @@ uint8_t APUPulseChannel::OutputValue() const
     return output;
 }
 
+APUTriangleChannel::APUTriangleChannel()
+: m_timer(0)
+, m_timerValue(0)
+, m_lengthCounter(0)
+, m_linearCounter(0)
+, m_linearCounterReaload(0)
+{
+
+}
+
+void APUTriangleChannel::Load(Archive& rArchive)
+{
+
+}
+
+void APUTriangleChannel::Save(Archive& rArchive)
+{
+
+}
+    
+uint8_t APUTriangleChannel::IsEnabled() const
+{
+    return m_lengthCounter > 0;
+}
+
+void APUTriangleChannel::SetEnabled(uint8_t bEnabled)
+{
+    if(!bEnabled)
+    {
+        m_lengthCounter = 0;
+    }
+}
+
+uint8_t APUTriangleChannel::OutputValue() const
+{
+    return 0;
+}
+
+void APUTriangleChannel::SetRegister(uint16_t reg, uint8_t byte)
+{
+
+}
+
+void APUTriangleChannel::Tick()
+{
+
+}
+
+void APUTriangleChannel::QuarterFrameTick()
+{
+
+}
+
+void APUTriangleChannel::HalfFrameTick()
+{
+
+}
+
 APUNES::APUNES(SystemIOBus& bus)
 : m_bus(bus)
 , m_frameCounter(0)
@@ -280,6 +337,7 @@ void APUNES::QuarterFrameTick()
     // Envelopes & triangle's linear counter
     m_pulse1.QuarterFrameTick();
     m_pulse2.QuarterFrameTick();
+    m_triangle.QuarterFrameTick();
 }
 
 void APUNES::HalfFrameTick()
@@ -287,20 +345,34 @@ void APUNES::HalfFrameTick()
     // Length counters & sweep units
     m_pulse1.HalfFrameTick();
     m_pulse2.HalfFrameTick();
+    m_triangle.HalfFrameTick();
 }
 
 float APUNES::OutputValue()
 {
     float fPulse1 = m_pulse1.OutputValue();
     float fPulse2 = m_pulse2.OutputValue();
+    float fTriangle = m_triangle.OutputValue();
+    float fNoise = 0.f;
+    float fDMC = 0.f;
     
-//    float fPulseOut = 95.88f / ((8128.f / (fPulse1 + fPulse2)) + 100.f);
-//    float FTNDOut = 0.f; // TODO
-//    return fPulseOut + FTNDOut;
+    float fPulse = 0.f;
+    float fTND = 0.f;
     
-    float fSample = 0.00752f * (fPulse1 + fPulse2);
-    return fSample;
-    //return (fSample - 0.5f) * 2.f;
+#if 1
+    {
+        fPulse = 95.88f / ((8128.f / (fPulse1 + fPulse2)) + 100.f);
+        fTND = 1.f / (((fTriangle / 8227.f) + (fNoise / 12241.f) + (fDMC / 22638.f)) + 100.f);
+    }
+#else
+    {
+        fPulse = 0.00752f * (fPulse1 + fPulse2);
+        fTND = 0.00851 * fTriangle + 0.00494 * fNoise + 0.00335 * fDMC;
+    }
+#endif
+
+    float fSample = fPulse + fTND;
+    return (fSample - 0.5f) * 2.f;
 }
 
 void APUNES::Tick()
@@ -316,10 +388,9 @@ void APUNES::Tick()
         m_pulse1.Tick();
         m_pulse2.Tick();
     }
-    
+
     // Ticked every CPU tick
-    // m_triangle.Tick();
-    // Noise/DMC ?
+    m_triangle.Tick();
     
     bool bFrameModeStep4 = (m_frameCountModeAndInterrupt & (1 << 7)) == 0;
     bool bIRQInhibit = (m_frameCountModeAndInterrupt & (1 << 6)) != 0;
@@ -393,7 +464,7 @@ uint8_t APUNES::cpuRead(uint16_t address)
         
         status |= m_pulse1.IsEnabled() << 0;
         status |= m_pulse2.IsEnabled() << 1;
-        // TODO Triangle, Noise, DMC
+        status |= m_triangle.IsEnabled() << 2;
                 
         // Clear frame interrupt flag on read
         status |= m_frameCountModeAndInterrupt & (1 << 6);
@@ -421,10 +492,9 @@ void APUNES::cpuWrite(uint16_t address, uint8_t byte)
             m_pulse2.SetRegister(address - 0x4004, byte);
             break;
         case TRI_LINEAR:
-            break;
         case TRI_LO:
-            break;
         case TRI_HI:
+            m_triangle.SetRegister(address - 0x4008, byte);
             break;
         case NOISE_VOL:
             break;

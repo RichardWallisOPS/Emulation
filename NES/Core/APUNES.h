@@ -117,6 +117,36 @@ protected:
     uint8_t m_sweepDivider;
 };
 
+class APUTriangleChannel : public Serialisable
+{
+public:
+    SERIALISABLE_DECL
+    
+    APUTriangleChannel();
+    
+    uint8_t IsEnabled() const;
+    void SetEnabled(uint8_t bEnabled);
+
+    uint8_t OutputValue() const;
+    void SetRegister(uint16_t reg, uint8_t byte);
+    
+    void Tick();
+    void QuarterFrameTick();
+    void HalfFrameTick();
+    
+private:
+    // Main Timer
+    uint16_t m_timer;
+    uint16_t m_timerValue;
+    
+    // Main counter
+    uint8_t m_lengthCounter;
+    
+    // Linear counter
+    uint8_t m_linearCounter;
+    uint8_t m_linearCounterReaload;
+};
+
 class APUNES : public Serialisable
 {
 public:
@@ -144,8 +174,9 @@ private:
     uint8_t m_frameCountModeAndInterrupt;
     
     // Channels
-    APUPulseChannel m_pulse1;
-    APUPulseChannel m_pulse2;
+    APUPulseChannel     m_pulse1;
+    APUPulseChannel     m_pulse2;
+    APUTriangleChannel  m_triangle;
     
     // Output
     APUAudioBuffer* m_pAudioBuffer;
