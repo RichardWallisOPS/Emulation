@@ -43,6 +43,7 @@ enum RegisterID : uint16_t
 const uint8_t LENGTH_COUNTER_LUT[] = { 0,254, 20,  2, 40,  4, 80,  6, 160,  8, 60, 10, 14, 12, 26, 14, 12, 16, 24, 18, 48, 20, 96, 22, 192, 24, 72, 26, 16, 28, 32, 30 };
 const uint8_t TRIANGLE_SEQUENCE[] = {15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15};
 const uint16_t NOISE_PERIOD[] =  {4, 8, 16, 32, 64, 96, 128, 160, 202, 254, 380, 508, 762, 1016, 2034, 4068};
+const uint16_t DMC_RATE[] = {428, 380, 340, 320, 286, 254, 226, 214, 190, 160, 142, 128, 106, 84, 72, 54};
 
 APUPulseChannel::APUPulseChannel(uint16_t sweepNegateComplement)
 : m_dutyCycle(0)
@@ -504,6 +505,13 @@ uint8_t APUNoiseChannel::OutputValue() const
 }
 
 APUDMC::APUDMC()
+: m_enabled(0)
+, m_IRQEnabled(0)
+, m_loop(0)
+, m_rate(0)
+, m_sampleAddress(0)
+, m_sampleLength(0)
+, m_outputLevel(0)
 {
 
 }
@@ -520,12 +528,12 @@ void APUDMC::Save(Archive& rArchive)
 
 uint8_t APUDMC::IsEnabled() const
 {
-    return 0;
+    return m_enabled;
 }
 
 void APUDMC::SetEnabled(uint8_t bEnabled)
 {
-    
+    m_enabled = bEnabled;
 }
 
 void APUDMC::SetRegister(uint16_t reg, uint8_t byte)
@@ -533,18 +541,25 @@ void APUDMC::SetRegister(uint16_t reg, uint8_t byte)
     if(reg == 0)
     {
         // IL-- RRRR
+        m_IRQEnabled = (byte >> 7) & 0b1;
+        m_loop = (byte >> 6) & 0b1;
+        m_rate = byte & 0b1111;
+        m_rate = DMC_RATE[m_rate];
     }
     else if(reg == 1)
     {
         // -DDD DDDD
+        m_outputLevel = byte & 0b01111111;
     }
     else if(reg == 2)
     {
         // AAAA AAAA
+        m_sampleAddress = 0xC000 + (uint16_t(byte) << 6);
     }
     else if(reg == 3)
     {
         // LLLL LLLL
+        m_sampleLength = (uint16_t(byte) << 4) + 1;
     }
 }
 
@@ -555,7 +570,7 @@ void APUDMC::Tick()
 
 uint8_t APUDMC::OutputValue() const
 {
-    return 0;
+    return m_outputLevel;
 }
 
 APUNES::APUNES(SystemIOBus& bus)
@@ -598,9 +613,7 @@ float APUNES::OutputValue()
     float fPulse = 0.00752f * (fPulse1 + fPulse2);
     float fTND = 0.00851f * fTriangle + 0.00494f * fNoise + 0.00335f * fDMC;
 
-    float fSample = fPulse + fTND;
-    //fSample = (fSample - 0.5f) * 2.f;
-    return fSample;
+    return fPulse + fTND;
 }
 
 void APUNES::QuarterFrameTick()

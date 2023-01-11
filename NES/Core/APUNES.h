@@ -178,7 +178,7 @@ private:
     // Main Timer
     uint8_t m_mode;
     uint16_t m_period;
-    uint8_t m_periodValue;
+    uint16_t m_periodValue;
     
     // Main counter
     uint8_t m_lengthCounter;
@@ -207,6 +207,19 @@ public:
     
     void Tick();
 private:
+
+    // Registers
+    uint8_t m_enabled;
+    uint8_t m_IRQEnabled;
+    uint8_t m_loop;
+    
+    uint16_t m_rate;
+    
+    uint16_t m_sampleAddress;
+    uint16_t m_sampleLength;
+    
+    // Channle Output - auto or directly set
+    uint8_t m_outputLevel;
 };
 
 class APUNES : public Serialisable
