@@ -42,6 +42,7 @@ enum RegisterID : uint16_t
 
 const uint8_t LENGTH_COUNTER_LUT[] = { 0,254, 20,  2, 40,  4, 80,  6, 160,  8, 60, 10, 14, 12, 26, 14, 12, 16, 24, 18, 48, 20, 96, 22, 192, 24, 72, 26, 16, 28, 32, 30 };
 const uint8_t TRIANGLE_SEQUENCE[] = {15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15};
+const uint16_t NOISE_PERIOD[] =  {4, 8, 16, 32, 64, 96, 128, 160, 202, 254, 380, 508, 762, 1016, 2034, 4068};
 
 APUPulseChannel::APUPulseChannel(uint16_t sweepNegateComplement)
 : m_dutyCycle(0)
@@ -357,6 +358,151 @@ void APUTriangleChannel::Tick()
     }
 }
 
+APUNoiseChannel::APUNoiseChannel()
+: m_lengthCounterHaltOrEnvelopeLoop(0)
+, m_volume_ConstantOrEnvelope(0)
+, m_volume_LevelOrEnvelopeDividerPeriod(0)
+, m_mode(0)
+, m_period(0)
+, m_periodValue(0)
+, m_lengthCounter(0)
+, m_envelopeStartFlag(0)
+, m_envelopeDivider(0)
+, m_envelopeDecayLevelCounter(0)
+, m_linearFeedbackShift(1)
+{}
+
+void APUNoiseChannel::Load(Archive& rArchive)
+{
+
+}
+
+void APUNoiseChannel::Save(Archive& rArchive)
+{
+
+}
+
+uint8_t APUNoiseChannel::IsEnabled() const
+{
+    return m_lengthCounter > 0;
+}
+
+void APUNoiseChannel::SetEnabled(uint8_t bEnabled)
+{
+    if(!bEnabled)
+    {
+        m_lengthCounter = 0;
+    }
+}
+
+void APUNoiseChannel::SetRegister(uint16_t reg, uint8_t byte)
+{
+    if(reg == 0)
+    {
+        // --LC VVVV
+        m_lengthCounterHaltOrEnvelopeLoop = (byte >> 5) & 0b1;
+        m_volume_ConstantOrEnvelope = (byte >> 4) & 0b1;;
+        m_volume_LevelOrEnvelopeDividerPeriod = byte & 0b1111;
+    }
+    else if(reg == 1)
+    {
+        // Nothing
+    }
+    else if(reg == 2)
+    {
+        // M---- PPPP
+        m_mode = (byte >> 7) & 0b1;
+        m_periodValue = byte & 0b1111;
+        m_periodValue = NOISE_PERIOD[m_periodValue];
+    }
+    else if(reg == 3)
+    {
+        // LLLL L---
+        m_lengthCounter = (byte >> 3) & 0b11111;
+        m_lengthCounter = LENGTH_COUNTER_LUT[m_lengthCounter];
+        m_envelopeStartFlag = 1;
+        //m_linearFeedbackShift = 1;
+    }
+}
+
+void APUNoiseChannel::QuarterFrameTick()
+{
+    if(m_envelopeStartFlag == 1)
+    {
+        m_envelopeStartFlag = 0;
+        m_envelopeDecayLevelCounter = 15;
+        m_envelopeDivider = m_volume_LevelOrEnvelopeDividerPeriod + 1;
+    }
+    else
+    {
+        if(m_envelopeDivider > 0)
+        {
+            --m_envelopeDivider;
+        }
+        else
+        {
+            m_envelopeDivider = m_volume_LevelOrEnvelopeDividerPeriod + 1;
+
+            if(m_envelopeDecayLevelCounter > 0)
+            {
+                --m_envelopeDecayLevelCounter;
+            }
+            else if(m_lengthCounterHaltOrEnvelopeLoop == 1)
+            {
+                m_envelopeDecayLevelCounter = 15;
+            }
+        }
+    }
+}
+
+void APUNoiseChannel::HalfFrameTick()
+{
+    if(m_lengthCounter > 0 && m_lengthCounterHaltOrEnvelopeLoop == 0)
+    {
+        --m_lengthCounter;
+    }
+}
+
+void APUNoiseChannel::Tick()
+{
+    if(IsEnabled())
+    {
+        if(m_period > 0)
+        {
+            m_period = m_period - 1;
+        }
+        else
+        {
+            m_period = m_periodValue + 1;
+            
+            uint16_t modeBit = m_mode ? 6 : 1;
+            uint16_t feedback = (m_linearFeedbackShift & 0b1) ^ ((m_linearFeedbackShift >> modeBit) & 0b1);
+            m_linearFeedbackShift >>= 1;
+            m_linearFeedbackShift |= feedback << 14;
+        }
+    }
+}
+
+uint8_t APUNoiseChannel::OutputValue() const
+{
+    uint8_t output = 0;
+    
+    if(m_lengthCounter > 0 && (m_linearFeedbackShift & 0b1) != 0)
+    {
+        // Constant volume or decay
+        if(m_volume_ConstantOrEnvelope == 1)
+        {
+            output = m_volume_LevelOrEnvelopeDividerPeriod;
+        }
+        else
+        {
+            output = m_envelopeDecayLevelCounter;
+        }
+    }
+    
+    return output;
+}
+
 APUNES::APUNES(SystemIOBus& bus)
 : m_bus(bus)
 , m_frameCounter(0)
@@ -385,21 +531,21 @@ float APUNES::OutputValue()
     float fPulse1 = m_pulse1.OutputValue();
     float fPulse2 = m_pulse2.OutputValue();
     float fTriangle = m_triangle.OutputValue();
-    float fNoise = 0.f;
+    float fNoise = m_noise.OutputValue();
     float fDMC = 0.f;
     
-    //fPulse1 = 0.f;
-    //fPulse2 = 0.f;
-    //fTriangle = 0.f;
-    //fNoise = 0.f;
-    //fDMC = 0.f;
+//    fPulse1 = 0.f;
+//    fPulse2 = 0.f;
+//    fTriangle = 0.f;
+//    fNoise = 0.f;
+//    fDMC = 0.f;
     
     float fPulse = 0.00752f * (fPulse1 + fPulse2);
-    float fTND = 0.00851 * fTriangle + 0.00494 * fNoise + 0.00335 * fDMC;
+    float fTND = 0.00851f * fTriangle + 0.00494f * fNoise + 0.00335f * fDMC;
 
     float fSample = fPulse + fTND;
+    //fSample = (fSample - 0.5f) * 2.f;
     return fSample;
-    //return (fSample - 0.5f) * 2.f;
 }
 
 void APUNES::QuarterFrameTick()
@@ -408,6 +554,7 @@ void APUNES::QuarterFrameTick()
     m_pulse1.QuarterFrameTick();
     m_pulse2.QuarterFrameTick();
     m_triangle.QuarterFrameTick();
+    m_noise.QuarterFrameTick();
 }
 
 void APUNES::HalfFrameTick()
@@ -416,6 +563,7 @@ void APUNES::HalfFrameTick()
     m_pulse1.HalfFrameTick();
     m_pulse2.HalfFrameTick();
     m_triangle.HalfFrameTick();
+    m_noise.HalfFrameTick();
 }
 
 void APUNES::Tick()
@@ -430,6 +578,7 @@ void APUNES::Tick()
     {
         m_pulse1.Tick();
         m_pulse2.Tick();
+        m_noise.Tick();
     }
 
     // Ticked every CPU tick
@@ -508,8 +657,8 @@ uint8_t APUNES::cpuRead(uint16_t address)
         status |= m_pulse1.IsEnabled() << 0;
         status |= m_pulse2.IsEnabled() << 1;
         status |= m_triangle.IsEnabled() << 2;
-        
-        // TODO: Noise, DMC
+        status |= m_noise.IsEnabled() << 3;
+        // TODO: DMC
                 
         // Clear frame interrupt flag on read
         status |= m_frameCountModeAndInterrupt & (1 << 6);
@@ -542,10 +691,9 @@ void APUNES::cpuWrite(uint16_t address, uint8_t byte)
             m_triangle.SetRegister(address - 0x4008, byte);
             break;
         case NOISE_VOL:
-            break;
         case NOISE_LO:
-            break;
         case NOISE_HI:
+            m_noise.SetRegister(address - 0x400C, byte);
             break;
         case DMC_FREQ:
             break;
@@ -561,7 +709,8 @@ void APUNES::cpuWrite(uint16_t address, uint8_t byte)
             m_pulse1.SetEnabled((byte >> 0) & 0b1);
             m_pulse2.SetEnabled((byte >> 1) & 0b1);
             m_triangle.SetEnabled((byte >> 2) & 0b1);
-            // TODO: Noise, DMC
+            m_noise.SetEnabled((byte >> 3) & 0b1);
+            // TODO: DMC
             break;
         case FRAME_COUNTER:
             m_frameCountModeAndInterrupt = byte;

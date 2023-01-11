@@ -151,6 +151,47 @@ private:
     uint8_t m_sequenceIndex;
 };
 
+class APUNoiseChannel : public Serialisable
+{
+public:
+    SERIALISABLE_DECL
+    
+    APUNoiseChannel();
+    
+    uint8_t IsEnabled() const;
+    void SetEnabled(uint8_t bEnabled);
+
+    uint8_t OutputValue() const;
+    void SetRegister(uint16_t reg, uint8_t byte);
+    
+    void Tick();
+    void QuarterFrameTick();
+    void HalfFrameTick();
+
+private:
+
+    // Registers
+    uint8_t m_lengthCounterHaltOrEnvelopeLoop;
+    uint8_t m_volume_ConstantOrEnvelope;
+    uint8_t m_volume_LevelOrEnvelopeDividerPeriod;
+    
+    // Main Timer
+    uint8_t m_mode;
+    uint16_t m_period;
+    uint8_t m_periodValue;
+    
+    // Main counter
+    uint8_t m_lengthCounter;
+    
+    // Current Envelope state
+    uint8_t m_envelopeStartFlag;
+    uint8_t m_envelopeDivider;
+    uint8_t m_envelopeDecayLevelCounter;
+    
+    // Linear shift register
+    uint16_t m_linearFeedbackShift;
+};
+
 class APUNES : public Serialisable
 {
 public:
@@ -181,6 +222,7 @@ private:
     APUPulseChannel     m_pulse1;
     APUPulseChannel     m_pulse2;
     APUTriangleChannel  m_triangle;
+    APUNoiseChannel     m_noise;
     
     // Output
     APUAudioBuffer* m_pAudioBuffer;
