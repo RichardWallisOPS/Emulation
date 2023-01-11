@@ -192,6 +192,23 @@ private:
     uint16_t m_linearFeedbackShift;
 };
 
+class APUDMC : public Serialisable
+{
+public:
+    SERIALISABLE_DECL
+    
+    APUDMC();
+    
+    uint8_t IsEnabled() const;
+    void SetEnabled(uint8_t bEnabled);
+
+    uint8_t OutputValue() const;
+    void SetRegister(uint16_t reg, uint8_t byte);
+    
+    void Tick();
+private:
+};
+
 class APUNES : public Serialisable
 {
 public:
@@ -223,6 +240,7 @@ private:
     APUPulseChannel     m_pulse2;
     APUTriangleChannel  m_triangle;
     APUNoiseChannel     m_noise;
+    APUDMC              m_dmc;
     
     // Output
     APUAudioBuffer* m_pAudioBuffer;

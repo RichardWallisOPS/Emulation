@@ -503,6 +503,61 @@ uint8_t APUNoiseChannel::OutputValue() const
     return output;
 }
 
+APUDMC::APUDMC()
+{
+
+}
+
+void APUDMC::Load(Archive& rArchive)
+{
+
+}
+
+void APUDMC::Save(Archive& rArchive)
+{
+
+}
+
+uint8_t APUDMC::IsEnabled() const
+{
+    return 0;
+}
+
+void APUDMC::SetEnabled(uint8_t bEnabled)
+{
+    
+}
+
+void APUDMC::SetRegister(uint16_t reg, uint8_t byte)
+{
+    if(reg == 0)
+    {
+        // IL-- RRRR
+    }
+    else if(reg == 1)
+    {
+        // -DDD DDDD
+    }
+    else if(reg == 2)
+    {
+        // AAAA AAAA
+    }
+    else if(reg == 3)
+    {
+        // LLLL LLLL
+    }
+}
+
+void APUDMC::Tick()
+{
+
+}
+
+uint8_t APUDMC::OutputValue() const
+{
+    return 0;
+}
+
 APUNES::APUNES(SystemIOBus& bus)
 : m_bus(bus)
 , m_frameCounter(0)
@@ -532,7 +587,7 @@ float APUNES::OutputValue()
     float fPulse2 = m_pulse2.OutputValue();
     float fTriangle = m_triangle.OutputValue();
     float fNoise = m_noise.OutputValue();
-    float fDMC = 0.f;
+    float fDMC = m_dmc.OutputValue();
     
 //    fPulse1 = 0.f;
 //    fPulse2 = 0.f;
@@ -579,6 +634,7 @@ void APUNES::Tick()
         m_pulse1.Tick();
         m_pulse2.Tick();
         m_noise.Tick();
+        m_dmc.Tick();
     }
 
     // Ticked every CPU tick
@@ -658,8 +714,8 @@ uint8_t APUNES::cpuRead(uint16_t address)
         status |= m_pulse2.IsEnabled() << 1;
         status |= m_triangle.IsEnabled() << 2;
         status |= m_noise.IsEnabled() << 3;
-        // TODO: DMC
-                
+        status |= m_dmc.IsEnabled() << 4;
+
         // Clear frame interrupt flag on read
         status |= m_frameCountModeAndInterrupt & (1 << 6);
         m_frameCountModeAndInterrupt = m_frameCountModeAndInterrupt & (~(1 << 6));
@@ -696,12 +752,10 @@ void APUNES::cpuWrite(uint16_t address, uint8_t byte)
             m_noise.SetRegister(address - 0x400C, byte);
             break;
         case DMC_FREQ:
-            break;
         case DMC_RAW:
-            break;
         case DMC_START:
-            break;
         case DMC_LEN:
+            m_dmc.SetRegister(address - 0x4010, byte);
             break;
         case SND_CHN:
             // Sset status and enabled flags
@@ -710,7 +764,7 @@ void APUNES::cpuWrite(uint16_t address, uint8_t byte)
             m_pulse2.SetEnabled((byte >> 1) & 0b1);
             m_triangle.SetEnabled((byte >> 2) & 0b1);
             m_noise.SetEnabled((byte >> 3) & 0b1);
-            // TODO: DMC
+            m_dmc.SetEnabled((byte >> 4) & 0b1);
             break;
         case FRAME_COUNTER:
             m_frameCountModeAndInterrupt = byte;
