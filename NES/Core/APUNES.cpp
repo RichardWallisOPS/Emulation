@@ -504,17 +504,23 @@ uint8_t APUNoiseChannel::OutputValue() const
     return output;
 }
 
-APUDMC::APUDMC()
-: m_enabled(0)
+APUDMC::APUDMC(SystemIOBus& bus)
+: m_bus(bus)
+, m_enabled(0)
 , m_IRQEnabled(0)
 , m_loop(0)
 , m_rate(0)
+, m_rateValue(0)
 , m_sampleAddress(0)
 , m_sampleLength(0)
 , m_outputLevel(0)
-{
-
-}
+, m_sampleBuffer(0)
+, m_sampleBufferLoaded(0)
+, m_sampleShiftBits(0)
+, m_sampleBitsRemaining(0)
+, m_currentSampleAddress(0)
+, m_sampleLengthRemaining(0)
+{}
 
 void APUDMC::Load(Archive& rArchive)
 {
@@ -534,6 +540,18 @@ uint8_t APUDMC::IsEnabled() const
 void APUDMC::SetEnabled(uint8_t bEnabled)
 {
     m_enabled = bEnabled;
+    if(bEnabled)
+    {
+        if(m_sampleLengthRemaining == 0)
+        {
+            m_currentSampleAddress = m_sampleAddress;
+            m_sampleLengthRemaining = m_sampleLength;
+        }
+    }
+    else
+    {
+        m_sampleLengthRemaining = 0;
+    }
 }
 
 void APUDMC::SetRegister(uint16_t reg, uint8_t byte)
@@ -543,8 +561,8 @@ void APUDMC::SetRegister(uint16_t reg, uint8_t byte)
         // IL-- RRRR
         m_IRQEnabled = (byte >> 7) & 0b1;
         m_loop = (byte >> 6) & 0b1;
-        m_rate = byte & 0b1111;
-        m_rate = DMC_RATE[m_rate];
+        m_rateValue = byte & 0b1111;
+        m_rateValue = DMC_RATE[m_rateValue];
     }
     else if(reg == 1)
     {
@@ -565,7 +583,70 @@ void APUDMC::SetRegister(uint16_t reg, uint8_t byte)
 
 void APUDMC::Tick()
 {
-
+    if(m_rate > 0)
+    {
+        m_rate = m_rate - 1;
+    }
+    else
+    {
+        m_rate = m_rateValue + 1;
+        
+        if(m_sampleBitsRemaining > 0)
+        {
+            uint8_t sampleModulation = m_sampleShiftBits & 0b1;
+            
+            if(sampleModulation == 1 && m_outputLevel <= 125)
+            {
+                m_outputLevel += 2;
+            }
+            else if(sampleModulation == 0 && m_outputLevel >= 2)
+            {
+                m_outputLevel -= 2;
+            }
+            
+            --m_sampleBitsRemaining;
+            m_sampleShiftBits >>= 1;
+        }
+        else
+        {
+            if(m_sampleBufferLoaded)
+            {
+                m_sampleBufferLoaded = 0;
+                m_sampleBitsRemaining = 8;
+                m_sampleShiftBits = m_sampleBuffer;
+            }
+            else
+            {
+                m_enabled = 0;
+            }
+            
+            if(m_sampleLengthRemaining > 0)
+            {
+                m_sampleBuffer = m_bus.cpuRead(m_currentSampleAddress);
+                m_sampleBufferLoaded = 1;
+                
+                --m_sampleLengthRemaining;
+                ++m_currentSampleAddress;
+                
+                if(m_currentSampleAddress == 0x0000)
+                {
+                    m_currentSampleAddress = 0x8000;
+                }
+            }
+            else
+            {
+                if(m_loop == 1)
+                {
+                    m_currentSampleAddress = m_sampleAddress;
+                    m_sampleLengthRemaining = m_sampleLength;
+                }
+                else if(m_IRQEnabled)
+                {
+                    m_bus.SignalIRQ(true);
+                }
+            }
+        }
+    }
 }
 
 uint8_t APUDMC::OutputValue() const
@@ -578,7 +659,10 @@ APUNES::APUNES(SystemIOBus& bus)
 , m_frameCounter(0)
 , m_pulse1(1)
 , m_pulse2(0)
-, m_frameCountModeAndInterrupt(0)
+, m_triangle()
+, m_noise()
+, m_dmc(bus)
+, m_frameCountModeAndInterrupt(1 << 6)
 , m_pAudioBuffer(nullptr)
 , m_audioOutDataCounter(0)
 {}
@@ -671,8 +755,7 @@ void APUNES::Tick()
     }
     else if(frameCount == 14914 && halfFrame == 0 && bFrameModeStep4 && !bIRQInhibit)
     {
-        // TODO
-        //m_bus.SignalIRQ(true);
+        m_bus.SignalIRQ(true);
     }
     else if(frameCount == 14914 && halfFrame == 1 && bFrameModeStep4)
     {

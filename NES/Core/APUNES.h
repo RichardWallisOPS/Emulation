@@ -197,7 +197,7 @@ class APUDMC : public Serialisable
 public:
     SERIALISABLE_DECL
     
-    APUDMC();
+    APUDMC(SystemIOBus& bus);
     
     uint8_t IsEnabled() const;
     void SetEnabled(uint8_t bEnabled);
@@ -208,18 +208,30 @@ public:
     void Tick();
 private:
 
+    SystemIOBus& m_bus;
+
     // Registers
     uint8_t m_enabled;
     uint8_t m_IRQEnabled;
     uint8_t m_loop;
     
     uint16_t m_rate;
+    uint16_t m_rateValue;
     
     uint16_t m_sampleAddress;
     uint16_t m_sampleLength;
     
     // Channle Output - auto or directly set
     uint8_t m_outputLevel;
+    
+    // Emulation
+    uint8_t m_sampleBuffer;
+    uint8_t m_sampleBufferLoaded;
+    uint8_t m_sampleShiftBits;
+    uint8_t m_sampleBitsRemaining;
+    
+    uint16_t m_currentSampleAddress;
+    uint16_t m_sampleLengthRemaining;
 };
 
 class APUNES : public Serialisable
