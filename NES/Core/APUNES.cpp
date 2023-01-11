@@ -567,7 +567,8 @@ void APUDMC::SetRegister(uint16_t reg, uint8_t byte)
     else if(reg == 1)
     {
         // -DDD DDDD
-        m_outputLevel = byte & 0b01111111;
+        // TODO fix popping
+        //m_outputLevel = byte & 0b01111111;
     }
     else if(reg == 2)
     {

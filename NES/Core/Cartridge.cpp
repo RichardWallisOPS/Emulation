@@ -215,101 +215,106 @@ void Cartridge::Load(Archive& rArchive)
     
     // TODO: When or if required
     // m_cartVRAM
-    
+    if(m_pMapper != nullptr)
     {
-        uint32_t prgRamSize = 0;
-        rArchive >> prgRamSize;
-        
-        if(m_pCartPRGRAM != nullptr && prgRamSize > 0 && prgRamSize == m_pMapper->GetPrgRamSize())
         {
-            rArchive.ReadBytes(m_pCartPRGRAM, prgRamSize);
-        }
-#if DEBUG
-        else if(prgRamSize > 0)
-        {
-            // Something has gone wrong
-            *(volatile char*)(0) = 'C' | 'A' | 'R' | 'T';
-        }
-#endif
-    }
-    
-    {
-        uint32_t chrRamSize = 0;
-        rArchive >> chrRamSize;
-        
-        if(m_pCartCHRRAM != nullptr && chrRamSize > 0 && chrRamSize == m_pMapper->GetChrRamSize())
-        {
-            rArchive.ReadBytes(m_pCartCHRRAM, chrRamSize);
-        }
-#if DEBUG
-        else if(chrRamSize > 0)
-        {
-            // Something has gone wrong
-            *(volatile char*)(0) = 'C' | 'A' | 'R' | 'T';
-        }
-#endif
-    }
-
-    {
-        uint8_t mapperInfo = 0;
-        rArchive >> mapperInfo;
-        
-        if(mapperInfo == kArchiveSentinalHasData)
-        {
-            // We should already have a mapper object - History or Saved Data
-            // Mappers don't handle memory, just offsets into this carts memory
-            if(m_pMapper != nullptr)
+            uint32_t prgRamSize = 0;
+            rArchive >> prgRamSize;
+            
+            if(m_pCartPRGRAM != nullptr && prgRamSize > 0 && prgRamSize == m_pMapper->GetPrgRamSize())
             {
-                m_pMapper->Load(rArchive);
+                rArchive.ReadBytes(m_pCartPRGRAM, prgRamSize);
             }
-#if DEBUG
-            else
+    #if DEBUG
+            else if(prgRamSize > 0)
             {
+                // Something has gone wrong
                 *(volatile char*)(0) = 'C' | 'A' | 'R' | 'T';
             }
-#endif
+    #endif
+        }
+        
+        {
+            uint32_t chrRamSize = 0;
+            rArchive >> chrRamSize;
+            
+            if(m_pCartCHRRAM != nullptr && chrRamSize > 0 && chrRamSize == m_pMapper->GetChrRamSize())
+            {
+                rArchive.ReadBytes(m_pCartCHRRAM, chrRamSize);
+            }
+    #if DEBUG
+            else if(chrRamSize > 0)
+            {
+                // Something has gone wrong
+                *(volatile char*)(0) = 'C' | 'A' | 'R' | 'T';
+            }
+    #endif
+        }
+
+        {
+            uint8_t mapperInfo = 0;
+            rArchive >> mapperInfo;
+            
+            if(mapperInfo == kArchiveSentinalHasData)
+            {
+                // We should already have a mapper object - History or Saved Data
+                // Mappers don't handle memory, just offsets into this carts memory
+                if(m_pMapper != nullptr)
+                {
+                    m_pMapper->Load(rArchive);
+                }
+    #if DEBUG
+                else
+                {
+                    *(volatile char*)(0) = 'C' | 'A' | 'R' | 'T';
+                }
+    #endif
+            }
         }
     }
 }
 
 void Cartridge::Save(Archive& rArchive)
 {
-    if(rArchive.GetArchiveMode() == ArchiveMode_Persistent)
-    {
-        uint32_t pathLen = (uint32_t)strlen(m_pCartPath);
-        rArchive << pathLen;
-        rArchive.WriteBytes(m_pCartPath, pathLen);
-    }
-    
-    // TODO: When or if required
-    // m_cartVRAM
-    
-    {
-        uint32_t prgRamSize = m_pMapper->GetPrgRamSize();
-        rArchive << prgRamSize;
-        if(m_pCartPRGRAM != nullptr && prgRamSize > 0)
-        {
-            rArchive.WriteBytes(m_pCartPRGRAM, prgRamSize);
-        }
-    }
-    
-    {
-        uint32_t chrRamSize = m_pMapper->GetChrRamSize();
-        rArchive << chrRamSize;
-        if(m_pCartCHRRAM != nullptr && chrRamSize > 0)
-        {
-            rArchive.WriteBytes(m_pCartCHRRAM, chrRamSize);
-        }
-    }
-
     if(m_pMapper != nullptr)
     {
-        rArchive << kArchiveSentinalHasData;
-        m_pMapper->Save(rArchive);
-    }
-    else
-    {
-        rArchive << kArchiveSentinalNoData;
+        if(rArchive.GetArchiveMode() == ArchiveMode_Persistent)
+        {
+            uint32_t pathLen = (uint32_t)strlen(m_pCartPath);
+            rArchive << pathLen;
+            rArchive.WriteBytes(m_pCartPath, pathLen);
+        }
+        
+        // TODO: When or if required
+        // m_cartVRAM
+        
+        {
+            uint32_t prgRamSize = m_pMapper->GetPrgRamSize();
+            rArchive << prgRamSize;
+            if(m_pCartPRGRAM != nullptr && prgRamSize > 0)
+            {
+                rArchive.WriteBytes(m_pCartPRGRAM, prgRamSize);
+            }
+        }
+        
+        {
+            uint32_t chrRamSize = m_pMapper->GetChrRamSize();
+            rArchive << chrRamSize;
+            if(m_pCartCHRRAM != nullptr && chrRamSize > 0)
+            {
+                rArchive.WriteBytes(m_pCartCHRRAM, chrRamSize);
+            }
+        }
+
+        if(m_pMapper != nullptr)
+        {
+            rArchive << kArchiveSentinalHasData;
+            m_pMapper->Save(rArchive);
+        }
+        else
+        {
+            rArchive << kArchiveSentinalNoData;
+        }
     }
 }
 
