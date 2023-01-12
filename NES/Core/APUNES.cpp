@@ -688,15 +688,28 @@ float APUNES::OutputValue()
     float fTriangle = m_triangle.OutputValue();
     float fNoise = m_noise.OutputValue();
     float fDMC = m_dmc.OutputValue();
-    
-//    fPulse1 = 0.f;
-//    fPulse2 = 0.f;
-//    fTriangle = 0.f;
-//    fNoise = 0.f;
-//    fDMC = 0.f;
-    
+
+    // Debug duck a channel
+    // fPulse1 = 0.f;
+    // fPulse2 = 0.f;
+    // fTriangle = 0.f;
+    // fNoise = 0.f;
+    // fDMC = 0.f;
+
+#if 0
+    // Fast linear
     float fPulse = 0.00752f * (fPulse1 + fPulse2);
     float fTND = 0.00851f * fTriangle + 0.00494f * fNoise + 0.00335f * fDMC;
+#else
+    // Better but more expensive and still a bit approx
+    float fPulse = 95.88f / ((8128.f / (fPulse1 + fPulse2)) + 100.f);
+    float fTND = 159.79f / ((1.f / ((fTriangle / 8227.f) + (fNoise / 12241.f) + (fDMC / 22638.f))) + 100.f);
+#endif
+
+    // TODO filters
+    // A first-order high-pass filter at 90 Hz
+    // Another first-order high-pass filter at 440 Hz
+    // A first-order low-pass filter at 14 kHz
 
     return fPulse + fTND;
 }

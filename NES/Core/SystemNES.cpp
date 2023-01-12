@@ -4,7 +4,6 @@
 //
 //  Created by richardwallis on 15/11/2022.
 //
-// All implementation info taken from https://www.nesdev.org/ with thanks
 //
 
 #include "SystemNES.h"

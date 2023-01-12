@@ -4,6 +4,12 @@
 //
 //  Created by richardwallis on 15/11/2022.
 //
+// Thanks to https://www.nesdev.org/ and all the people who contributed to the information contained there.
+// All internal NES hardware info for this implementation taken from that source.  Again many thanks.
+// This implementation is my own take on that information.  The goal was to make it fairly accurate.
+// There are however some edge cases not accounted for. And there will be bugs!
+
+// Goal: Decently accurate emulation - don't sweat the tiny edge cases - but try to have most "Top 50" games "working" if possible.
 
 #ifndef SystemNES_h
 #define SystemNES_h
