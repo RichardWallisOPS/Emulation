@@ -17,7 +17,7 @@ void CartMapper_3::Load(Archive& rArchive)
     rArchive >> m_chrBankSelect;
 }
 
-void CartMapper_3::Save(Archive& rArchive)
+void CartMapper_3::Save(Archive& rArchive) const
 {
     rArchive << m_chrBankSelect;
 }

@@ -71,7 +71,7 @@ void SystemNES::Load(Archive& rArchive)
     m_apu.Load(rArchive);
 }
 
-void SystemNES::Save(Archive& rArchive)
+void SystemNES::Save(Archive& rArchive) const
 {
     if(m_pCart != nullptr)
     {

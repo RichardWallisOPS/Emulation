@@ -17,7 +17,7 @@ void CartMapper_2::Load(Archive& rArchive)
     rArchive >> m_prgBankSelect;
 }
 
-void CartMapper_2::Save(Archive& rArchive)
+void CartMapper_2::Save(Archive& rArchive) const
 {
     rArchive << m_prgBankSelect;
 }

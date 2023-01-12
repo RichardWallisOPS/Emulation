@@ -274,7 +274,7 @@ void Cartridge::Load(Archive& rArchive)
     }
 }
 
-void Cartridge::Save(Archive& rArchive)
+void Cartridge::Save(Archive& rArchive) const
 {
     if(m_pMapper != nullptr)
     {

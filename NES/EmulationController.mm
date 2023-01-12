@@ -30,6 +30,7 @@ volatile size_t m_readAudioBuffer = 0;
 volatile size_t m_writeAudioBuffer = 0;
 const size_t    m_audioBufferCount = 6;
 APUAudioBuffer  m_audioBuffers[m_audioBufferCount];
+const float     m_outputMixerVolume = 0.5;
 
 @implementation EmulationMetalView
 
@@ -341,7 +342,7 @@ id<MTLTexture>  m_emulationOutput[m_renderTextureCount];
             [self.audioEngine attachNode:self.audioSourceNode];
             [self.audioEngine connect:self.audioSourceNode to:self.audioEngine.mainMixerNode format:inputFormat];
             [self.audioEngine connect:self.audioEngine.mainMixerNode to:outputNode format:outputFormat];
-            self.audioEngine.mainMixerNode.outputVolume = 0.5f;
+            self.audioEngine.mainMixerNode.outputVolume = 0.f;
         }
     }
     
@@ -376,6 +377,11 @@ id<MTLTexture>  m_emulationOutput[m_renderTextureCount];
     // Rewind into archive history
     if(m_emulationDirection <= 0)
     {
+        if(self.audioEngine.mainMixerNode.outputVolume != 0)
+        {
+            self.audioEngine.mainMixerNode.outputVolume = 0.f;
+        }
+        
         ssize_t tmpArchiveIndex = m_archiveIndex == 0 ? m_kArchiveCount - 1 : m_archiveIndex - 1;
 
         if(tmpArchiveIndex != m_rewindStartIndex)
@@ -419,6 +425,7 @@ id<MTLTexture>  m_emulationOutput[m_renderTextureCount];
             {
                 NSLog(@"Failed to start audio engine");
             }
+            self.audioEngine.mainMixerNode.outputVolume = m_outputMixerVolume;
         }
     }
     
@@ -519,6 +526,11 @@ id<MTLTexture>  m_emulationOutput[m_renderTextureCount];
         m_ArchiveBuffer[m_archiveIndex].Reset();
         g_NESConsole.Save(m_ArchiveBuffer[m_archiveIndex]);
         m_archiveIndex = (m_archiveIndex + 1) % m_kArchiveCount;
+        
+        if(self.audioEngine.running && self.audioEngine.mainMixerNode.outputVolume <= 0.f)
+        {
+            self.audioEngine.mainMixerNode.outputVolume = m_outputMixerVolume;
+        }
     }
 }
 

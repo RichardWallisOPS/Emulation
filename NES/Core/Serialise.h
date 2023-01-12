@@ -66,7 +66,7 @@ public:
     size_t ByteCount() const {return m_writeHead;}
     
     bool Load(const char* pPath);
-    bool Save(const char* pPath);
+    bool Save(const char* pPath) const;
     
     // Saving
     template<typename T>
@@ -85,7 +85,7 @@ public:
         m_writeHead += objSize;
     }
     
-    void WriteBytes(void* pBytes, size_t count)
+    void WriteBytes(void const* pBytes, size_t count)
     {
         if(count + m_writeHead >= m_memSize)
         {
@@ -146,11 +146,11 @@ private:
 class Serialisable
 {
 public:
-    virtual void Load(Archive& rArchive) {}
-    virtual void Save(Archive& rArchive) {}
+    virtual void Load(Archive& rArchive)        {}
+    virtual void Save(Archive& rArchive) const  {}
 };
 
 #define SERIALISABLE_DECL   virtual void Load(Archive& rArchive) override; \
-                            virtual void Save(Archive& rArchive) override; \
+                            virtual void Save(Archive& rArchive) const override; \
 
 #endif /* Serialise_h */

@@ -68,12 +68,46 @@ APUPulseChannel::APUPulseChannel(uint16_t sweepNegateComplement)
 
 void APUPulseChannel::Load(Archive& rArchive)
 {
-
+    rArchive >> m_dutyCycle;
+    rArchive >> m_lengthCounterHaltOrEnvelopeLoop;
+    rArchive >> m_volume_ConstantOrEnvelope;
+    rArchive >> m_volume_LevelOrEnvelopeDividerPeriod;
+    rArchive >> m_sweepEnabled;
+    rArchive >> m_sweepPeriod;
+    rArchive >> m_sweepNegate;
+    rArchive >> m_sweepShift;
+    rArchive >> m_sweepNegateComplement;
+    rArchive >> m_timer;
+    rArchive >> m_timerValue;
+    rArchive >> m_currDutySequence;
+    rArchive >> m_lengthCounter;
+    rArchive >> m_envelopeStartFlag;
+    rArchive >> m_envelopeDivider;
+    rArchive >> m_envelopeDecayLevelCounter;
+    rArchive >> m_sweepReloadFlag;
+    rArchive >> m_sweepDivider;
 }
 
-void APUPulseChannel::Save(Archive& rArchive)
+void APUPulseChannel::Save(Archive& rArchive) const
 {
-
+    rArchive << m_dutyCycle;
+    rArchive << m_lengthCounterHaltOrEnvelopeLoop;
+    rArchive << m_volume_ConstantOrEnvelope;
+    rArchive << m_volume_LevelOrEnvelopeDividerPeriod;
+    rArchive << m_sweepEnabled;
+    rArchive << m_sweepPeriod;
+    rArchive << m_sweepNegate;
+    rArchive << m_sweepShift;
+    rArchive << m_sweepNegateComplement;
+    rArchive << m_timer;
+    rArchive << m_timerValue;
+    rArchive << m_currDutySequence;
+    rArchive << m_lengthCounter;
+    rArchive << m_envelopeStartFlag;
+    rArchive << m_envelopeDivider;
+    rArchive << m_envelopeDecayLevelCounter;
+    rArchive << m_sweepReloadFlag;
+    rArchive << m_sweepDivider;
 }
 
 uint8_t APUPulseChannel::IsEnabled() const
@@ -265,12 +299,26 @@ APUTriangleChannel::APUTriangleChannel()
 
 void APUTriangleChannel::Load(Archive& rArchive)
 {
-
+    rArchive >> m_timer;
+    rArchive >> m_timerValue;
+    rArchive >> m_lengthCounter;
+    rArchive >> m_linearCounter;
+    rArchive >> m_linearCounterReloadValue;
+    rArchive >> m_linearCounterReloadFlag;
+    rArchive >> m_controlFlag;
+    rArchive >> m_sequenceIndex;
 }
 
-void APUTriangleChannel::Save(Archive& rArchive)
+void APUTriangleChannel::Save(Archive& rArchive) const
 {
-
+    rArchive << m_timer;
+    rArchive << m_timerValue;
+    rArchive << m_lengthCounter;
+    rArchive << m_linearCounter;
+    rArchive << m_linearCounterReloadValue;
+    rArchive << m_linearCounterReloadFlag;
+    rArchive << m_controlFlag;
+    rArchive << m_sequenceIndex;
 }
     
 uint8_t APUTriangleChannel::IsEnabled() const
@@ -375,12 +423,32 @@ APUNoiseChannel::APUNoiseChannel()
 
 void APUNoiseChannel::Load(Archive& rArchive)
 {
-
+    rArchive >> m_lengthCounterHaltOrEnvelopeLoop;
+    rArchive >> m_volume_ConstantOrEnvelope;
+    rArchive >> m_volume_LevelOrEnvelopeDividerPeriod;
+    rArchive >> m_mode;
+    rArchive >> m_period;
+    rArchive >> m_periodValue;
+    rArchive >> m_lengthCounter;
+    rArchive >> m_envelopeStartFlag;
+    rArchive >> m_envelopeDivider;
+    rArchive >> m_envelopeDecayLevelCounter;
+    rArchive >> m_linearFeedbackShift;
 }
 
-void APUNoiseChannel::Save(Archive& rArchive)
+void APUNoiseChannel::Save(Archive& rArchive) const
 {
-
+    rArchive << m_lengthCounterHaltOrEnvelopeLoop;
+    rArchive << m_volume_ConstantOrEnvelope;
+    rArchive << m_volume_LevelOrEnvelopeDividerPeriod;
+    rArchive << m_mode;
+    rArchive << m_period;
+    rArchive << m_periodValue;
+    rArchive << m_lengthCounter;
+    rArchive << m_envelopeStartFlag;
+    rArchive << m_envelopeDivider;
+    rArchive << m_envelopeDecayLevelCounter;
+    rArchive << m_linearFeedbackShift;
 }
 
 uint8_t APUNoiseChannel::IsEnabled() const
@@ -524,17 +592,48 @@ APUDMC::APUDMC(SystemIOBus& bus)
 
 void APUDMC::Load(Archive& rArchive)
 {
-
+    rArchive >>  m_enabled;
+    rArchive >> m_IRQEnabled;
+    rArchive >> m_loop;
+    rArchive >> m_rate;
+    rArchive >> m_rateValue;
+    rArchive >> m_sampleAddress;
+    rArchive >> m_sampleLength;
+    rArchive >> m_outputLevel;
+    rArchive >> m_sampleBuffer;
+    rArchive >> m_sampleBufferLoaded;
+    rArchive >> m_sampleShiftBits;
+    rArchive >> m_sampleBitsRemaining;
+    rArchive >> m_currentSampleAddress;
+    rArchive >> m_sampleLengthRemaining;
 }
 
-void APUDMC::Save(Archive& rArchive)
+void APUDMC::Save(Archive& rArchive) const
 {
-
+    rArchive << m_enabled;
+    rArchive << m_IRQEnabled;
+    rArchive << m_loop;
+    rArchive << m_rate;
+    rArchive << m_rateValue;
+    rArchive << m_sampleAddress;
+    rArchive << m_sampleLength;
+    rArchive << m_outputLevel;
+    rArchive << m_sampleBuffer;
+    rArchive << m_sampleBufferLoaded;
+    rArchive << m_sampleShiftBits;
+    rArchive << m_sampleBitsRemaining;
+    rArchive << m_currentSampleAddress;
+    rArchive << m_sampleLengthRemaining;
 }
 
 uint8_t APUDMC::IsEnabled() const
 {
     return m_enabled;
+}
+
+uint8_t APUDMC::IsIRQEnabled() const
+{
+    return m_IRQEnabled;
 }
 
 void APUDMC::SetEnabled(uint8_t bEnabled)
@@ -567,8 +666,8 @@ void APUDMC::SetRegister(uint16_t reg, uint8_t byte)
     else if(reg == 1)
     {
         // -DDD DDDD
-        // TODO fix popping
-        //m_outputLevel = byte & 0b01111111;
+        // Slight popping when setting this during DMC playback
+        m_outputLevel = byte & 0b01111111;
     }
     else if(reg == 2)
     {
@@ -663,7 +762,8 @@ APUNES::APUNES(SystemIOBus& bus)
 , m_triangle()
 , m_noise()
 , m_dmc(bus)
-, m_frameCountModeAndInterrupt(1 << 6)
+, m_frameCountMode(0)
+, m_frameInhibitIRQ(1)
 , m_pAudioBuffer(nullptr)
 , m_audioOutDataCounter(0)
 {}
@@ -673,12 +773,26 @@ APUNES::~APUNES()
 
 void APUNES::Load(Archive& rArchive)
 {
-
+    rArchive >> m_frameCounter;
+    rArchive >> m_frameCountMode;
+    rArchive >> m_frameInhibitIRQ;
+    m_pulse1.Load(rArchive);
+    m_pulse2.Load(rArchive);
+    m_triangle.Load(rArchive);
+    m_noise.Load(rArchive);
+    m_dmc.Load(rArchive);
 }
 
-void APUNES::Save(Archive& rArchive)
+void APUNES::Save(Archive& rArchive) const
 {
-
+    rArchive << m_frameCounter;
+    rArchive << m_frameCountMode;
+    rArchive << m_frameInhibitIRQ;
+    m_pulse1.Save(rArchive);
+    m_pulse2.Save(rArchive);
+    m_triangle.Save(rArchive);
+    m_noise.Save(rArchive);
+    m_dmc.Save(rArchive);
 }
 
 float APUNES::OutputValue()
@@ -751,9 +865,6 @@ void APUNES::Tick()
     // Ticked every CPU tick
     m_triangle.Tick();
     
-    bool bFrameModeStep4 = (m_frameCountModeAndInterrupt & (1 << 7)) == 0;
-    bool bIRQInhibit = (m_frameCountModeAndInterrupt & (1 << 6)) != 0;
-    
     if(frameCount == 3728 && halfFrame == 1)
     {
         QuarterFrameTick();
@@ -767,16 +878,16 @@ void APUNES::Tick()
     {
         QuarterFrameTick();
     }
-    else if(frameCount == 14914 && halfFrame == 0 && bFrameModeStep4 && !bIRQInhibit)
+    else if(frameCount == 14914 && halfFrame == 0 && m_frameCountMode == 0 && m_frameInhibitIRQ == 0)
     {
         m_bus.SignalIRQ(true);
     }
-    else if(frameCount == 14914 && halfFrame == 1 && bFrameModeStep4)
+    else if(frameCount == 14914 && halfFrame == 1 && m_frameCountMode == 0)
     {
         QuarterFrameTick();
         HalfFrameTick();
     }
-    else if(frameCount == 14915 && bFrameModeStep4)
+    else if(frameCount == 14915 && m_frameCountMode == 0)
     {
         m_frameCounter = 0;
     }
@@ -826,9 +937,11 @@ uint8_t APUNES::cpuRead(uint16_t address)
         status |= m_noise.IsEnabled() << 3;
         status |= m_dmc.IsEnabled() << 4;
 
+        status |= m_frameInhibitIRQ << 6;
+        status |= m_dmc.IsIRQEnabled() << 7;
+
         // Clear frame interrupt flag on read
-        status |= m_frameCountModeAndInterrupt & (1 << 6);
-        m_frameCountModeAndInterrupt = m_frameCountModeAndInterrupt & (~(1 << 6));
+        m_frameInhibitIRQ = 0;
         
         return status;
     }
@@ -877,7 +990,14 @@ void APUNES::cpuWrite(uint16_t address, uint8_t byte)
             m_dmc.SetEnabled((byte >> 4) & 0b1);
             break;
         case FRAME_COUNTER:
-            m_frameCountModeAndInterrupt = byte;
+            // MI-- ----    M=0 4 step, M=1 5 Step
+            m_frameCountMode = (byte >> 7) & 0b1;
+            m_frameInhibitIRQ = (byte >> 6) & 0b1;
+            if(m_frameCountMode == 1)
+            {
+                QuarterFrameTick();
+                HalfFrameTick();
+            }
             break;
     }
 }

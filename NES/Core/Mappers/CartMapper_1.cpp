@@ -37,7 +37,7 @@ void CartMapper_1::Load(Archive& rArchive)
     rArchive >> m_prgBank;
 }
 
-void CartMapper_1::Save(Archive& rArchive)
+void CartMapper_1::Save(Archive& rArchive) const
 {
     rArchive << m_shiftRegister;
     rArchive << m_shiftCount;

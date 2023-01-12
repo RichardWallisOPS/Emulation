@@ -18,7 +18,7 @@ void CartMapper_66::Load(Archive& rArchive)
     rArchive >> m_bankSelect;
 }
 
-void CartMapper_66::Save(Archive& rArchive)
+void CartMapper_66::Save(Archive& rArchive) const
 {
     rArchive << m_bankSelect;
 }

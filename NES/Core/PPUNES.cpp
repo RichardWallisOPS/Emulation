@@ -124,7 +124,7 @@ void PPUNES::Load(Archive& rArchive)
     rArchive >> m_scanlineDot;
 }
 
-void PPUNES::Save(Archive& rArchive)
+void PPUNES::Save(Archive& rArchive) const
 {
     rArchive << m_mirrorMode;
     rArchive.WriteBytes(m_vram, nVRamSize);

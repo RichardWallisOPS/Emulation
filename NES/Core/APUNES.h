@@ -201,6 +201,7 @@ public:
     
     uint8_t IsEnabled() const;
     void SetEnabled(uint8_t bEnabled);
+    uint8_t IsIRQEnabled() const;
 
     uint8_t OutputValue() const;
     void SetRegister(uint16_t reg, uint8_t byte);
@@ -258,7 +259,8 @@ private:
     
     // Main system
     uint16_t m_frameCounter;
-    uint8_t m_frameCountModeAndInterrupt;
+    uint8_t m_frameCountMode;
+    uint8_t m_frameInhibitIRQ;
     
     // Channels
     APUPulseChannel     m_pulse1;

@@ -49,7 +49,7 @@ bool Archive::Load(const char* pPath)
     return m_writeHead > 0 && m_writeHead == m_memSize;
 }
 
-bool Archive::Save(const char* pPath)
+bool Archive::Save(const char* pPath) const
 {
     size_t bytesSaved = 0;
  

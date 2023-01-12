@@ -101,7 +101,7 @@ void CartMapper_4::Load(Archive& rArchive)
     rArchive >> m_cycleCount;
 }
 
-void CartMapper_4::Save(Archive& rArchive)
+void CartMapper_4::Save(Archive& rArchive) const
 {
     rArchive << m_bankSelect;
     rArchive << m_bankData;

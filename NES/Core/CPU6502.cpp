@@ -103,7 +103,7 @@ void CPU6502::Load(Archive& rArchive)
     rArchive >> m_bBranch;
 }
 
-void CPU6502::Save(Archive& rArchive)
+void CPU6502::Save(Archive& rArchive) const
 {
     rArchive << m_a;
     rArchive << m_x;
