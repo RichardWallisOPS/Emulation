@@ -19,6 +19,7 @@ public:
     APUAudioBuffer(size_t size = 48000 / 60)
     : m_bufferSize(size)
     , m_samplesWritten(0)
+    , m_bReverseFlag(false)
     {
         m_pBuffer = new float[m_bufferSize];
     }
@@ -53,6 +54,25 @@ public:
             m_pBuffer[m_samplesWritten++] = fSample;
         }
     }
+    void FillUnusedSamples()
+    {
+        if(m_samplesWritten > 0)
+        {
+            while(m_samplesWritten < m_bufferSize)
+            {
+                m_pBuffer[m_samplesWritten] = m_pBuffer[m_samplesWritten - 1];
+                ++m_samplesWritten;
+            }
+        }
+    }
+    void SetShouldReverseBuffer(bool bReverse)
+    {
+        m_bReverseFlag = bReverse;
+    }
+    bool ShouldReverseBuffer() const
+    {
+        return m_bReverseFlag;
+    }
     float* GetSampleBuffer()
     {
         return m_pBuffer;
@@ -62,6 +82,7 @@ private:
     float* m_pBuffer;
     size_t m_bufferSize;
     size_t m_samplesWritten;
+    bool   m_bReverseFlag;
 };
 
 class APUPulseChannel : public Serialisable

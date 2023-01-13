@@ -321,19 +321,31 @@ id<MTLTexture>  m_emulationOutput[m_renderTextureCount];
                     float* pOutputFloatBuffer = (float*)pOutputAudioBuffer->mData;
                     
                     APUAudioBuffer* pInputAudioBuffer = &m_audioBuffers[m_readAudioBuffer];
+                    pInputAudioBuffer->FillUnusedSamples();
+                    
                     float* pInputFloatBuffer = pInputAudioBuffer->GetSampleBuffer();
                     
-                    size_t targetSize = pInputAudioBuffer->GetBufferSize();
                     size_t samplesWritten = pInputAudioBuffer->GetSamplesWritten();
                     
-                    memcpy(pOutputFloatBuffer, pInputFloatBuffer, samplesWritten * sizeof(float));
-                    
-                    while(samplesWritten < targetSize)
+                    if(samplesWritten == frameCount)
                     {
-                        pOutputFloatBuffer[samplesWritten] = pOutputFloatBuffer[samplesWritten - 1];
-                        ++samplesWritten;
+                        if(pInputAudioBuffer->ShouldReverseBuffer())
+                        {
+                            for(size_t sampleIdx = 0;sampleIdx < samplesWritten;++sampleIdx)
+                            {
+                                pOutputFloatBuffer[sampleIdx] = pInputFloatBuffer[samplesWritten - sampleIdx - 1];
+                            }
+                        }
+                        else
+                        {
+                            memcpy(pOutputFloatBuffer, pInputFloatBuffer, samplesWritten * sizeof(float));
+                        }
                     }
-
+                    else
+                    {
+                        memset(pOutputFloatBuffer, 0x00, frameCount * sizeof(float));
+                    }
+                    
                     m_readAudioBuffer = (m_readAudioBuffer + 1) % m_audioBufferCount;
                 }
                 return 0;
@@ -377,11 +389,6 @@ id<MTLTexture>  m_emulationOutput[m_renderTextureCount];
     // Rewind into archive history
     if(m_emulationDirection <= 0)
     {
-        if(self.audioEngine.mainMixerNode.outputVolume != 0)
-        {
-            self.audioEngine.mainMixerNode.outputVolume = 0.f;
-        }
-        
         ssize_t tmpArchiveIndex = m_archiveIndex == 0 ? m_kArchiveCount - 1 : m_archiveIndex - 1;
 
         if(tmpArchiveIndex != m_rewindStartIndex)
@@ -401,13 +408,41 @@ id<MTLTexture>  m_emulationOutput[m_renderTextureCount];
         }
     }
     
+    //Update Audio level - silence when paused - otherwise normal
+    if(m_emulationDirection == 0)
+    {
+        if(self.audioEngine.mainMixerNode.outputVolume != 0)
+        {
+            self.audioEngine.mainMixerNode.outputVolume = 0.f;
+        }
+    }
+    else
+    {
+        if(self.audioEngine.running && self.audioEngine.mainMixerNode.outputVolume <= 0.f)
+        {
+            self.audioEngine.mainMixerNode.outputVolume = m_outputMixerVolume;
+        }
+    }
+    
     // Emulation ticks
     {
         // Set ouput buffers
         {
-            g_NESConsole.SetVideoOutputDataPtr((uint32_t*)currentTextureBacking.contents);
-            g_NESConsole.SetAudioOutputBuffer(&m_audioBuffers[m_writeAudioBuffer]);
-            m_writeAudioBuffer = (m_writeAudioBuffer + 1) % m_audioBufferCount;
+            // Video
+            {
+                g_NESConsole.SetVideoOutputDataPtr((uint32_t*)currentTextureBacking.contents);
+            }
+            
+            // Audio
+            {
+                APUAudioBuffer* pCurrentAudioBuffer = &m_audioBuffers[m_writeAudioBuffer];
+                
+                // Always update reverse flag for next buffer
+                pCurrentAudioBuffer->SetShouldReverseBuffer(m_emulationDirection < 0);
+                
+                g_NESConsole.SetAudioOutputBuffer(pCurrentAudioBuffer);
+                m_writeAudioBuffer = (m_writeAudioBuffer + 1) % m_audioBufferCount;
+            }
         }
         
         // Tick emulation
@@ -418,7 +453,7 @@ id<MTLTexture>  m_emulationOutput[m_renderTextureCount];
             g_NESConsole.Tick();
         }
         
-        // TODO Possible move this somewhere else....
+        // TODO: Move this somewhere else....
         if(!self.audioEngine.isRunning && m_writeAudioBuffer > 2)
         {
             if(![self.audioEngine startAndReturnError:nil])
@@ -429,7 +464,7 @@ id<MTLTexture>  m_emulationOutput[m_renderTextureCount];
         }
     }
     
-    // HAck to show visual rewind feedback - write it directly into the output texture for now
+    //Show visual rewind feedback - write it directly into the output texture for now
     if(m_emulationDirection <= 0)
     {
          --m_rewindCounter;
@@ -526,11 +561,6 @@ id<MTLTexture>  m_emulationOutput[m_renderTextureCount];
         m_ArchiveBuffer[m_archiveIndex].Reset();
         g_NESConsole.Save(m_ArchiveBuffer[m_archiveIndex]);
         m_archiveIndex = (m_archiveIndex + 1) % m_kArchiveCount;
-        
-        if(self.audioEngine.running && self.audioEngine.mainMixerNode.outputVolume <= 0.f)
-        {
-            self.audioEngine.mainMixerNode.outputVolume = m_outputMixerVolume;
-        }
     }
 }
 
