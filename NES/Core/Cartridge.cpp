@@ -403,13 +403,13 @@ void Cartridge::cpuWrite(uint16_t address, uint8_t byte)
 {
     if(m_pMapper != nullptr)
     {
-        return m_pMapper->cpuWrite(address, byte);
+        m_pMapper->cpuWrite(address, byte);
     }
 }
 
 uint8_t Cartridge::ppuRead(uint16_t address)
 {
-    if(address>= 0 && address <= 0x1FFF)
+    if(address >= 0 && address <= 0x1FFF)
     {
         if(m_pMapper != nullptr)
         {
@@ -426,7 +426,7 @@ uint8_t Cartridge::ppuRead(uint16_t address)
 
 void Cartridge::ppuWrite(uint16_t address, uint8_t byte)
 {
-    if(address>= 0 && address <= 0x1FFF)
+    if(address >= 0 && address <= 0x1FFF)
     {
         if(m_pMapper != nullptr)
         {
