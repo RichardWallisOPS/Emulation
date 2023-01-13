@@ -44,8 +44,11 @@ uint8_t CartMapper_2::cpuRead(uint16_t address)
 
 void CartMapper_2::cpuWrite(uint16_t address, uint8_t byte)
 {
-    uint16_t maxBanks = (m_nProgramSize / 0x4000);
-    m_prgBankSelect = byte & (maxBanks - 1);
+    if(address >= 0x8000 && address <= 0xFFFF)
+    {
+        uint16_t maxBanks = (m_nProgramSize / 0x4000);
+        m_prgBankSelect = byte & (maxBanks - 1);
+    }
 }
 
 uint8_t CartMapper_2::ppuRead(uint16_t address)
