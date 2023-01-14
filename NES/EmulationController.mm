@@ -44,107 +44,110 @@ uint8_t m_keyboardController[2] = {0 , 0};
 
 - (void) keyDown:(NSEvent *)event
 {
-    if(event.keyCode == 26)
+    if(!event.isARepeat)
     {
-        m_keyboardController[m_keyboardPort] |= 1 << SystemNES::Controller_Start;
-    }
-    else if(event.keyCode == 22)
-    {
-        m_keyboardController[m_keyboardPort] |= 1 << SystemNES::Controller_Select;
-    }
-    else if(event.keyCode == 31)
-    {
-        m_keyboardController[m_keyboardPort] |= 1 << SystemNES::Controller_B;
-    }
-    else if(event.keyCode == 35)
-    {
-        m_keyboardController[m_keyboardPort] |= 1 << SystemNES::Controller_A;
-    }
-    else if(event.keyCode == 2)
-    {
-        m_keyboardController[m_keyboardPort] |= 1 << SystemNES::Controller_Right;
-    }
-    else if(event.keyCode == 0)
-    {
-        m_keyboardController[m_keyboardPort] |= 1 << SystemNES::Controller_Left;
-    }
-    else if(event.keyCode == 1)
-    {
-        m_keyboardController[m_keyboardPort] |= 1 << SystemNES::Controller_Down;
-    }
-    else if(event.keyCode == 13)
-    {
-        m_keyboardController[m_keyboardPort] |= 1 << SystemNES::Controller_Up;
-    }
-    else if(event.keyCode == 125)   // down - save into file
-    {
-        NSProcessInfo* process = [NSProcessInfo processInfo];
-        NSArray* arguments = [process arguments];
-            
-        if(arguments.count > 1)
+        if(event.keyCode == 26)
         {
-            Archive archive(ArchiveMode_Persistent);
-            g_NESConsole.Save(archive);
-            NSString* cartPath = arguments[1];
-            NSString* savePath = [cartPath stringByAppendingString:@".SAVE"];
-            archive.Save([savePath cStringUsingEncoding:NSUTF8StringEncoding]);
+            m_keyboardController[m_keyboardPort] |= 1 << SystemNES::Controller_Start;
         }
-    }
-    else if(event.keyCode == 126) // up - load from file
-    {
-        NSProcessInfo* process = [NSProcessInfo processInfo];
-        NSArray* arguments = [process arguments];
-            
-        if(arguments.count > 1)
+        else if(event.keyCode == 22)
         {
-            Archive archive(ArchiveMode_Persistent);
-            NSString* cartPath = arguments[1];
-            NSString* loadPath = [cartPath stringByAppendingString:@".SAVE"];
-            
-            if(archive.Load([loadPath cStringUsingEncoding:NSUTF8StringEncoding]))
+            m_keyboardController[m_keyboardPort] |= 1 << SystemNES::Controller_Select;
+        }
+        else if(event.keyCode == 31)
+        {
+            m_keyboardController[m_keyboardPort] |= 1 << SystemNES::Controller_B;
+        }
+        else if(event.keyCode == 35)
+        {
+            m_keyboardController[m_keyboardPort] |= 1 << SystemNES::Controller_A;
+        }
+        else if(event.keyCode == 2)
+        {
+            m_keyboardController[m_keyboardPort] |= 1 << SystemNES::Controller_Right;
+        }
+        else if(event.keyCode == 0)
+        {
+            m_keyboardController[m_keyboardPort] |= 1 << SystemNES::Controller_Left;
+        }
+        else if(event.keyCode == 1)
+        {
+            m_keyboardController[m_keyboardPort] |= 1 << SystemNES::Controller_Down;
+        }
+        else if(event.keyCode == 13)
+        {
+            m_keyboardController[m_keyboardPort] |= 1 << SystemNES::Controller_Up;
+        }
+        else if(event.keyCode == 125)   // down - save into file
+        {
+            NSProcessInfo* process = [NSProcessInfo processInfo];
+            NSArray* arguments = [process arguments];
+                
+            if(arguments.count > 1)
             {
-                if(archive.ByteCount() > 0)
+                Archive archive(ArchiveMode_Persistent);
+                g_NESConsole.Save(archive);
+                NSString* cartPath = arguments[1];
+                NSString* savePath = [cartPath stringByAppendingString:@".SAVE"];
+                archive.Save([savePath cStringUsingEncoding:NSUTF8StringEncoding]);
+            }
+        }
+        else if(event.keyCode == 126) // up - load from file
+        {
+            NSProcessInfo* process = [NSProcessInfo processInfo];
+            NSArray* arguments = [process arguments];
+                
+            if(arguments.count > 1)
+            {
+                Archive archive(ArchiveMode_Persistent);
+                NSString* cartPath = arguments[1];
+                NSString* loadPath = [cartPath stringByAppendingString:@".SAVE"];
+                
+                if(archive.Load([loadPath cStringUsingEncoding:NSUTF8StringEncoding]))
                 {
-                    g_NESConsole.Load(archive);
-                    
-                    // Clear history on load
-                    m_emulationDirection = 1;
-                    m_archiveIndex = 0;
-                    m_rewindStartIndex = 0;
-                    for(size_t i = 0;i < m_kArchiveCount;++i)
+                    if(archive.ByteCount() > 0)
                     {
-                        m_ArchiveBuffer[i].Reset();
+                        g_NESConsole.Load(archive);
+                        
+                        // Clear history on load
+                        m_emulationDirection = 1;
+                        m_archiveIndex = 0;
+                        m_rewindStartIndex = 0;
+                        for(size_t i = 0;i < m_kArchiveCount;++i)
+                        {
+                            m_ArchiveBuffer[i].Reset();
+                        }
                     }
                 }
             }
         }
-    }
-    else if(event.keyCode == 124) // right
-    {
-
-    }
-    else if(event.keyCode == 123) // left - go back in time
-    {
-        if(m_emulationDirection > 0)
+        else if(event.keyCode == 124) // right
         {
-            m_emulationDirection = -1;
-            m_rewindCounter = m_kRewindFlashFrames;
-            m_rewindStartIndex = m_archiveIndex;
-        }
-    }
-    else if(event.keyCode == 49) // space
-    {
 
-    }
-    else if(event.keyCode == 36) // enter - swap keyboard for player 1<->2
-    {
-        m_keyboardController[m_keyboardPort] = 0;
-        m_keyboardPort = (m_keyboardPort + 1) % 2;
-        m_keyboardController[m_keyboardPort] = 0;
-    }
-    else if(event.keyCode == 53) // esc - console reset button
-    {
-         g_NESConsole.Reset();
+        }
+        else if(event.keyCode == 123) // left - go back in time
+        {
+            if(m_emulationDirection > 0)
+            {
+                m_emulationDirection = -1;
+                m_rewindCounter = m_kRewindFlashFrames;
+                m_rewindStartIndex = m_archiveIndex;
+            }
+        }
+        else if(event.keyCode == 49) // space
+        {
+
+        }
+        else if(event.keyCode == 36) // enter - swap keyboard for player 1<->2
+        {
+            m_keyboardController[m_keyboardPort] = 0;
+            m_keyboardPort = (m_keyboardPort + 1) % 2;
+            m_keyboardController[m_keyboardPort] = 0;
+        }
+        else if(event.keyCode == 53) // esc - console reset button
+        {
+             g_NESConsole.Reset();
+        }
     }
 }
 

@@ -592,19 +592,22 @@ void PPUNES::ppuWriteAddress(uint16_t address, uint8_t byte)
     }
     else if(address >= 0x3F00 && address <= 0x3FFF)
     {
+        // Pallete index is a 6 bit value
+        uint8_t palletteLUT = byte & 0b00111111;
         uint16_t palletteIndex = (address - 0x3F00) % nPalletteSize;
-        m_pallette[palletteIndex] = byte;
+        
+        m_pallette[palletteIndex] = palletteLUT;
         
         // $3F10/$3F14/$3F18/$3F1C <-Mirror-> $3F00/$3F04/$3F08/$3F0C - mirror writes to keep read simple
         if(palletteIndex == 0x0 || palletteIndex == 0x4 || palletteIndex == 0x8 || palletteIndex == 0xC)
         {
             palletteIndex += 0x10;
-            m_pallette[palletteIndex] = byte;
+            m_pallette[palletteIndex] = palletteLUT;
         }
         else if(palletteIndex == 0x10 || palletteIndex == 0x14 || palletteIndex == 0x18 || palletteIndex == 0x1C)
         {
             palletteIndex -= 0x10;
-            m_pallette[palletteIndex] = byte;
+            m_pallette[palletteIndex] = palletteLUT;
         }
     }
 }
