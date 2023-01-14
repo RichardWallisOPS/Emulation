@@ -653,6 +653,8 @@ void APUDMC::SetEnabled(uint8_t bEnabled)
     else
     {
         m_sampleLengthRemaining = 0;
+        m_sampleBufferLoaded = 0;
+        m_silence = 1;
     }
 }
 
@@ -717,7 +719,7 @@ void APUDMC::Tick()
             }
             
             // Loop - reload start sample address and length
-            if(m_sampleLengthRemaining == 0 && m_loop == 1)
+            if(m_sampleLengthRemaining == 0 && m_loop == 1 && m_enabled)
             {
                 m_currentSampleAddress = m_sampleAddress;
                 m_sampleLengthRemaining = m_sampleLength;
