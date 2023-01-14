@@ -582,6 +582,7 @@ APUDMC::APUDMC(SystemIOBus& bus)
 , m_sampleAddress(0)
 , m_sampleLength(0)
 , m_outputLevel(0)
+, m_silence(0)
 , m_sampleBuffer(0)
 , m_sampleBufferLoaded(0)
 , m_sampleShiftBits(0)
@@ -600,6 +601,7 @@ void APUDMC::Load(Archive& rArchive)
     rArchive >> m_sampleAddress;
     rArchive >> m_sampleLength;
     rArchive >> m_outputLevel;
+    rArchive >> m_silence;
     rArchive >> m_sampleBuffer;
     rArchive >> m_sampleBufferLoaded;
     rArchive >> m_sampleShiftBits;
@@ -618,6 +620,7 @@ void APUDMC::Save(Archive& rArchive) const
     rArchive << m_sampleAddress;
     rArchive << m_sampleLength;
     rArchive << m_outputLevel;
+    rArchive << m_silence;
     rArchive << m_sampleBuffer;
     rArchive << m_sampleBufferLoaded;
     rArchive << m_sampleShiftBits;
@@ -666,7 +669,8 @@ void APUDMC::SetRegister(uint16_t reg, uint8_t byte)
     else if(reg == 1)
     {
         // -DDD DDDD
-        // Slight popping when setting this during DMC playback
+        // Manually set 7-bit output value
+        // Can have slight popping when setting this during Auto DMC playback - seems intentional in games that do it
         m_outputLevel = byte & 0b01111111;
     }
     else if(reg == 2)
@@ -691,35 +695,35 @@ void APUDMC::Tick()
     {
         m_rate = m_rateValue + 1;
         
-        if(m_sampleBitsRemaining > 0)
+        if(m_sampleBitsRemaining == 0)
         {
-            uint8_t sampleModulation = m_sampleShiftBits & 0b1;
+            // Next cycle - this thing keeps running
+            m_sampleBitsRemaining = 8;
             
-            if(sampleModulation == 1 && m_outputLevel <= 125)
-            {
-                m_outputLevel += 2;
-            }
-            else if(sampleModulation == 0 && m_outputLevel >= 2)
-            {
-                m_outputLevel -= 2;
-            }
-            
-            --m_sampleBitsRemaining;
-            m_sampleShiftBits >>= 1;
-        }
-        else
-        {
+            // Load next delta sample buffer into sample shifter
             if(m_sampleBufferLoaded)
             {
+                m_silence = 0;
                 m_sampleBufferLoaded = 0;
-                m_sampleBitsRemaining = 8;
                 m_sampleShiftBits = m_sampleBuffer;
             }
             else
             {
-                m_enabled = 0;
+                m_silence = 1;
+                if(m_IRQEnabled)
+                {
+                    m_bus.SignalIRQ(true);
+                }
             }
             
+            // Loop - reload start sample address and length
+            if(m_sampleLengthRemaining == 0 && m_loop == 1)
+            {
+                m_currentSampleAddress = m_sampleAddress;
+                m_sampleLengthRemaining = m_sampleLength;
+            }
+            
+            // Fetch next sample
             if(m_sampleLengthRemaining > 0)
             {
                 m_sampleBuffer = m_bus.cpuRead(m_currentSampleAddress);
@@ -733,18 +737,27 @@ void APUDMC::Tick()
                     m_currentSampleAddress = 0x8000;
                 }
             }
-            else
+        }
+        
+        // Auto DMC Output unit
+        if(m_sampleBitsRemaining > 0)
+        {
+            if(!m_silence)
             {
-                if(m_loop == 1)
+                uint8_t sampleModulation = m_sampleShiftBits & 0b1;
+                
+                if(sampleModulation == 1 && m_outputLevel <= 125)
                 {
-                    m_currentSampleAddress = m_sampleAddress;
-                    m_sampleLengthRemaining = m_sampleLength;
+                    m_outputLevel += 2;
                 }
-                else if(m_IRQEnabled)
+                else if(sampleModulation == 0 && m_outputLevel >= 2)
                 {
-                    m_bus.SignalIRQ(true);
+                    m_outputLevel -= 2;
                 }
             }
+            
+            --m_sampleBitsRemaining;
+            m_sampleShiftBits >>= 1;
         }
     }
 }
@@ -804,11 +817,11 @@ float APUNES::OutputValue()
     float fDMC = m_dmc.OutputValue();
 
     // Debug duck a channel
-    // fPulse1 = 0.f;
-    // fPulse2 = 0.f;
-    // fTriangle = 0.f;
-    // fNoise = 0.f;
-    // fDMC = 0.f;
+//    fPulse1 = 0.f;
+//    fPulse2 = 0.f;
+//    fTriangle = 0.f;
+//    fNoise = 0.f;
+//    fDMC = 0.f;
 
 #if 0
     // Fast linear

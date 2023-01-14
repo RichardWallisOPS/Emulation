@@ -245,6 +245,7 @@ private:
     
     // Channle Output - auto or directly set
     uint8_t m_outputLevel;
+    uint8_t m_silence;
     
     // Emulation
     uint8_t m_sampleBuffer;
