@@ -210,7 +210,7 @@ void APUPulseChannel::HalfFrameTick()
         --m_lengthCounter;
     }
     
-    if(m_sweepEnabled)
+    if(m_sweepEnabled && m_sweepShift > 0)
     {
         uint16_t changeAmount = m_timerValue >> m_sweepShift;
         if(m_sweepNegate)
@@ -229,21 +229,21 @@ void APUPulseChannel::HalfFrameTick()
         {
             m_timerValue += changeAmount;
         }
-    }
-    
-    if(m_sweepEnabled && m_sweepDivider == 0)
-    {
-        m_timer = m_timerValue;
-    }
-    
-    if(m_sweepDivider == 0 || m_sweepReloadFlag == 1)
-    {
-        m_sweepDivider = m_sweepPeriod + 1;
-        m_sweepReloadFlag = 0;
-    }
-    else
-    {
-        --m_sweepDivider;
+        
+        if(m_sweepDivider == 0)
+        {
+            m_timer = m_timerValue;
+        }
+        
+        if(m_sweepDivider == 0 || m_sweepReloadFlag == 1)
+        {
+            m_sweepDivider = m_sweepPeriod + 1;
+            m_sweepReloadFlag = 0;
+        }
+        else
+        {
+            --m_sweepDivider;
+        }
     }
 }
 
