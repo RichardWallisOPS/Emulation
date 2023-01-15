@@ -712,7 +712,9 @@ void APUDMC::Tick()
             else
             {
                 m_silence = 1;
-                if(m_IRQEnabled)
+                
+                // Assume channel enabled AND IRQEnabled for IRQ
+                if(m_IRQEnabled && m_enabled)
                 {
                     m_bus.SignalIRQ(true);
                 }
