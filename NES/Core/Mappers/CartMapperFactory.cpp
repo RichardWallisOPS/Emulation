@@ -27,6 +27,9 @@ Mapper* Mapper::CreateMapper(SystemIOBus& bus, uint8_t mapperID,
 {
     Mapper* pMapper = nullptr;
     
+    // Mapper remap hacks
+    if(mapperID == 71) mapperID = 2;
+    
     if(mapperID == 0)
     {
         pMapper = CART_MAPPER(0);

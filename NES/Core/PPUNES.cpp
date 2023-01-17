@@ -1031,14 +1031,13 @@ uint8_t PPUNES::cpuRead(uint16_t address)
             break;
         case OAMDATA:   // 2004
         {
-            if(m_scanlineDot >= 1 && m_scanlineDot <= 64)
+            if(m_scanlineDot >= 1 && m_scanlineDot <= 320)
             {
-                // during init of sprite evaluation
-                data = m_portLatch = 0XFF;
+                data = m_portLatch = m_secondaryOAM[m_secondaryOAMWrite];
             }
             else
             {
-                data = m_portLatch = m_primaryOAM[m_oamAddress];
+                 data = m_portLatch = m_primaryOAM[m_oamAddress];
             }
             break;
         }

@@ -267,7 +267,7 @@ uint8_t APUPulseChannel::OutputValue() const
 {
     uint8_t output = 0;
     
-    if(m_lengthCounter > 0)
+    if(m_lengthCounter > 0 && m_timerValue > 8 && m_timerValue <= 0x7FF)
     {
         // Output is current MSB
         output = (m_currDutySequence >> 7) & 0b1;
