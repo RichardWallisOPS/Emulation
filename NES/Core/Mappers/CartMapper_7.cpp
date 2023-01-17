@@ -15,12 +15,12 @@ void CartMapper_7::Initialise()
 
 void CartMapper_7::Load(Archive& rArchive)
 {
-
+    rArchive >> m_prgBankSelect;
 }
 
 void CartMapper_7::Save(Archive& rArchive) const
 {
-
+    rArchive << m_prgBankSelect;
 }
 
 uint8_t CartMapper_7::cpuRead(uint16_t address)
