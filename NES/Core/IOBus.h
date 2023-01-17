@@ -31,7 +31,8 @@ enum MirrorMode : uint8_t
     VRAM_MIRROR_V,
     VRAM_MIRROR_CART4,
     
-    VRAM_MIRROR_SINGLE, // TODO: Not yet supported
+    VRAM_MIRROR_SINGLEA,
+    VRAM_MIRROR_SINGLEB
 };
 
 // Core System has extra features

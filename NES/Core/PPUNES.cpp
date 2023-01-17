@@ -878,6 +878,11 @@ void PPUNES::GenerateVideoPixel()
                 spritePalletteSelect = sprite.m_patternLatch;
                 bSpriteZero = sprite.m_spriteZero;
                 
+                // HACK: Battle toads hack!!!
+                if(sprite.m_spriteZero)
+                {
+                    SetFlag(STATUS_SPRITE0_HIT, m_status);
+                }
                 break;
             }
         }
@@ -965,6 +970,36 @@ uint16_t PPUNES::absoluteAddressToVRAMAddress(uint16_t address)
         {
             // no mirroring all exist on cart ram
             // does the cart handle the 0x3000 to 0x3EFF mirror?
+        }
+        else if(m_mirrorMode == VRAM_MIRROR_SINGLEA)
+        {
+            if(address >= 0x2400 && address <= 0x27FF)
+            {
+                address -= 0x0400;
+            }
+            else if(address >= 0x2800 && address <= 0x2BFF)
+            {
+                address -= 0x0800;
+            }
+            else if(address >= 0x2C00 && address <= 0x2FFF)
+            {
+                address -= 0x0C00;
+            }
+        }
+        else if(m_mirrorMode == VRAM_MIRROR_SINGLEB)
+        {
+            if(address >= 0x2000 && address <= 0x23FF)
+            {
+                address += 0x0400;
+            }
+            else if(address >= 0x2800 && address <= 0x2BFF)
+            {
+                address -= 0x0400;
+            }
+            else if(address >= 0x2C00 && address <= 0x2FFF)
+            {
+                address -= 0x0800;
+            }
         }
     }
     return address;
