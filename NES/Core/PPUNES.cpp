@@ -851,7 +851,8 @@ void PPUNES::GenerateVideoPixel()
     bool bSpriteZero = false;
     
     // Background
-    if(TestFlag(MASK_BACKGROUND_L8, m_mask) || (m_scanlineDot - 1) > 7)
+    if( TestFlag(MASK_BACKGROUND_SHOW, m_mask) &&
+        (TestFlag(MASK_BACKGROUND_L8, m_mask) || (m_scanlineDot - 1) > 7))
     {
         uint8_t pixel0 = (m_bgPatternShift0 & (1 << (15 - m_fineX))) ? 1 : 0;
         uint8_t pixel1 = (m_bgPatternShift1 & (1 << (15 - m_fineX))) ? 1 : 0;
@@ -865,7 +866,8 @@ void PPUNES::GenerateVideoPixel()
     }
     
     // Sprite
-    if(TestFlag(MASK_SPRITE_L8, m_mask) || (m_scanlineDot - 1) > 7)
+    if( TestFlag(MASK_SPRITE_SHOW, m_mask) &&
+        (TestFlag(MASK_SPRITE_L8, m_mask) || (m_scanlineDot - 1) > 7))
     {
         for(uint8_t spriteIndex = 0;spriteIndex < 8;++spriteIndex)
         {
