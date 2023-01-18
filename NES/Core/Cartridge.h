@@ -16,6 +16,7 @@ class Mapper;
 class Cartridge : public IOBus, public Serialisable
 {
 public:
+    BUS_HEADER_DECL
     SERIALISABLE_DECL;
 
     Cartridge(SystemIOBus& bus, const char* pCartPath);
@@ -23,8 +24,6 @@ public:
     ~Cartridge();
     
     bool IsValid() const;
-
-    BUS_HEADER_DECL
     
 private:
 

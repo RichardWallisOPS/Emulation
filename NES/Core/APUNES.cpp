@@ -730,6 +730,7 @@ void APUDMC::Tick()
             // Fetch next sample
             if(m_sampleLengthRemaining > 0)
             {
+                // TODO: If required for better emulation stall CPU 
                 m_sampleBuffer = m_bus.cpuRead(m_currentSampleAddress);
                 m_sampleBufferLoaded = 1;
                 

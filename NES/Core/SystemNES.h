@@ -10,6 +10,9 @@
 // There are however some edge cases not accounted for. And there will be bugs!
 
 // Goal: Decently accurate emulation - don't sweat the tiny edge cases - but try to have most "Top 50" games "working" if possible.
+// Extra: Rather than virtual functions for my bus implementation it would be nice to emulate the bus and cartridge pins
+//        as is directly and send clock pulses to each system to update what goes on the pins.  Better for mappers/open bus/etc
+//        Only spotted this info on nesdev later on.  If I feel the need later, I'll make this change - might be fun....
 
 #ifndef SystemNES_h
 #define SystemNES_h
@@ -24,6 +27,7 @@
 class SystemNES : public SystemIOBus, public Serialisable
 {
 public:
+    BUS_HEADER_DECL
     SERIALISABLE_DECL
 
     enum ControllerButton : uint8_t
@@ -56,8 +60,6 @@ public:
     void PowerOn();
 
     void Tick();
-    
-    BUS_HEADER_DECL
         
     virtual void SignalReset(bool bSignal) override;
     virtual void SignalNMI(bool bSignal) override;
