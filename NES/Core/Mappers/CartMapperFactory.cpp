@@ -17,7 +17,7 @@
 #include "CartMapper_9.h"
 #include "CartMapper_66.h"
 
-#define CART_MAPPER(X) new CartMapper_##X(bus, pPrg, nProgramSize, pChr, nCharacterSize, pCartPRGRAM, nPrgRamSize, nNVPrgRamSize, pCartCHRRAM, nChrRamSize, nNVChrRamSize);
+#define CART_MAPPER(X) new CartMapper_##X(bus, pPrg, nProgramSize, pChr, nCharacterSize, pCartPRGRAM, nPrgRamSize, nNVPrgRamSize, pCartCHRRAM, nChrRamSize, nNVChrRamSize)
 
 Mapper* Mapper::CreateMapper(SystemIOBus& bus, uint8_t mapperID,
                                 uint8_t* pPrg, uint32_t nProgramSize,
@@ -27,41 +27,18 @@ Mapper* Mapper::CreateMapper(SystemIOBus& bus, uint8_t mapperID,
 {
     Mapper* pMapper = nullptr;
     
-    // Mapper remap hacks
+    // Mapper remap hack(s)
     if(mapperID == 71) mapperID = 2;
     
-    if(mapperID == 0)
-    {
-        pMapper = CART_MAPPER(0);
-    }
-    else if(mapperID == 1)
-    {
-        pMapper = CART_MAPPER(1);
-    }
-    else if(mapperID == 2)
-    {
-        pMapper = CART_MAPPER(2);
-    }
-    else if(mapperID == 3)
-    {
-        pMapper = CART_MAPPER(3);
-    }
-    else if(mapperID == 4)
-    {
-        pMapper = CART_MAPPER(4);
-    }
-    else if(mapperID == 7)
-    {
-        pMapper = CART_MAPPER(7);
-    }
-    else if(mapperID == 9)
-    {
-        pMapper = CART_MAPPER(9);
-    }
-    else if(mapperID == 66)
-    {
-        pMapper = CART_MAPPER(66);
-    }
+    // TODO: Better factory lookup - Templates/Create function pointers?
+    if(mapperID == 0)       pMapper = CART_MAPPER(0);
+    else if(mapperID == 1)  pMapper = CART_MAPPER(1);
+    else if(mapperID == 2)  pMapper = CART_MAPPER(2);
+    else if(mapperID == 3)  pMapper = CART_MAPPER(3);
+    else if(mapperID == 4)  pMapper = CART_MAPPER(4);
+    else if(mapperID == 7)  pMapper = CART_MAPPER(7);
+    else if(mapperID == 9)  pMapper = CART_MAPPER(9);
+    else if(mapperID == 66) pMapper = CART_MAPPER(66);
     
     if(pMapper != nullptr)
     {
