@@ -63,6 +63,7 @@ enum PortRegisterID : uint16_t
 
 PPUNES::PPUNES(SystemIOBus& bus)
 : m_bus(bus)
+, m_compatibiltyMode(0)
 , m_mirrorMode(VRAM_MIRROR_H)
 , m_secondaryOAMWrite(0)
 , m_spriteZero(0xFF)
@@ -74,6 +75,7 @@ PPUNES::PPUNES(SystemIOBus& bus)
 , m_ppuDataBuffer(0)
 , m_scanline(0)
 , m_scanlineDot(0)
+, m_nmiSurpress(0)
 , m_ppuAddress(0)
 , m_ppuTAddress(0)
 , m_ppuWriteToggle(0)
@@ -97,6 +99,7 @@ PPUNES::~PPUNES()
 
 void PPUNES::Load(Archive& rArchive)
 {
+    rArchive >> m_compatibiltyMode;
     rArchive >> m_mirrorMode;
     rArchive.ReadBytes(m_vram, nVRamSize);
     rArchive.ReadBytes(m_pallette, nPalletteSize);
@@ -122,10 +125,12 @@ void PPUNES::Load(Archive& rArchive)
     rArchive.ReadBytes(m_scanlineSprites, sizeof(ScanlineSprite) * 8);
     rArchive >> m_scanline;
     rArchive >> m_scanlineDot;
+    rArchive >> m_nmiSurpress;
 }
 
 void PPUNES::Save(Archive& rArchive) const
 {
+    rArchive << m_compatibiltyMode;
     rArchive << m_mirrorMode;
     rArchive.WriteBytes(m_vram, nVRamSize);
     rArchive.WriteBytes(m_pallette, nPalletteSize);
@@ -151,11 +156,24 @@ void PPUNES::Save(Archive& rArchive) const
     rArchive.WriteBytes(m_scanlineSprites, sizeof(ScanlineSprite) * 8);
     rArchive << m_scanline;
     rArchive << m_scanlineDot;
+    rArchive << m_nmiSurpress;
 }
 
 void PPUNES::SetVideoOutputDataPtr(uint32_t* pVideoOutData)
 {
     m_pVideoOutput = pVideoOutData;
+}
+
+void PPUNES::SetCompatabilityMode(uint8_t flag)
+{
+    if(flag == 0)
+    {
+        m_compatibiltyMode = 0;
+    }
+    else
+    {
+        m_compatibiltyMode |= flag;
+    }
 }
 
 void PPUNES::SetMirrorMode(MirrorMode mode)
@@ -190,6 +208,7 @@ void PPUNES::PowerOn()
     m_ppuDataBuffer = 0;
     m_scanline = 0;
     m_scanlineDot = 0;
+    m_nmiSurpress = 0;
     
     m_ppuTAddress = 0;
     m_ppuAddress = 0;
@@ -219,6 +238,7 @@ void PPUNES::Reset()
     m_ppuDataBuffer = 0;
     m_scanline = 0;
     m_scanlineDot = 0;
+    m_nmiSurpress = 0;
     
     m_ppuTAddress = 0;
     m_ppuAddress = 0;
@@ -238,6 +258,15 @@ void PPUNES::Reset()
 
 void PPUNES::Tick()
 {
+    if(m_nmiSurpress > 0)
+    {
+        --m_nmiSurpress;
+        if(m_nmiSurpress == 0)
+        {
+            m_bus.SignalNMI(true);
+        }
+    }
+    
     // VBlank set
     if(m_scanline == 241 && m_scanlineDot == 1)
     {
@@ -245,7 +274,14 @@ void PPUNES::Tick()
         
         if(TestFlag(CTRL_GEN_VBLANK_NMI, m_ctrl))
         {
-            m_bus.SignalNMI(true);
+            if(m_compatibiltyMode & CompatabilityModeFlag_NMI)
+            {
+                m_nmiSurpress = 1000;
+            }
+            else
+            {
+                m_bus.SignalNMI(true);
+            }
         }
     }
     
@@ -880,8 +916,7 @@ void PPUNES::GenerateVideoPixel()
                 spritePalletteSelect = sprite.m_patternLatch;
                 bSpriteZero = sprite.m_spriteZero;
                 
-                // HACK: Battle toads hack!!!
-                if(sprite.m_spriteZero)
+                if(sprite.m_spriteZero && (m_compatibiltyMode & CompatabilityModeFlag_SPRITE0))
                 {
                     SetFlag(STATUS_SPRITE0_HIT, m_status);
                 }

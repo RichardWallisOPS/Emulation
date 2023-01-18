@@ -25,6 +25,8 @@ public:
     
     bool IsValid() const;
     
+    uint16_t GetMapperID() const;
+    
 private:
 
     void Initialise(SystemIOBus& bus, const char* pCartPath);

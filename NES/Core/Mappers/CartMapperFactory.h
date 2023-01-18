@@ -14,12 +14,13 @@
 class Mapper : public IOBus, public Serialisable
 {
 public:
-    Mapper( SystemIOBus& bus,
+    Mapper( SystemIOBus& bus, uint16_t mapperID,
             uint8_t* pPrg, uint32_t nProgramSize,
             uint8_t* pChr, uint32_t nCharacterSize,
             uint8_t* pCartPRGRAM, uint32_t nPrgRamSize, uint32_t nNVPrgRamSize,
             uint8_t* pCartCHRRAM, uint32_t nChrRamSize, uint32_t nNVChrRamSize)
     : m_bus(bus)
+    , m_mapperID(mapperID)
     , m_pPrg(pPrg)
     , m_pChr(pChr)
     , m_nProgramSize(nProgramSize)
@@ -35,19 +36,21 @@ public:
     virtual ~Mapper() {}
     virtual void Initialise() {}
     
+    uint16_t GetMapperID() const     { return m_mapperID; }
+    
     // Return larger of the two
-    uint32_t GetPrgRamSize() const   { return m_nPrgRamSize > m_nNVPrgRamSize ? m_nPrgRamSize : m_nNVPrgRamSize;}
+    uint32_t GetPrgRamSize() const   { return m_nPrgRamSize > m_nNVPrgRamSize ? m_nPrgRamSize : m_nNVPrgRamSize; }
     
     // Just the Non volatile prg ram
-    uint32_t GetNVPrgRAMSize() const {return m_nNVPrgRamSize;}
+    uint32_t GetNVPrgRAMSize() const { return m_nNVPrgRamSize; }
     
     // Return larger of the two
-    uint32_t GetChrRamSize() const   { return m_nChrRamSize > m_nNVChrRamSize ? m_nChrRamSize : m_nNVChrRamSize;}
+    uint32_t GetChrRamSize() const   { return m_nChrRamSize > m_nNVChrRamSize ? m_nChrRamSize : m_nNVChrRamSize; }
     
     // Just the Non volatile chr ram
-    uint32_t GetNVChrRAMSize() const {return m_nNVChrRamSize;}
+    uint32_t GetNVChrRAMSize() const { return m_nNVChrRamSize; }
     
-    static Mapper* CreateMapper(SystemIOBus& bus, uint8_t mapperID,
+    static Mapper* CreateMapper(SystemIOBus& bus, uint16_t mapperID,
                                     uint8_t* pPrg, uint32_t nProgramSize,
                                     uint8_t* pChr, uint32_t nCharacterSize,
                                     uint8_t* pCartPRGRAM, uint32_t nPrgRamSize, uint32_t nNVPrgRamSize,
@@ -56,6 +59,8 @@ public:
 protected:
 
     SystemIOBus& m_bus;
+    
+    uint16_t    m_mapperID;
     
     uint8_t*    m_pPrg;
     uint8_t*    m_pChr;

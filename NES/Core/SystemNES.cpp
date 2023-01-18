@@ -140,7 +140,24 @@ bool SystemNES::InsertCartridge(const char* pCartPath)
     
     m_pCart = new Cartridge(*this, pCartPath);
     
-    return m_pCart != nullptr && m_pCart->IsValid();
+    if(m_pCart != nullptr)
+    {
+        // Workarounds for hard to emulate games - mapper 7 detection good enough for now
+        // Anything for a specific game will need something like cart data crc
+        {
+            uint8_t compatabilityFlag = 0;
+            uint16_t mapperID = m_pCart->GetMapperID();
+            if(mapperID == 7)
+            {
+                compatabilityFlag = CompatabilityModeFlag_NMI | CompatabilityModeFlag_SPRITE0;
+            }
+            m_ppu.SetCompatabilityMode(compatabilityFlag);
+        }
+        
+        return m_pCart->IsValid();
+    }
+    
+    return false;
 }
 
 void SystemNES::SignalReset(bool bSignal)

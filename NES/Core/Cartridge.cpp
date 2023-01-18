@@ -138,6 +138,12 @@ void Cartridge::Initialise(SystemIOBus& bus, const char* pCartPath)
         if(nNVChrRamSize <= 64) nNVChrRamSize = 0;
     }
     
+    // Homebrew support
+    if(nCharacterSize == 0 && nChrRamSize == 0 && nNVChrRamSize == 0)
+    {
+        nChrRamSize = 8192;
+    }
+    
     // Currently assume Volatile RAM OR Non-Volatile RAM but not both
     {
         uint32_t allocPrgRamSize = nPrgRamSize > nNVPrgRamSize ? nPrgRamSize : nNVPrgRamSize;
@@ -388,6 +394,15 @@ Cartridge::~Cartridge()
 bool Cartridge::IsValid() const
 {
     return m_pMapper != nullptr;
+}
+
+uint16_t Cartridge::GetMapperID() const
+{
+    if(m_pMapper != nullptr)
+    {
+        return m_pMapper->GetMapperID();
+    }
+    return 0xFFFF;
 }
 
 uint8_t Cartridge::cpuRead(uint16_t address)

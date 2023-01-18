@@ -40,7 +40,6 @@ void CartMapper_7::cpuWrite(uint16_t address, uint8_t byte)
         uint16_t maxBanks = (m_nProgramSize / 0x8000);
         m_prgBankSelect = (byte & 0b111) & maxBanks - 1;
         
-        
         uint8_t nameTableVRAMSelect = (byte >> 4) & 0b1;
         if(nameTableVRAMSelect == 0)
         {

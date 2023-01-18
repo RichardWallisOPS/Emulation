@@ -12,6 +12,13 @@
 #include "IOBus.h"
 #include "Serialise.h"
 
+// Workarounds for issues - i.e. failings in the emulation quality
+enum CompatabilityModeFlag
+{
+    CompatabilityModeFlag_NMI       = 1 << 0,       // Surpress NMI signal for some amount of ticks
+    CompatabilityModeFlag_SPRITE0   = 1 << 1,       // Flag sprite zero if drawn - ignore transparent logic vs bg
+};
+
 class PPUNES : public Serialisable
 {
 public:
@@ -34,6 +41,9 @@ public:
     
     // Expects a 256x240 RGBA8 pixel foramt data pointer
     void SetVideoOutputDataPtr(uint32_t* pVideoOutData);
+    
+    // flag = 0, clears all current set flags
+    void SetCompatabilityMode(uint8_t flag);
 
 private:
 
@@ -60,6 +70,11 @@ private:
     
 private:
     SystemIOBus& m_bus;
+    
+    // Signal for items that still need fixing correctly
+    uint8_t m_compatibiltyMode;
+    
+    // Current VRAM mirroring
     MirrorMode m_mirrorMode;
     
     // Nametable + Pallette RAM
@@ -107,6 +122,7 @@ private:
     // Emulation
     uint16_t m_scanline;
     uint16_t m_scanlineDot;
+    uint16_t m_nmiSurpress;
     
     // Output
     uint32_t* m_pVideoOutput;
