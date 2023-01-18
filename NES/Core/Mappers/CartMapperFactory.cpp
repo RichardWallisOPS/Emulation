@@ -38,16 +38,7 @@ Mapper* Mapper::CreateMapper(SystemIOBus& bus, uint8_t mapperID,
     else if(mapperID == 66) pMapper = CART_MAPPER(66);
     else if(mapperID == 71) pMapper = CART_MAPPER(2);   // TODO
     
-    if(pMapper != nullptr)
-    {
-        pMapper->Initialise();
-        
-        printf("Created cart mapper id = %d\n", mapperID);
-    }
-    else
-    {
-        printf("Cannot create cart mapper ID = %d\n", mapperID);
-    }
+    if(pMapper != nullptr)  pMapper->Initialise();
     
     return pMapper;
 }
