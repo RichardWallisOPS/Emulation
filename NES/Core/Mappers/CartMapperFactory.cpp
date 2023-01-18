@@ -27,9 +27,6 @@ Mapper* Mapper::CreateMapper(SystemIOBus& bus, uint8_t mapperID,
 {
     Mapper* pMapper = nullptr;
     
-    // Mapper remap hack(s)
-    if(mapperID == 71) mapperID = 2;
-    
     // TODO: Better factory lookup - Templates/Create function pointers?
     if(mapperID == 0)       pMapper = CART_MAPPER(0);
     else if(mapperID == 1)  pMapper = CART_MAPPER(1);
@@ -39,6 +36,7 @@ Mapper* Mapper::CreateMapper(SystemIOBus& bus, uint8_t mapperID,
     else if(mapperID == 7)  pMapper = CART_MAPPER(7);
     else if(mapperID == 9)  pMapper = CART_MAPPER(9);
     else if(mapperID == 66) pMapper = CART_MAPPER(66);
+    else if(mapperID == 71) pMapper = CART_MAPPER(2);   // TODO
     
     if(pMapper != nullptr)
     {
