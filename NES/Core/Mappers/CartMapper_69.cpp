@@ -300,11 +300,11 @@ void CartMapper_69::cpuWrite(uint16_t address, uint8_t byte)
     }
     else if(address >= 0xC000 && address <= 0xDFFF)
     {
-        // audio
+        // audio - Japan only - not implemented
     }
     else if(address >= 0xE000 && address <= 0xFFFF)
     {
-        // audio
+        // audio - Japan only - not implemented
     }
 }
 
