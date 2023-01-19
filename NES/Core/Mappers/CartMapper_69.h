@@ -17,6 +17,7 @@ public:
     MAPPER_HEADER_DECL
     SERIALISABLE_DECL
     
+    virtual void systemTick(uint64_t cycleCount) override;
 private:
 
     uint8_t m_cmdRegister;
@@ -42,6 +43,10 @@ private:
     uint8_t* m_chrBank5;
     uint8_t* m_chrBank6;
     uint8_t* m_chrBank7;
+    
+    uint8_t m_irqGenerate;
+    uint8_t m_irqCounterDecrement;
+    uint16_t m_irqCounter;
 
 };
 

@@ -16,6 +16,9 @@ public:
     BUS_HEADER_DECL
     MAPPER_HEADER_DECL
     SERIALISABLE_DECL
+    
+    virtual void systemTick(uint64_t cycleCount) override;
+    
 private:
     void MM3Signal(uint16_t address);
     
@@ -48,6 +51,7 @@ private:
     uint8_t m_lastA12;
     uint8_t m_delay;
     uint64_t m_cycleCount;
+    uint64_t m_systemCycleCount;
 };
 
 #endif /* CartMapper_4_h */

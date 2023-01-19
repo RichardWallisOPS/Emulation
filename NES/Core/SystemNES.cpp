@@ -180,11 +180,6 @@ void SystemNES::SetMirrorMode(MirrorMode mode)
     m_ppu.SetMirrorMode(mode);
 }
 
-uint64_t SystemNES::CycleCount() const
-{
-    return m_cycleCount;
-}
-
 void SystemNES::SetControllerBits(uint8_t port, uint8_t bits)
 {
     if(port == 0)
@@ -208,6 +203,12 @@ void SystemNES::Tick()
     if(m_bPowerOn)
     {
         ++m_cycleCount;
+        
+        if(m_pCart != nullptr)
+        {
+            m_pCart->systemTick(m_cycleCount);
+        }
+    
         {
             m_ppu.Tick();
         }

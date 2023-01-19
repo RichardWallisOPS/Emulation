@@ -405,6 +405,14 @@ uint16_t Cartridge::GetMapperID() const
     return 0xFFFF;
 }
 
+void Cartridge::systemTick(uint64_t cycleCount)
+{
+    if(m_pMapper != nullptr)
+    {
+        m_pMapper->systemTick(cycleCount);
+    }
+}
+
 uint8_t Cartridge::cpuRead(uint16_t address)
 {
     if(m_pMapper != nullptr)

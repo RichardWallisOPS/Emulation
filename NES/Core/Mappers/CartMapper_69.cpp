@@ -26,6 +26,10 @@ void CartMapper_69::Initialise()
     m_chrBank5 = &m_pChr[0x0400 * 5];
     m_chrBank6 = &m_pChr[0x0400 * 6];
     m_chrBank7 = &m_pChr[0x0400 * 7];
+    
+    m_irqGenerate = 0;
+    m_irqCounterDecrement = 0;
+    m_irqCounter = 0;
 }
 
 void CartMapper_69::Load(Archive& rArchive)
@@ -34,6 +38,9 @@ void CartMapper_69::Load(Archive& rArchive)
     rArchive >> m_paramRegister;
     rArchive >> m_prgBank0RAM;
     rArchive >> m_prgBank0RAMEnabled;
+    rArchive >> m_irqGenerate;
+    rArchive >> m_irqCounterDecrement;
+    rArchive >> m_irqCounter;
     
     {
         uint8_t* pBasePrgAddress = &m_pPrg[0];
@@ -42,7 +49,7 @@ void CartMapper_69::Load(Archive& rArchive)
         size_t offsetBank2 = 0;
         size_t offsetBank3 = 0;
         size_t offsetBank4 = 0;
-        rArchive >> offsetBank0;    // TODO
+        rArchive >> offsetBank0;
         rArchive >> offsetBank1;
         rArchive >> offsetBank2;
         rArchive >> offsetBank3;
@@ -52,6 +59,11 @@ void CartMapper_69::Load(Archive& rArchive)
         m_prgBank2 = pBasePrgAddress + offsetBank2;
         m_prgBank3 = pBasePrgAddress + offsetBank3;
         m_prgBank4 = pBasePrgAddress + offsetBank4;
+        
+        if(m_prgBank0RAM)
+        {
+            m_prgBank0 = m_pCartPRGRAM;
+        }
     }
 
     {
@@ -89,6 +101,9 @@ void CartMapper_69::Save(Archive& rArchive) const
     rArchive << m_paramRegister;
     rArchive << m_prgBank0RAM;
     rArchive << m_prgBank0RAMEnabled;
+    rArchive << m_irqGenerate;
+    rArchive << m_irqCounterDecrement;
+    rArchive << m_irqCounter;
     
     {
         uint8_t* pBasePrgAddress = &m_pPrg[0];
@@ -264,7 +279,40 @@ void CartMapper_69::cpuWrite(uint16_t address, uint8_t byte)
         else if(m_cmdRegister >= 0xD && m_cmdRegister <= 0xF)
         {
             // $D-F controls IRQ
-            // TODO IRQ
+            if(m_cmdRegister == 0xD)
+            {
+                m_irqGenerate = byte & 0b1;
+                m_irqCounterDecrement = (byte >> 7) & 0b1;
+                m_bus.SignalIRQ(false);
+            }
+            else if(m_cmdRegister == 0xE)
+            {
+                m_irqCounter = (m_irqCounter & 0xFF00) | uint16_t(byte);
+            }
+            else if(m_cmdRegister == 0xF)
+            {
+                m_irqCounter = (uint16_t(byte) << 8) | (m_irqCounter & 0x00FF);
+            }
+        }
+    }
+    else if(address >= 0xC000 && address <= 0xDFFF)
+    {
+        // audio
+    }
+    else if(address >= 0xE000 && address <= 0xFFFF)
+    {
+        // audio
+    }
+}
+
+void CartMapper_69::systemTick(uint64_t cycleCount)
+{
+    if(m_irqCounterDecrement && (cycleCount % 3) == 0)
+    {
+        --m_irqCounter;
+        if(m_irqCounter == 0xFFFF && m_irqGenerate)
+        {
+            m_bus.SignalIRQ(true);
         }
     }
 }

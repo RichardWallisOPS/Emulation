@@ -35,6 +35,7 @@ public:
     
     virtual ~Mapper() {}
     virtual void Initialise() {}
+    virtual void systemTick(uint64_t cycleCount) override {}
     
     uint16_t GetMapperID() const     { return m_mapperID; }
     

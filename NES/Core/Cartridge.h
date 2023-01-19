@@ -27,6 +27,8 @@ public:
     
     uint16_t GetMapperID() const;
     
+    virtual void systemTick(uint64_t cycleCount) override;
+    
 private:
 
     void Initialise(SystemIOBus& bus, const char* pCartPath);

@@ -18,6 +18,8 @@ public:
     virtual void cpuWrite(uint16_t address, uint8_t byte) = 0;
     virtual uint8_t ppuRead(uint16_t address) = 0;
     virtual void ppuWrite(uint16_t address, uint8_t byte) = 0;
+    
+    virtual void systemTick(uint64_t cycleCount) = 0;
 };
 
 #define BUS_HEADER_DECL     virtual uint8_t cpuRead(uint16_t address) override; \
@@ -43,7 +45,8 @@ public:
     virtual void SignalNMI(bool bSignal)        {}
     virtual void SignalIRQ(bool bSignal)        {}
     virtual void SetMirrorMode(MirrorMode mode) {}
-    virtual uint64_t CycleCount() const      { return 0; }
+    
+    virtual void systemTick(uint64_t cycleCount) override {}
 };
 
 #endif /* IOBus_h */

@@ -18,6 +18,7 @@ void CartMapper_4::Initialise()
     m_lastA12 = 0;
     m_delay = 0;    
     m_cycleCount = 0;
+    m_systemCycleCount = 0;
 
     m_prgBank0 = &m_pPrg[0];
     m_prgBank1 = &m_pPrg[0x2000];
@@ -95,6 +96,7 @@ void CartMapper_4::Load(Archive& rArchive)
     rArchive >> m_lastA12;
     rArchive >> m_delay;
     rArchive >> m_cycleCount;
+    rArchive >> m_systemCycleCount;
 }
 
 void CartMapper_4::Save(Archive& rArchive) const
@@ -141,6 +143,7 @@ void CartMapper_4::Save(Archive& rArchive) const
     rArchive << m_lastA12;
     rArchive << m_delay;
     rArchive << m_cycleCount;
+    rArchive << m_systemCycleCount;
 }
 
 uint8_t CartMapper_4::cpuRead(uint16_t address)
@@ -419,6 +422,11 @@ void CartMapper_4::ppuWrite(uint16_t address, uint8_t byte)
     }
 }
 
+void CartMapper_4::systemTick(uint64_t cycleCount)
+{
+    m_systemCycleCount = cycleCount;
+}
+
 void CartMapper_4::MM3Signal(uint16_t address)
 {
     uint8_t currentA12 = (address & (1 << 12)) >> 12;
@@ -426,7 +434,7 @@ void CartMapper_4::MM3Signal(uint16_t address)
     // We need to know how many cycles have passes since A12 went low
     if(m_lastA12 == 1 && currentA12 == 0)
     {
-        m_cycleCount = m_bus.CycleCount();
+        m_cycleCount = m_systemCycleCount;
     }
     
     if(m_delay > 0)
@@ -442,7 +450,7 @@ void CartMapper_4::MM3Signal(uint16_t address)
     }
 
     // Its gone high but also have enough cycles passed
-    if(m_lastA12 == 0 && currentA12 == 1 && m_bus.CycleCount() - m_cycleCount > 16)
+    if(m_lastA12 == 0 && currentA12 == 1 && m_systemCycleCount - m_cycleCount > 16)
     {
         if(m_scanlineReload)
         {
