@@ -189,12 +189,12 @@ uint8_t CartMapper_1::ppuRead(uint16_t address)
         // 2x 4k banks
         if(address >= 0x0000 && address <= 0x0FFF)
         {
-            uint32_t bankAddress = (m_chrBank0 * 0x1000) + address;
+            uint32_t bankAddress = (uint32_t(m_chrBank0) * 0x1000) + address;
             return m_pChr[bankAddress];
         }
         else if(address >= 0x1000 && address <= 0x1FFF)
         {
-            uint32_t bankAddress = (m_chrBank1 * 0x1000) + (address - 0x1000);
+            uint32_t bankAddress = (uint32_t(m_chrBank1) * 0x1000) + (address - 0x1000);
             return m_pChr[bankAddress];
         }
     }
@@ -203,7 +203,7 @@ uint8_t CartMapper_1::ppuRead(uint16_t address)
         // 1x 8k chunk
         if(address >= 0x0000 && address <= 0x1FFF)
         {
-            uint32_t bankAddress = ((m_chrBank0 >> 1) * 0x2000) + address;
+            uint32_t bankAddress = ((uint32_t(m_chrBank0) >> 1) * 0x2000) + address;
             return m_pChr[bankAddress];
         }
     }
@@ -220,12 +220,12 @@ void CartMapper_1::ppuWrite(uint16_t address, uint8_t byte)
         // 2x 4k banks
         if(address >= 0x0000 && address <= 0x0FFF)
         {
-            uint32_t bankAddress = (m_chrBank0 * 0x1000) + address;
+            uint32_t bankAddress = (uint32_t(m_chrBank0) * 0x1000) + address;
             m_pChr[bankAddress] = byte;
         }
         else if(address >= 0x1000 && address <= 0x1FFF)
         {
-            uint32_t bankAddress = (m_chrBank1 * 0x1000) + (address - 0x1000);
+            uint32_t bankAddress = (uint32_t(m_chrBank1) * 0x1000) + (address - 0x1000);
             m_pChr[bankAddress] = byte;
         }
     }
@@ -234,7 +234,7 @@ void CartMapper_1::ppuWrite(uint16_t address, uint8_t byte)
         // 1x 8k chunk
         if(address >= 0x0000 && address <= 0x1FFF)
         {
-            uint32_t bankAddress = ((m_chrBank0 >> 1) * 0x2000) + address;
+            uint32_t bankAddress = ((uint32_t(m_chrBank0) >> 1) * 0x2000) + address;
             m_pChr[bankAddress] = byte;
         }
     }

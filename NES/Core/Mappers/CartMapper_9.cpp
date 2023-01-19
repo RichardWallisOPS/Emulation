@@ -44,10 +44,10 @@ uint8_t CartMapper_9::cpuRead(uint16_t address)
 {
     // CPU $8000-$9FFF: 8 KB switchable PRG ROM bank
     // CPU $A000-$FFFF: Three 8 KB PRG ROM banks, fixed to the last three banks
-    const uint16_t bankSize = 0x2000;
+    const uint32_t bankSize = 0x2000;
     if(address >= 0x8000 && address <= 0x9FFF)
     {
-        return m_pPrg[(uint16_t(m_prgBankSelect) * bankSize) + (address - 0x8000)];
+        return m_pPrg[(uint32_t(m_prgBankSelect) * bankSize) + (address - 0x8000)];
     }
     else if(address >= 0xA000 && address <= 0xFFFF)
     {
@@ -101,22 +101,22 @@ uint8_t CartMapper_9::ppuRead(uint16_t address)
     {
         if(m_latch0 == 0xFD)
         {
-            byte = m_pChr[(0x1000 * m_chrBankSelect0) + (address - 0x0000)];
+            byte = m_pChr[(0x1000 * uint32_t(m_chrBankSelect0)) + (address - 0x0000)];
         }
         else if(m_latch0 == 0xFE)
         {
-            byte = m_pChr[(0x1000 * m_chrBankSelect1) + (address - 0x0000)];
+            byte = m_pChr[(0x1000 * uint32_t(m_chrBankSelect1)) + (address - 0x0000)];
         }
     }
     else if(address >= 0x1000 && address <= 0x1FFF)
     {
         if(m_latch1 == 0xFD)
         {
-            byte = m_pChr[(0x1000 * m_chrBankSelect2) + (address - 0x1000)];
+            byte = m_pChr[(0x1000 * uint32_t(m_chrBankSelect2)) + (address - 0x1000)];
         }
         else if(m_latch1 == 0xFE)
         {
-            byte = m_pChr[(0x1000 * m_chrBankSelect3) + (address - 0x1000)];
+            byte = m_pChr[(0x1000 * uint32_t(m_chrBankSelect3)) + (address - 0x1000)];
         }
     }
     // Latch updates
