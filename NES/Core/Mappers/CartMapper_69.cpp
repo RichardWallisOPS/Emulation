@@ -190,44 +190,47 @@ void CartMapper_69::cpuWrite(uint16_t address, uint8_t byte)
         {
             // $0-7 control CHR banking
             uint32_t chrBankSize = 0x0400;
+            uint32_t maxBanks = m_nCharacterSize / chrBankSize;
+            uint32_t bank = m_paramRegister & (maxBanks - 1);
             if(m_cmdRegister == 0x0)
             {
-                m_chrBank0 = &m_pChr[chrBankSize * m_paramRegister];
+                m_chrBank0 = &m_pChr[chrBankSize * bank];
             }
             else if(m_cmdRegister == 0x1)
             {
-                m_chrBank1 = &m_pChr[chrBankSize * m_paramRegister];
+                m_chrBank1 = &m_pChr[chrBankSize * bank];
             }
             else if(m_cmdRegister == 0x2)
             {
-                m_chrBank2 = &m_pChr[chrBankSize * m_paramRegister];
+                m_chrBank2 = &m_pChr[chrBankSize * bank];
             }
             else if(m_cmdRegister == 0x3)
             {
-                m_chrBank3 = &m_pChr[chrBankSize * m_paramRegister];
+                m_chrBank3 = &m_pChr[chrBankSize * bank];
             }
             else if(m_cmdRegister == 0x4)
             {
-                m_chrBank4 = &m_pChr[chrBankSize * m_paramRegister];
+                m_chrBank4 = &m_pChr[chrBankSize * bank];
             }
             else if(m_cmdRegister == 0x5)
             {
-                m_chrBank5 = &m_pChr[chrBankSize * m_paramRegister];
+                m_chrBank5 = &m_pChr[chrBankSize * bank];
             }
             else if(m_cmdRegister == 0x6)
             {
-                m_chrBank6 = &m_pChr[chrBankSize * m_paramRegister];
+                m_chrBank6 = &m_pChr[chrBankSize * bank];
             }
             else if(m_cmdRegister == 0x7)
             {
-                m_chrBank7 = &m_pChr[chrBankSize * m_paramRegister];
+                m_chrBank7 = &m_pChr[chrBankSize * bank];
             }
         }
         else if(m_cmdRegister >= 0x8 && m_cmdRegister <= 0xB)
         {
             // $8-B control PRG banking
-            uint32_t bank = m_paramRegister & 0b0011111111;
             uint32_t bankSize = 0x2000;
+            uint32_t maxBanks = m_nProgramSize / bankSize;
+            uint32_t bank = (m_paramRegister & 0b0011111111) & (maxBanks - 1);
             if(m_cmdRegister == 0x8)
             {
                 m_prgBank0RAM = (m_paramRegister >> 6) & 0b1;
@@ -310,7 +313,8 @@ void CartMapper_69::systemTick(uint64_t cycleCount)
     if(m_irqCounterDecrement && (cycleCount % 3) == 0)
     {
         --m_irqCounter;
-        if(m_irqCounter == 0xFFFF && m_irqGenerate)
+        // Should be 0xFFFF - but hold it back a bit
+        if(m_irqCounter == 0xFFF8 && m_irqGenerate)
         {
             m_bus.SignalIRQ(true);
         }

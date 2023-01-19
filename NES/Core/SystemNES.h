@@ -13,6 +13,8 @@
 // Extra: Rather than virtual functions for my bus implementation it would be nice to emulate the bus and cartridge pins
 //        as is directly and send clock pulses to each system to update what goes on the pins.  Better for mappers/open bus/etc
 //        Only spotted this info on nesdev later on.  If I feel the need later, I'll make this change - might be fun....
+// Extra2: Looking like NMI and IRQ signals should be held back some amount of ticks.  Must be as the H/W take time to pull the lines low
+//          Look at moving any wait logic into the System::SignalXXX() functiions before signaling the CPU
 
 #ifndef SystemNES_h
 #define SystemNES_h
