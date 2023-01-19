@@ -23,8 +23,6 @@ private:
 
     uint8_t m_bankSelect;
     uint8_t m_bankData;
-    uint8_t m_mirror;
-    uint8_t m_prgRamProtect;
     
     // 4x 8KB Program banks
     uint8_t* m_prgBank0;

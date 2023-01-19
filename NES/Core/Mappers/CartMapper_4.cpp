@@ -11,8 +11,6 @@ void CartMapper_4::Initialise()
 {
     m_bankSelect = 0;
     m_bankData = 0;
-    m_mirror = 0;
-    m_prgRamProtect = 0;
     m_scanlineLatch = 0;
     m_scanlineCounter = 0;
     m_scanlineEnable = 0;
@@ -45,8 +43,6 @@ void CartMapper_4::Load(Archive& rArchive)
 {
     rArchive >> m_bankSelect;
     rArchive >> m_bankData;
-    rArchive >> m_mirror;
-    rArchive >> m_prgRamProtect;
     
     {
         uint8_t* pBasePrgAddress = &m_pPrg[0];
@@ -105,8 +101,6 @@ void CartMapper_4::Save(Archive& rArchive) const
 {
     rArchive << m_bankSelect;
     rArchive << m_bankData;
-    rArchive << m_mirror;
-    rArchive << m_prgRamProtect;
     
     {
         uint8_t* pBasePrgAddress = &m_pPrg[0];
@@ -195,17 +189,17 @@ void CartMapper_4::cpuWrite(uint16_t address, uint8_t byte)
             // 0-5 chr select, 6-7 prg select
             if(registerSelect >= 0 && registerSelect <= 5)
             {
-                uint16_t chrBankSize = 0x0400;
+                uint32_t chrBankSize = 0x0400;
                 uint8_t chrBankMode = (m_bankSelect >> 7) & 1;
                 
-                uint8_t maxBanks = m_nCharacterSize / 0x0400;
-                uint16_t bankData = m_bankData % maxBanks;
+                uint32_t maxBanks = m_nCharacterSize / 0x0400;
+                uint32_t bankData = m_bankData % maxBanks;
 
                 if(chrBankMode == 0)
                 {
                     if(registerSelect == 0)
                     {
-                        uint16_t bankData2K = bankData & 0b11111110;
+                        uint32_t bankData2K = bankData & 0b11111110;
                         m_chrBank0 = &m_pChr[bankData2K * chrBankSize];
                         m_chrBank1 = m_chrBank0 + 0x0400;
                     }
@@ -236,13 +230,13 @@ void CartMapper_4::cpuWrite(uint16_t address, uint8_t byte)
                 {
                     if(registerSelect == 0)
                     {
-                        uint16_t bankData2K = bankData & 0b11111110;
+                        uint32_t bankData2K = bankData & 0b11111110;
                         m_chrBank4 = &m_pChr[bankData2K * 0x0400];
                         m_chrBank5 = m_chrBank4 + 0x0400;
                     }
                     else if(registerSelect == 1)
                     {
-                        uint16_t bankData2K = bankData & 0b11111110;
+                        uint32_t bankData2K = bankData & 0b11111110;
                         m_chrBank6 = &m_pChr[bankData2K * chrBankSize];
                         m_chrBank7 = m_chrBank6 + 0x0400;
                     }
@@ -266,10 +260,10 @@ void CartMapper_4::cpuWrite(uint16_t address, uint8_t byte)
             }
             else if(registerSelect >= 6 && registerSelect <= 7)
             {
-                uint16_t prgBankSize = 0x2000;
-                uint16_t bankData = m_bankData & 0b00111111;
+                uint32_t prgBankSize = 0x2000;
+                uint32_t bankData = m_bankData & 0b00111111;
                 
-                uint8_t maxBanks = m_nProgramSize / prgBankSize;
+                uint32_t maxBanks = m_nProgramSize / prgBankSize;
                 bankData = bankData % maxBanks;
 
                 uint8_t prgBankMode = (m_bankSelect >> 6) & 1;
@@ -307,7 +301,6 @@ void CartMapper_4::cpuWrite(uint16_t address, uint8_t byte)
         // mirroring
         if((address & 1) == 0)  // even registers
         {
-            m_mirror = byte;
             uint8_t mirrorMode = byte & 1;
             if(mirrorMode == 0)
             {
