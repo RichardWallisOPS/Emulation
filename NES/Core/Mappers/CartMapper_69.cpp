@@ -127,10 +127,14 @@ void CartMapper_69::Save(Archive& rArchive) const
 
 uint8_t CartMapper_69::cpuRead(uint16_t address)
 {
-    if(address >= 0x6000 && address <= 0x7FFF)
+    if(address >= 0x6000 && address <= 0x7FFF && m_prgBank0RAM && m_prgBank0RAMEnabled && m_pCartPRGRAM == m_prgBank0)
     {
-        // TODO prg ramcheck
+        // if ram is not enabled but bank 0 is ram then return open bus - not the ram bank data
         return m_prgBank0[address - 0x6000];
+    }
+    else if(address >= 0x6000 && address <= 0x7FFF && !m_prgBank0RAM)
+    {
+         return m_prgBank0[address - 0x6000];
     }
     else if(address >= 0x8000 && address <= 0x9FFF)
     {
@@ -155,8 +159,11 @@ void CartMapper_69::cpuWrite(uint16_t address, uint8_t byte)
 {
     // Command $8000-$9FFF
     // Parameter A000-$BFFF
-
-    if(address >= 0x8000 && address <= 0x9FFF)
+    if(address >= 0x6000 && address <= 0x7FFF && m_prgBank0RAM && m_prgBank0RAMEnabled && m_pCartPRGRAM == m_prgBank0)
+    {
+        m_prgBank0[address - 0x6000] = byte;
+    }
+    else if(address >= 0x8000 && address <= 0x9FFF)
     {
         m_cmdRegister = byte & 0b1111;
     }
@@ -204,13 +211,13 @@ void CartMapper_69::cpuWrite(uint16_t address, uint8_t byte)
         else if(m_cmdRegister >= 0x8 && m_cmdRegister <= 0xB)
         {
             // $8-B control PRG banking
-            m_prgBank0RAM = (m_paramRegister >> 6) & 0b1;
-            m_prgBank0RAMEnabled = (m_paramRegister >> 7) & 0b1;
-
             uint32_t bank = m_paramRegister & 0b0011111111;
             uint32_t bankSize = 0x2000;
-            if(m_cmdRegister == 0)
+            if(m_cmdRegister == 0x8)
             {
+                m_prgBank0RAM = (m_paramRegister >> 6) & 0b1;
+                m_prgBank0RAMEnabled = (m_paramRegister >> 7) & 0b1;
+
                 if(m_prgBank0RAM)
                 {
                     m_prgBank0 = m_pCartPRGRAM;
@@ -220,15 +227,15 @@ void CartMapper_69::cpuWrite(uint16_t address, uint8_t byte)
                     m_prgBank0 = &m_pPrg[bank * bankSize];
                 }
             }
-            else if(m_cmdRegister == 1)
+            else if(m_cmdRegister == 0x9)
             {
                 m_prgBank1 = &m_pPrg[bank * bankSize];
             }
-            else if(m_cmdRegister == 2)
+            else if(m_cmdRegister == 0xA)
             {
                 m_prgBank2 = &m_pPrg[bank * bankSize];
             }
-            else if(m_cmdRegister == 3)
+            else if(m_cmdRegister == 0xB)
             {
                 m_prgBank3 = &m_pPrg[bank * bankSize];
             }
