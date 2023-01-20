@@ -20,7 +20,6 @@
 		A14F253929531B4D007ED30F /* GameController.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A14F253829531B4D007ED30F /* GameController.framework */; };
 		A1526480292A9DD60015068B /* CPU6502-ITable.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A152647F292A9DD60015068B /* CPU6502-ITable.cpp */; };
 		A1696600297AA9B8008F3F7A /* CartMapper_5.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A16965FE297AA9B8008F3F7A /* CartMapper_5.cpp */; };
-		A1696603297AAA8F008F3F7A /* CartMapper_206.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A1696601297AAA8F008F3F7A /* CartMapper_206.cpp */; };
 		A16FA7FB2965B7A400880309 /* APUNES.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A16FA7F92965B7A400880309 /* APUNES.cpp */; };
 		A16FF7922979AF23003DA65C /* CartMapper_69.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A16FF7902979AF23003DA65C /* CartMapper_69.cpp */; };
 		A17210F329241C400055A57A /* SystemNES.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A17210F129241C400055A57A /* SystemNES.cpp */; };
@@ -62,8 +61,6 @@
 		A152647F292A9DD60015068B /* CPU6502-ITable.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = "CPU6502-ITable.cpp"; sourceTree = "<group>"; };
 		A16965FE297AA9B8008F3F7A /* CartMapper_5.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = CartMapper_5.cpp; sourceTree = "<group>"; };
 		A16965FF297AA9B8008F3F7A /* CartMapper_5.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = CartMapper_5.h; sourceTree = "<group>"; };
-		A1696601297AAA8F008F3F7A /* CartMapper_206.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = CartMapper_206.cpp; sourceTree = "<group>"; };
-		A1696602297AAA8F008F3F7A /* CartMapper_206.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = CartMapper_206.h; sourceTree = "<group>"; };
 		A16FA7F92965B7A400880309 /* APUNES.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = APUNES.cpp; sourceTree = "<group>"; };
 		A16FA7FA2965B7A400880309 /* APUNES.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = APUNES.h; sourceTree = "<group>"; };
 		A16FF7902979AF23003DA65C /* CartMapper_69.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = CartMapper_69.cpp; sourceTree = "<group>"; };
@@ -137,8 +134,6 @@
 				A1733DB2294BBE9200D1B296 /* CartMapper_66.cpp */,
 				A16FF7912979AF23003DA65C /* CartMapper_69.h */,
 				A16FF7902979AF23003DA65C /* CartMapper_69.cpp */,
-				A1696602297AAA8F008F3F7A /* CartMapper_206.h */,
-				A1696601297AAA8F008F3F7A /* CartMapper_206.cpp */,
 			);
 			path = Mappers;
 			sourceTree = "<group>";
@@ -308,7 +303,6 @@
 				A14F253529531983007ED30F /* Controller.m in Sources */,
 				A120529E294F7B730030D93C /* CartMapper_4.cpp in Sources */,
 				84907F3D20D902CD005E174C /* shaders.metal in Sources */,
-				A1696603297AAA8F008F3F7A /* CartMapper_206.cpp in Sources */,
 				A17210F829241DB60055A57A /* CPU6502.cpp in Sources */,
 				A172110D292424E50055A57A /* PPUNES.cpp in Sources */,
 				A14A9B952971FB7D005209FB /* CartMapper_9.cpp in Sources */,

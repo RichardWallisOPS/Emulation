@@ -182,7 +182,14 @@ void CartMapper_4::cpuWrite(uint16_t address, uint8_t byte)
         // memory mapping
         if((address & 1) == 0)  // even registers
         {
-            m_bankSelect = byte;
+            if(m_mapperID == 206)
+            {
+                m_bankSelect = byte &0b111;
+            }
+            else // Standard MMC3
+            {
+                m_bankSelect = byte;
+            }
         }
         else                    // odd registers
         {
@@ -299,7 +306,7 @@ void CartMapper_4::cpuWrite(uint16_t address, uint8_t byte)
             }
         }
     }
-    else if(address >= 0xA000 && address <= 0xBFFF)
+    else if(address >= 0xA000 && address <= 0xBFFF && m_mapperID == 4)
     {
         // mirroring
         if((address & 1) == 0)  // even registers
@@ -319,7 +326,7 @@ void CartMapper_4::cpuWrite(uint16_t address, uint8_t byte)
             // RAM Protect
         }
     }
-    else if(address >= 0xC000 && address <= 0xDFFF)
+    else if(address >= 0xC000 && address <= 0xDFFF && m_mapperID == 4)
     {
         if((address & 1) == 0)  // even registers
         {
@@ -332,7 +339,7 @@ void CartMapper_4::cpuWrite(uint16_t address, uint8_t byte)
             m_scanlineReload = 1;
         }
     }
-    else if(address >= 0xE000 && address <= 0xFFFF)
+    else if(address >= 0xE000 && address <= 0xFFFF && m_mapperID == 4)
     {
         if((address & 1) == 0)  // even registers
         {
@@ -429,45 +436,48 @@ void CartMapper_4::systemTick(uint64_t cycleCount)
 
 void CartMapper_4::MM3Signal(uint16_t address)
 {
-    uint8_t currentA12 = (address & (1 << 12)) >> 12;
-    
-    // We need to know how many cycles have passes since A12 went low
-    if(m_lastA12 == 1 && currentA12 == 0)
+    if(m_mapperID == 4)
     {
-        m_cycleCount = m_systemCycleCount;
-    }
-    
-    if(m_delay > 0)
-    {
-        --m_delay;
-        if(m_delay == 0)
+        uint8_t currentA12 = (address & (1 << 12)) >> 12;
+        
+        // We need to know how many cycles have passes since A12 went low
+        if(m_lastA12 == 1 && currentA12 == 0)
         {
-            if(m_scanlineEnable)
+            m_cycleCount = m_systemCycleCount;
+        }
+        
+        if(m_delay > 0)
+        {
+            --m_delay;
+            if(m_delay == 0)
             {
-                m_bus.SignalIRQ(true);
+                if(m_scanlineEnable)
+                {
+                    m_bus.SignalIRQ(true);
+                }
             }
         }
-    }
 
-    // Its gone high but also have enough cycles passed
-    if(m_lastA12 == 0 && currentA12 == 1 && m_systemCycleCount - m_cycleCount > 16)
-    {
-        if(m_scanlineReload)
+        // Its gone high but also have enough cycles passed
+        if(m_lastA12 == 0 && currentA12 == 1 && m_systemCycleCount - m_cycleCount > 16)
         {
-            m_scanlineReload = 0;
-            m_scanlineCounter = m_scanlineLatch;
-        }
-        else
-        {
-            --m_scanlineCounter;
-
-            if(m_scanlineCounter == 0)
+            if(m_scanlineReload)
             {
-                m_scanlineReload = 1;
+                m_scanlineReload = 0;
+                m_scanlineCounter = m_scanlineLatch;
+            }
+            else
+            {
+                --m_scanlineCounter;
 
-                m_delay = 4;
+                if(m_scanlineCounter == 0)
+                {
+                    m_scanlineReload = 1;
+
+                    m_delay = 4;
+                }
             }
         }
+        m_lastA12 = currentA12;
     }
-    m_lastA12 = currentA12;
 }
