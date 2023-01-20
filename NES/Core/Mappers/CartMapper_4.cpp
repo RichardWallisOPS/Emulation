@@ -184,7 +184,7 @@ void CartMapper_4::cpuWrite(uint16_t address, uint8_t byte)
         {
             if(m_mapperID == 206)
             {
-                m_bankSelect = byte &0b111;
+                m_bankSelect = byte & 0b111;
             }
             else // Standard MMC3
             {
