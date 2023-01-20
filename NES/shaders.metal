@@ -37,14 +37,14 @@ fragment float4 fragCopy(VertexClip vertexClip [[stage_in]],
 // PUBLIC DOMAIN CRT STYLED SCAN-LINE SHADER
 //
 //   Original by Timothy Lottes published on ShaderToy
-//   Converted to Metal and tweaked a tiny bit!
+//   Converted to Metal and tweaked a very very tiny bit!
 //
 // Square
 // 256 x 240 = 768 x 720 = 1024 x 960
 // 4:3 Image is notfully 4:3 as there is empty left and right
 // 292 x 240 = 876 x 720 = 1168 x 960
 
-constant float hardScan = -6.f;
+constant float hardScan = -6.25f;
 constant float hardPix = -3.f;
 
 float ToLinear1(float c)
@@ -132,7 +132,7 @@ float3 Horz5(texture2d<float, access::sample> sourceTex, float2 pos, float off)
 float Scan(texture2d<float, access::sample> sourceTex, float2 pos, float off)
 {
     float dst = Dist(sourceTex, pos).y;
-    return Gaus(dst + off,hardScan);
+    return Gaus(dst + off, hardScan);
 }
 
 float3 Tri(texture2d<float, access::sample> sourceTex, float2 pos)
