@@ -29,8 +29,6 @@ Mapper* Mapper::CreateMapper(SystemIOBus& bus, uint16_t mapperID,
 {
     Mapper* pMapper = nullptr;
     
-    mapperID = 206;
-    
     // TODO: Better factory lookup - Templates/Create function pointers?
     if(mapperID == 0)           pMapper = CART_MAPPER(0);
     else if(mapperID == 1)      pMapper = CART_MAPPER(1);
