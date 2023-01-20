@@ -281,6 +281,11 @@ void CartMapper_4::cpuWrite(uint16_t address, uint8_t byte)
                 uint32_t prgBankSize = 0x2000;
                 uint32_t bankData = m_bankData & 0b00111111;
                 
+                if(m_mapperID == 206)
+                {
+                    bankData = bankData & 0b111;
+                }
+                
                 uint32_t maxBanks = m_nProgramSize / prgBankSize;
                 bankData = bankData % maxBanks;
 
