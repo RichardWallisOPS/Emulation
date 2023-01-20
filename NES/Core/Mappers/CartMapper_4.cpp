@@ -193,7 +193,15 @@ void CartMapper_4::cpuWrite(uint16_t address, uint8_t byte)
         }
         else                    // odd registers
         {
-            m_bankData = byte;
+            if(m_mapperID == 206)
+            {
+                m_bankData = byte & 0b00111111;
+            }
+            else // Standard MMC3
+            {
+                m_bankData = byte;
+            }
+            
             uint8_t registerSelect = m_bankSelect & 0b111;
             
             // 0-5 chr select, 6-7 prg select
