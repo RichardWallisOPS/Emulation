@@ -4,6 +4,7 @@
 //
 //  Created by Richard Wallis on 19/01/2023.
 //
+//  NOTE: Not all features of this mapper are implemented (missing extra audio - no other adverse affects)
 
 #ifndef CartMapper_69_h
 #define CartMapper_69_h

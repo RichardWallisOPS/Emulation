@@ -12,7 +12,7 @@ void CartMapper_69::Initialise()
     m_prgBank0RAM = 0;
     m_prgBank0RAMEnabled = 0;
     
-    m_prgBank0 = &m_pPrg[0];    //TODO can be RAM or ROM
+    m_prgBank0 = &m_pPrg[0];
     m_prgBank1 = &m_pPrg[m_nProgramSize - 0x8000];
     m_prgBank2 = &m_pPrg[m_nProgramSize - 0x6000];
     m_prgBank3 = &m_pPrg[m_nProgramSize - 0x4000];
@@ -107,7 +107,7 @@ void CartMapper_69::Save(Archive& rArchive) const
     
     {
         uint8_t* pBasePrgAddress = &m_pPrg[0];
-        size_t offsetBank0 = m_prgBank0 - pBasePrgAddress;  // TODO
+        size_t offsetBank0 = m_prgBank0 - pBasePrgAddress;
         size_t offsetBank1 = m_prgBank1 - pBasePrgAddress;
         size_t offsetBank2 = m_prgBank2 - pBasePrgAddress;
         size_t offsetBank3 = m_prgBank3 - pBasePrgAddress;
@@ -144,7 +144,7 @@ uint8_t CartMapper_69::cpuRead(uint16_t address)
 {
     if(address >= 0x6000 && address <= 0x7FFF && m_prgBank0RAM && m_prgBank0RAMEnabled && m_pCartPRGRAM == m_prgBank0)
     {
-        // if ram is not enabled but bank 0 is ram then return open bus - not the ram bank data
+        // if RAM is not enabled but bank 0 is RAM then return open bus - not the RAM bank data
         return m_prgBank0[address - 0x6000];
     }
     else if(address >= 0x6000 && address <= 0x7FFF && !m_prgBank0RAM)
@@ -172,8 +172,6 @@ uint8_t CartMapper_69::cpuRead(uint16_t address)
 
 void CartMapper_69::cpuWrite(uint16_t address, uint8_t byte)
 {
-    // Command $8000-$9FFF
-    // Parameter A000-$BFFF
     if(address >= 0x6000 && address <= 0x7FFF && m_prgBank0RAM && m_prgBank0RAMEnabled && m_pCartPRGRAM == m_prgBank0)
     {
         m_prgBank0[address - 0x6000] = byte;
@@ -188,7 +186,7 @@ void CartMapper_69::cpuWrite(uint16_t address, uint8_t byte)
         
         if(m_cmdRegister >= 0x0 && m_cmdRegister <= 0x7)
         {
-            // $0-7 control CHR banking
+            // CHR bank switching
             uint32_t chrBankSize = 0x0400;
             uint32_t maxBanks = m_nCharacterSize / chrBankSize;
             uint32_t bank = m_paramRegister & (maxBanks - 1);
@@ -227,7 +225,7 @@ void CartMapper_69::cpuWrite(uint16_t address, uint8_t byte)
         }
         else if(m_cmdRegister >= 0x8 && m_cmdRegister <= 0xB)
         {
-            // $8-B control PRG banking
+            // PRG bank switching
             uint32_t bankSize = 0x2000;
             uint32_t maxBanks = m_nProgramSize / bankSize;
             uint32_t bank = (m_paramRegister & 0b0011111111) & (maxBanks - 1);
@@ -260,7 +258,7 @@ void CartMapper_69::cpuWrite(uint16_t address, uint8_t byte)
         }
         else if(m_cmdRegister == 0xC)
         {
-            // $C controls nametable mirroring
+            // Nametable mirroring
             uint8_t mirror = m_paramRegister & 0b111;
             if(mirror == 0)
             {
@@ -281,7 +279,7 @@ void CartMapper_69::cpuWrite(uint16_t address, uint8_t byte)
         }
         else if(m_cmdRegister >= 0xD && m_cmdRegister <= 0xF)
         {
-            // $D-F controls IRQ
+            // IRQ Control
             if(m_cmdRegister == 0xD)
             {
                 m_irqGenerate = byte & 0b1;
@@ -313,7 +311,7 @@ void CartMapper_69::systemTick(uint64_t cycleCount)
     if(m_irqCounterDecrement && (cycleCount % 3) == 0)
     {
         --m_irqCounter;
-        // Should be 0xFFFF - but hold it back a bit
+        // Should be 0xFFFF - but hold it back a bit - prob same thing as NMI delay
         if(m_irqCounter == 0xFFF8 && m_irqGenerate)
         {
             m_bus.SignalIRQ(true);

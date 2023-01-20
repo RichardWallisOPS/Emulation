@@ -15,6 +15,7 @@
 //        Only spotted this info on nesdev later on.  If I feel the need later, I'll make this change - might be fun....
 // Extra2: Looking like NMI and IRQ signals should be held back some amount of ticks.  Must be as the H/W take time to pull the lines low
 //          Look at moving any wait logic into the System::SignalXXX() functiions before signaling the CPU
+// Extra3: Some features of more complex mappers are not implemented. Mainly extra audio, but especially MMC5 which is missing many features.
 
 #ifndef SystemNES_h
 #define SystemNES_h

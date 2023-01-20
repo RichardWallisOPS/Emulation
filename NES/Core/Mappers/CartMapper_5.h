@@ -4,6 +4,7 @@
 //
 //  Created by Richard Wallis on 20/01/2023.
 //
+//  NOTE: Not all features of this mapper are implemented (Too many to list - you may get crashes/unexpected behaviour if they are used)
 
 #ifndef CartMapper_5_h
 #define CartMapper_5_h
