@@ -13,7 +13,6 @@
 #include "CartMapper_2.h"
 #include "CartMapper_3.h"
 #include "CartMapper_4.h"
-#include "CartMapper_5.h"
 #include "CartMapper_7.h"
 #include "CartMapper_9.h"
 #include "CartMapper_66.h"
@@ -35,7 +34,6 @@ Mapper* Mapper::CreateMapper(SystemIOBus& bus, uint16_t mapperID,
     else if(mapperID == 2)      pMapper = CART_MAPPER(2);
     else if(mapperID == 3)      pMapper = CART_MAPPER(3);
     else if(mapperID == 4)      pMapper = CART_MAPPER(4);
-    else if(mapperID == 5)      pMapper = CART_MAPPER(5);
     else if(mapperID == 7)      pMapper = CART_MAPPER(7);
     else if(mapperID == 9)      pMapper = CART_MAPPER(9);
     else if(mapperID == 66)     pMapper = CART_MAPPER(66);
