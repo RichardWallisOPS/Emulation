@@ -27,7 +27,7 @@ void CartMapper_4::Initialise()
     
     if(m_nCharacterSize == 0)
     {
-        *(volatile char*)(0) = 'M' | 'M' | 'C' | '3'; // CHRRAM is not implemented, there could be combinations/interleaving of both CHR ROM and CHR RAM
+        m_pChr = m_pCartCHRRAM;
     }
     
     m_chrBank0 = &m_pChr[0x0400 * 0];

@@ -16,6 +16,9 @@
 // The console we are emulating
 SystemNES g_NESConsole;
 
+// Main Controller
+__weak EmulationController* g_EmulationController = nil;
+
 // History and rewind support
 int             m_emulationDirection = 1;
 const int       m_kRewindFlashFrames = 8;
@@ -31,171 +34,35 @@ volatile size_t m_writeAudioBuffer = 0;
 const size_t    m_audioBufferCount = 6;
 APUAudioBuffer  m_audioBuffers[m_audioBufferCount];
 const float     m_outputMixerVolume = 0.5;
+bool            m_allowAudio = false;
 
-@implementation EmulationMetalView
-
+// Keyboard controller support
 uint8_t m_keyboardPort = 0;
 uint8_t m_keyboardController[2] = {0 , 0};
 
-- (BOOL) acceptsFirstResponder
+// Render stuff
+Vertex const g_quadVerts[] = {  {{-1.f,-1.f,0.f,1.f},   {0.f,1.f}},
+                                {{1.f,1.f,0.f,1.f},     {1.f,0.f}},
+                                {{-1.f,1.f,0.f,1.f},    {0.f,0.f}},
+                                {{-1.f,-1.f,0.f,1.f},   {0.f,1.f}},
+                                {{1.f,-1.f,0.f,1.f},    {1.f,1.f}},
+                                {{1.f,1.f,0.f,1.f},     {1.f,0.f}} };
+
+size_t          m_textureId = 0;
+const size_t    m_renderTextureCount = 2;
+id<MTLTexture>  m_emulationOutput[m_renderTextureCount];
+
+void ClearHistory()
 {
-    return YES;
-}
-
-- (void) keyDown:(NSEvent *)event
-{
-    if(!event.isARepeat)
-    {
-        if(event.keyCode == 26)
-        {
-            m_keyboardController[m_keyboardPort] |= 1 << SystemNES::Controller_Start;
-        }
-        else if(event.keyCode == 22)
-        {
-            m_keyboardController[m_keyboardPort] |= 1 << SystemNES::Controller_Select;
-        }
-        else if(event.keyCode == 31)
-        {
-            m_keyboardController[m_keyboardPort] |= 1 << SystemNES::Controller_B;
-        }
-        else if(event.keyCode == 35)
-        {
-            m_keyboardController[m_keyboardPort] |= 1 << SystemNES::Controller_A;
-        }
-        else if(event.keyCode == 2)
-        {
-            m_keyboardController[m_keyboardPort] |= 1 << SystemNES::Controller_Right;
-        }
-        else if(event.keyCode == 0)
-        {
-            m_keyboardController[m_keyboardPort] |= 1 << SystemNES::Controller_Left;
-        }
-        else if(event.keyCode == 1)
-        {
-            m_keyboardController[m_keyboardPort] |= 1 << SystemNES::Controller_Down;
-        }
-        else if(event.keyCode == 13)
-        {
-            m_keyboardController[m_keyboardPort] |= 1 << SystemNES::Controller_Up;
-        }
-        else if(event.keyCode == 125)   // down - save into file
-        {
-            NSProcessInfo* process = [NSProcessInfo processInfo];
-            NSArray* arguments = [process arguments];
-                
-            if(arguments.count > 1)
-            {
-                Archive archive(ArchiveMode_Persistent);
-                g_NESConsole.Save(archive);
-                NSString* cartPath = arguments[1];
-                NSString* savePath = [cartPath stringByAppendingString:@".SAVE"];
-                archive.Save([savePath cStringUsingEncoding:NSUTF8StringEncoding]);
-            }
-        }
-        else if(event.keyCode == 126) // up - load from file
-        {
-            NSProcessInfo* process = [NSProcessInfo processInfo];
-            NSArray* arguments = [process arguments];
-                
-            if(arguments.count > 1)
-            {
-                Archive archive(ArchiveMode_Persistent);
-                NSString* cartPath = arguments[1];
-                NSString* loadPath = [cartPath stringByAppendingString:@".SAVE"];
-                
-                if(archive.Load([loadPath cStringUsingEncoding:NSUTF8StringEncoding]))
-                {
-                    if(archive.ByteCount() > 0)
-                    {
-                        g_NESConsole.Load(archive);
-                        
-                        // Clear history on load
-                        m_emulationDirection = 1;
-                        m_archiveIndex = 0;
-                        m_rewindStartIndex = 0;
-                        for(size_t i = 0;i < m_kArchiveCount;++i)
-                        {
-                            m_ArchiveBuffer[i].Reset();
-                        }
-                    }
-                }
-            }
-        }
-        else if(event.keyCode == 124) // right
-        {
-
-        }
-        else if(event.keyCode == 123) // left - go back in time
-        {
-            if(m_emulationDirection > 0)
-            {
-                m_emulationDirection = -1;
-                m_rewindCounter = m_kRewindFlashFrames;
-                m_rewindStartIndex = m_archiveIndex;
-            }
-        }
-        else if(event.keyCode == 49) // space
-        {
-
-        }
-        else if(event.keyCode == 36) // enter - swap keyboard for player 1<->2
-        {
-            m_keyboardController[m_keyboardPort] = 0;
-            m_keyboardPort = (m_keyboardPort + 1) % 2;
-            m_keyboardController[m_keyboardPort] = 0;
-        }
-        else if(event.keyCode == 53) // esc - console reset button
-        {
-             g_NESConsole.Reset();
-        }
-    }
-}
-
-- (void) keyUp:(NSEvent *)event
-{
-    if(event.keyCode == 26)
-    {
-        m_keyboardController[m_keyboardPort] &= ~(1 << SystemNES::Controller_Start);
-    }
-    else if(event.keyCode == 22)
-    {
-        m_keyboardController[m_keyboardPort] &= ~(1 << SystemNES::Controller_Select);
-    }
-    else if(event.keyCode == 31)
-    {
-        m_keyboardController[m_keyboardPort] &= ~(1 << SystemNES::Controller_B);
-    }
-    else if(event.keyCode == 35)
-    {
-        m_keyboardController[m_keyboardPort] &= ~(1 << SystemNES::Controller_A);
-    }
-    else if(event.keyCode == 2)
-    {
-        m_keyboardController[m_keyboardPort] &= ~(1 << SystemNES::Controller_Right);
-    }
-    else if(event.keyCode == 0)
-    {
-        m_keyboardController[m_keyboardPort] &= ~(1 << SystemNES::Controller_Left);
-    }
-    else if(event.keyCode == 1)
-    {
-        m_keyboardController[m_keyboardPort] &= ~(1 << SystemNES::Controller_Down);
-    }
-    else if(event.keyCode == 13)
-    {
-        m_keyboardController[m_keyboardPort] &= ~(1 << SystemNES::Controller_Up);
-    }
-    else if(event.keyCode == 124)
-    {
+    m_emulationDirection = 1;
+    m_archiveIndex = 0;
+    m_rewindStartIndex = 0;
     
-    }
-    else if(event.keyCode == 123)
+    for(size_t i = 0;i < m_kArchiveCount;++i)
     {
-        m_emulationDirection = 1;
+        m_ArchiveBuffer[i].Reset();
     }
 }
-
-@end
 
 @interface EmulationController()
 
@@ -208,21 +75,13 @@ uint8_t m_keyboardController[2] = {0 , 0};
 @property (nonatomic,readwrite) AVAudioEngine*      audioEngine;
 @property (nonatomic,readwrite) AVAudioSourceNode*  audioSourceNode;
 
+//
+@property (nonatomic, readwrite) NSString*  cartLoadPath;
+
 @end
 
 
 @implementation EmulationController
-
-Vertex const g_quadVerts[] = {  {{-1.f,-1.f,0.f,1.f},   {0.f,1.f}},
-                                {{1.f,1.f,0.f,1.f},     {1.f,0.f}},
-                                {{-1.f,1.f,0.f,1.f},    {0.f,0.f}},
-                                {{-1.f,-1.f,0.f,1.f},   {0.f,1.f}},
-                                {{1.f,-1.f,0.f,1.f},    {1.f,1.f}},
-                                {{1.f,1.f,0.f,1.f},     {1.f,0.f}} };
-
-size_t          m_textureId = 0;
-const size_t    m_renderTextureCount = 2;
-id<MTLTexture>  m_emulationOutput[m_renderTextureCount];
 
 - (id<MTLTexture>) nextTextureOutput
 {
@@ -235,12 +94,52 @@ id<MTLTexture>  m_emulationOutput[m_renderTextureCount];
 	return [self.device supportsFamily:MTLGPUFamilyApple1];
 }
 
+- (void) stopAudio
+{
+    m_allowAudio = false;
+    
+    self.audioEngine.mainMixerNode.outputVolume = 0.f;
+    [self.audioEngine pause];
+    
+    m_readAudioBuffer = 0;
+    m_writeAudioBuffer = 0;
+}
+
+- (void) openNew
+{
+    [self stopAudio];
+    
+    NSOpenPanel* panel = [NSOpenPanel openPanel];
+    [panel beginWithCompletionHandler: ^(NSInteger result)
+    {
+        if(result == NSModalResponseOK)
+        {
+            NSURL* urlPath = [[panel URLs] objectAtIndex:0];
+            if(urlPath != nil)
+            {
+                NSString* path = urlPath.path;
+                if(g_NESConsole.InsertCartridge([path cStringUsingEncoding:NSUTF8StringEncoding]))
+                {
+                    self.cartLoadPath = path;
+                    ClearHistory();
+                    g_NESConsole.PowerOn();
+                    
+                }
+            }
+        }
+        
+        m_allowAudio = true;
+    }];
+}
+
 - (instancetype) initWithView:(EmulationMetalView*)metalView
 {
     self = [super init];
     
     if(self != nil)
     {
+        g_EmulationController = self;
+        
         if(self.device == nil)
         {
             self.device = MTLCreateSystemDefaultDevice();
@@ -284,16 +183,31 @@ id<MTLTexture>  m_emulationOutput[m_renderTextureCount];
         self.pipelineEmulationOutputToFrameBufferTexture = [self.device newRenderPipelineStateWithDescriptor:pipelineEmulationOutputToFrameBufferTextureDesc error:nil];
         
         {
-            // TODO: File selection in UI
+            bool bGameLoaded = false;
+            
+            // Command line check
             NSProcessInfo* process = [NSProcessInfo processInfo];
             NSArray* arguments = [process arguments];
             
             if(arguments.count > 1)
             {
-                if(g_NESConsole.InsertCartridge([arguments[1] cStringUsingEncoding:NSUTF8StringEncoding]))
+                NSString* path = arguments[1];
+                if([path rangeOfString:@".nes"].length != 0)
                 {
-                    g_NESConsole.PowerOn();
+                    if(g_NESConsole.InsertCartridge([path cStringUsingEncoding:NSUTF8StringEncoding]))
+                    {
+                        self.cartLoadPath = path;
+                        g_NESConsole.PowerOn();
+                        m_allowAudio = true;
+                        bGameLoaded = true;
+                    }
                 }
+            }
+            
+            // No game - show file picker
+            if(!bGameLoaded)
+            {
+                [self openNew];
             }
         }
         
@@ -421,7 +335,7 @@ id<MTLTexture>  m_emulationOutput[m_renderTextureCount];
     }
     else
     {
-        if(self.audioEngine.running && self.audioEngine.mainMixerNode.outputVolume <= 0.f)
+        if(m_allowAudio && self.audioEngine.running && self.audioEngine.mainMixerNode.outputVolume <= 0.f)
         {
             self.audioEngine.mainMixerNode.outputVolume = m_outputMixerVolume;
         }
@@ -456,8 +370,7 @@ id<MTLTexture>  m_emulationOutput[m_renderTextureCount];
             g_NESConsole.Tick();
         }
         
-        // TODO: Move this somewhere else....
-        if(!self.audioEngine.isRunning && m_writeAudioBuffer > 2)
+        if(m_allowAudio && !self.audioEngine.isRunning && m_writeAudioBuffer > 2)
         {
             if(![self.audioEngine startAndReturnError:nil])
             {
@@ -564,6 +477,169 @@ id<MTLTexture>  m_emulationOutput[m_renderTextureCount];
         m_ArchiveBuffer[m_archiveIndex].Reset();
         g_NESConsole.Save(m_ArchiveBuffer[m_archiveIndex]);
         m_archiveIndex = (m_archiveIndex + 1) % m_kArchiveCount;
+    }
+}
+
+@end
+
+@implementation EmulationMetalView
+
+- (BOOL) acceptsFirstResponder
+{
+    return YES;
+}
+
+- (void) keyDown:(NSEvent *)event
+{
+    if(!event.isARepeat)
+    {
+        if(event.keyCode == 26)
+        {
+            m_keyboardController[m_keyboardPort] |= 1 << SystemNES::Controller_Start;
+        }
+        else if(event.keyCode == 22)
+        {
+            m_keyboardController[m_keyboardPort] |= 1 << SystemNES::Controller_Select;
+        }
+        else if(event.keyCode == 31)
+        {
+            m_keyboardController[m_keyboardPort] |= 1 << SystemNES::Controller_B;
+        }
+        else if(event.keyCode == 35)
+        {
+            m_keyboardController[m_keyboardPort] |= 1 << SystemNES::Controller_A;
+        }
+        else if(event.keyCode == 2)
+        {
+            m_keyboardController[m_keyboardPort] |= 1 << SystemNES::Controller_Right;
+        }
+        else if(event.keyCode == 0)
+        {
+            m_keyboardController[m_keyboardPort] |= 1 << SystemNES::Controller_Left;
+        }
+        else if(event.keyCode == 1)
+        {
+            m_keyboardController[m_keyboardPort] |= 1 << SystemNES::Controller_Down;
+        }
+        else if(event.keyCode == 13)
+        {
+            m_keyboardController[m_keyboardPort] |= 1 << SystemNES::Controller_Up;
+        }
+        else if(event.keyCode == 125)   // down - save into file
+        {
+            NSProcessInfo* process = [NSProcessInfo processInfo];
+            NSArray* arguments = [process arguments];
+                
+            if(arguments.count > 1)
+            {
+                [g_EmulationController stopAudio];
+                 
+                Archive archive(ArchiveMode_Persistent);
+                g_NESConsole.Save(archive);
+                
+                NSString* cartPath = arguments[1];
+                NSString* savePath = [cartPath stringByAppendingString:@".SAVE"];
+                archive.Save([savePath cStringUsingEncoding:NSUTF8StringEncoding]);
+            }
+        }
+        else if(event.keyCode == 126) // up - load from file
+        {
+            NSProcessInfo* process = [NSProcessInfo processInfo];
+            NSArray* arguments = [process arguments];
+                
+            if(arguments.count > 1)
+            {
+                [g_EmulationController stopAudio];
+                 
+                Archive archive(ArchiveMode_Persistent);
+                NSString* cartPath = arguments[1];
+                NSString* loadPath = [cartPath stringByAppendingString:@".SAVE"];
+                
+                if(archive.Load([loadPath cStringUsingEncoding:NSUTF8StringEncoding]))
+                {
+                    if(archive.ByteCount() > 0)
+                    {
+                        g_NESConsole.Load(archive);
+                        ClearHistory();
+                    }
+                }
+            }
+        }
+        else if(event.keyCode == 124) // right
+        {
+
+        }
+        else if(event.keyCode == 123) // left - go back in time
+        {
+            if(m_emulationDirection > 0)
+            {
+                m_emulationDirection = -1;
+                m_rewindCounter = m_kRewindFlashFrames;
+                m_rewindStartIndex = m_archiveIndex;
+            }
+        }
+        else if(event.keyCode == 49) // space
+        {
+
+        }
+        else if(event.keyCode == 36) // enter - swap keyboard for player 1<->2
+        {
+            m_keyboardController[m_keyboardPort] = 0;
+            m_keyboardPort = (m_keyboardPort + 1) % 2;
+            m_keyboardController[m_keyboardPort] = 0;
+        }
+        else if(event.keyCode == 53) // esc - console reset button
+        {
+             g_NESConsole.Reset();
+        }
+    }
+}
+
+- (void) keyUp:(NSEvent *)event
+{
+    if(event.keyCode == 26)
+    {
+        m_keyboardController[m_keyboardPort] &= ~(1 << SystemNES::Controller_Start);
+    }
+    else if(event.keyCode == 22)
+    {
+        m_keyboardController[m_keyboardPort] &= ~(1 << SystemNES::Controller_Select);
+    }
+    else if(event.keyCode == 31)
+    {
+        m_keyboardController[m_keyboardPort] &= ~(1 << SystemNES::Controller_B);
+    }
+    else if(event.keyCode == 35)
+    {
+        m_keyboardController[m_keyboardPort] &= ~(1 << SystemNES::Controller_A);
+    }
+    else if(event.keyCode == 2)
+    {
+        m_keyboardController[m_keyboardPort] &= ~(1 << SystemNES::Controller_Right);
+    }
+    else if(event.keyCode == 0)
+    {
+        m_keyboardController[m_keyboardPort] &= ~(1 << SystemNES::Controller_Left);
+    }
+    else if(event.keyCode == 1)
+    {
+        m_keyboardController[m_keyboardPort] &= ~(1 << SystemNES::Controller_Down);
+    }
+    else if(event.keyCode == 13)
+    {
+        m_keyboardController[m_keyboardPort] &= ~(1 << SystemNES::Controller_Up);
+    }
+    else if(event.keyCode == 45)
+    {
+        [g_EmulationController openNew];
+    }
+    else if(event.keyCode == 124)
+    {
+    
+    }
+    else if(event.keyCode == 123)
+    {
+        m_emulationDirection = 1;
     }
 }
 

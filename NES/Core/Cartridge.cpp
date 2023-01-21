@@ -175,6 +175,7 @@ void Cartridge::Initialise(SystemIOBus& bus, const char* pCartPath)
 
 Cartridge::Cartridge(SystemIOBus& bus, const char* pCartPath)
 : m_pCartPath(nullptr)
+, m_pNVRAMPath(nullptr)
 , m_pMapper(nullptr)
 , m_fileDataSize(0)
 , m_pFileData(nullptr)
