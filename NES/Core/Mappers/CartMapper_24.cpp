@@ -162,19 +162,74 @@ void CartMapper_24::cpuWrite(uint16_t address, uint8_t byte)
     }
     else if(address == 0xB003)
     {
-        // banking
-        uint8_t bankingMode = byte & 0b11;
-        uint8_t mirror = (byte >> 2) & 0b11;
-#if DEBUG
-        // Any features in the upper bits are not supported
-        uint8_t other = byte >> 4;
-        if(other != 0)
+        uint8_t chrBankingMode = byte & 0b11;
+
+        if(chrBankingMode == 0)
         {
-            //*(volatile char*)(0) = 'V' | 'R' | 'C' | '6';
+            uint8_t mirror = (byte >> 2) & 0b11;
+            if(mirror == 0)
+            {
+                m_bus.SetMirrorMode(VRAM_MIRROR_V);
+            }
+            else if(mirror == 1)
+            {
+                m_bus.SetMirrorMode(VRAM_MIRROR_H);
+            }
+            else if(mirror == 2)
+            {
+                m_bus.SetMirrorMode(VRAM_MIRROR_SINGLEA);
+            }
+            else if(mirror == 3)
+            {
+                m_bus.SetMirrorMode(VRAM_MIRROR_SINGLEB);
+            }
+        }
+#if DEBUG
+        else
+        {
+            // Only mode 0 is supported
+            *(volatile char*)(0) = 'V' | 'R' | 'C' | '6';
+        }
+        
+        // Test any features in the upper bits that are also not supported e.g Name tables from CIRAM (console nametable)
+        if((byte >> 4) != 2)
+        {
+            *(volatile char*)(0) = 'V' | 'R' | 'C' | '6';
         }
 #endif
     }
-    // TODO: chr banking
+    else if(address == 0xD000)
+    {
+        SetChrBank(&m_chrBank0, byte);
+    }
+    else if(address == 0xD001)
+    {
+        SetChrBank(&m_chrBank1, byte);
+    }
+    else if(address == 0xD002)
+    {
+        SetChrBank(&m_chrBank2, byte);
+    }
+    else if(address == 0xD003)
+    {
+        SetChrBank(&m_chrBank3, byte);
+    }
+    else if(address == 0xE000)
+    {
+        SetChrBank(&m_chrBank4, byte);
+    }
+    else if(address == 0xE001)
+    {
+        SetChrBank(&m_chrBank5, byte);
+    }
+    else if(address == 0xE002)
+    {
+        SetChrBank(&m_chrBank6, byte);
+    }
+    else if(address == 0xE003)
+    {
+        SetChrBank(&m_chrBank7, byte);
+    }
     // TODO: extra audio
     else if(address == 0xF000)
     {
@@ -198,14 +253,21 @@ void CartMapper_24::cpuWrite(uint16_t address, uint8_t byte)
     }
 }
 
+void CartMapper_24::SetChrBank(uint8_t** pChrBank, uint8_t bank)
+{
+    bank = bank & ((m_nCharacterSize / 0x400) - 1);
+    uint32_t bankAddress = (uint32_t(bank) * 0x400);
+    *pChrBank = &m_pChr[bankAddress];
+}
+
 void CartMapper_24::ClockIRQCounter()
 {
     if(m_irqEnable)
     {
-        if(m_irqCounter == 0xFF)
+        if(m_irqCounter == 0x00)
         {
             m_irqCounter = m_irqLatch;
-            //m_bus.SignalIRQ(true); // TODO enable
+            m_bus.SignalIRQ(true);
         }
         else
         {
@@ -236,7 +298,7 @@ void CartMapper_24::SystemTick(uint64_t cycleCount)
 
 float CartMapper_24::AudioOut()
 {
-    // TODO:
+    // TODO: 2x pulse + 1x saw
     return 0.f;
 }
 

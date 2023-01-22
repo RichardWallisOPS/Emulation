@@ -23,6 +23,7 @@ public:
 private:
 
     void ClockIRQCounter();
+    void SetChrBank(uint8_t** pChrBank, uint8_t bank);
     
 private:
 
@@ -44,7 +45,7 @@ private:
     uint8_t m_irqMode;
     uint8_t m_irqEnable;
     uint8_t m_irqEnableAfterAck;
-    uint16_t m_irqCounter;
+    uint8_t m_irqCounter;
     uint16_t m_irqPrescaler;
 };
 
