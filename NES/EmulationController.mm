@@ -120,8 +120,9 @@ void ClearHistory()
                 NSString* path = urlPath.path;
                 if(g_NESConsole.InsertCartridge([path cStringUsingEncoding:NSUTF8StringEncoding]))
                 {
-                    self.cartLoadPath = path;
                     ClearHistory();
+                    
+                    self.cartLoadPath = path;
                     g_NESConsole.PowerOn();
                     
                 }
@@ -559,8 +560,8 @@ void ClearHistory()
                 {
                     if(archive.ByteCount() > 0)
                     {
-                        g_NESConsole.Load(archive);
                         ClearHistory();
+                        g_NESConsole.Load(archive);
                     }
                 }
             }

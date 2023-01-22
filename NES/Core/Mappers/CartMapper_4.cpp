@@ -249,7 +249,7 @@ void CartMapper_4::cpuWrite(uint16_t address, uint8_t byte)
                     if(registerSelect == 0)
                     {
                         uint32_t bankData2K = bankData & 0b11111110;
-                        m_chrBank4 = &m_pChr[bankData2K * 0x0400];
+                        m_chrBank4 = &m_pChr[bankData2K * chrBankSize];
                         m_chrBank5 = m_chrBank4 + 0x0400;
                     }
                     else if(registerSelect == 1)
