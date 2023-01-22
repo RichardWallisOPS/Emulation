@@ -31,7 +31,7 @@ Archive         m_ArchiveBuffer[m_kArchiveCount];
 // Audio buffers
 volatile size_t m_readAudioBuffer = 0;
 volatile size_t m_writeAudioBuffer = 0;
-const size_t    m_audioBufferCount = 6;
+const size_t    m_audioBufferCount = 8;
 APUAudioBuffer  m_audioBuffers[m_audioBufferCount];
 const float     m_outputMixerVolume = 0.5;
 bool            m_allowAudio = false;
@@ -371,13 +371,13 @@ void ClearHistory()
             g_NESConsole.Tick();
         }
         
-        if(m_allowAudio && !self.audioEngine.isRunning && m_writeAudioBuffer > 2)
+        if(m_allowAudio && !self.audioEngine.isRunning && m_writeAudioBuffer > 3)
         {
+            self.audioEngine.mainMixerNode.outputVolume = 0.f;
             if(![self.audioEngine startAndReturnError:nil])
             {
                 NSLog(@"Failed to start audio engine");
             }
-            self.audioEngine.mainMixerNode.outputVolume = m_outputMixerVolume;
         }
     }
     

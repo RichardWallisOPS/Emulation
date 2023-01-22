@@ -204,20 +204,24 @@ void SystemNES::Tick()
     {
         ++m_cycleCount;
         
+        // Bus to cart
         if(m_pCart != nullptr)
         {
-            m_pCart->systemTick(m_cycleCount);
+            m_pCart->SystemTick(m_cycleCount);
         }
     
+        // Graphics
         {
             m_ppu.Tick();
         }
         
+        // CPU
         if((m_cycleCount % 3) == 0 && m_DMAMode == DMA_OFF)
         {
             m_cpu.Tick();
         }
         
+        // Audio
         if((m_cycleCount % 3) == 0)
         {
             m_apu.Tick();
@@ -247,6 +251,15 @@ void SystemNES::Tick()
             }
         }
     }
+}
+
+float SystemNES::AudioOut()
+{
+    if(m_pCart != nullptr)
+    {
+        return m_pCart->AudioOut();
+    }
+    return 0.f;
 }
 
 uint8_t SystemNES::cpuRead(uint16_t address)

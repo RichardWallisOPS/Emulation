@@ -63,7 +63,8 @@ public:
     void PowerOn();
 
     void Tick();
-        
+    
+    virtual float AudioOut() override;
     virtual void SignalReset(bool bSignal) override;
     virtual void SignalNMI(bool bSignal) override;
     virtual void SignalIRQ(bool bSignal) override;

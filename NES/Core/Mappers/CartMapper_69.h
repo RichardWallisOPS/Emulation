@@ -17,8 +17,10 @@ public:
     BUS_HEADER_DECL
     MAPPER_HEADER_DECL
     SERIALISABLE_DECL
+
+    virtual float AudioOut() override;
+    virtual void SystemTick(uint64_t cycleCount) override;
     
-    virtual void systemTick(uint64_t cycleCount) override;
 private:
 
     uint8_t m_cmdRegister;

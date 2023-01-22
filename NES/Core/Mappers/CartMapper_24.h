@@ -17,7 +17,12 @@ public:
     MAPPER_HEADER_DECL
     SERIALISABLE_DECL
     
-    virtual void systemTick(uint64_t cycleCount) override;
+    virtual float AudioOut() override;
+    virtual void SystemTick(uint64_t cycleCount) override;
+    
+private:
+
+    void ClockIRQCounter();
     
 private:
 
@@ -34,8 +39,13 @@ private:
     uint8_t* m_chrBank5;
     uint8_t* m_chrBank6;
     uint8_t* m_chrBank7;
-    
-    uint64_t m_systemCycleCount;
+
+    uint8_t m_irqLatch;
+    uint8_t m_irqMode;
+    uint8_t m_irqEnable;
+    uint8_t m_irqEnableAfterAck;
+    uint16_t m_irqCounter;
+    uint16_t m_irqPrescaler;
 };
 
 #endif /* CartMapper_24_h */

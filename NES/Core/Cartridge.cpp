@@ -406,12 +406,21 @@ uint16_t Cartridge::GetMapperID() const
     return 0xFFFF;
 }
 
-void Cartridge::systemTick(uint64_t cycleCount)
+void Cartridge::SystemTick(uint64_t cycleCount)
 {
     if(m_pMapper != nullptr)
     {
-        m_pMapper->systemTick(cycleCount);
+        m_pMapper->SystemTick(cycleCount);
     }
+}
+
+float Cartridge::AudioOut()
+{
+    if(m_pMapper != nullptr)
+    {
+        return m_pMapper->AudioOut();
+    }
+    return 0.f;
 }
 
 uint8_t Cartridge::cpuRead(uint16_t address)

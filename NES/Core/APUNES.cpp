@@ -838,12 +838,14 @@ float APUNES::OutputValue()
     float fTND = 159.79f / ((1.f / ((fTriangle / 8227.f) + (fNoise / 12241.f) + (fDMC / 22638.f))) + 100.f);
 #endif
 
+    float fExternalAudio = m_bus.AudioOut();
+
     // TODO filters
     // A first-order high-pass filter at 90 Hz
     // Another first-order high-pass filter at 440 Hz
     // A first-order low-pass filter at 14 kHz
 
-    return fPulse + fTND;
+    return fPulse + fTND + fExternalAudio;
 }
 
 void APUNES::QuarterFrameTick()

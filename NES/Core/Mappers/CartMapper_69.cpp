@@ -298,15 +298,21 @@ void CartMapper_69::cpuWrite(uint16_t address, uint8_t byte)
     }
     else if(address >= 0xC000 && address <= 0xDFFF)
     {
-        // audio - Japan only - not implemented
+        // audio - Japan only - not implemented - use USA version for now
     }
     else if(address >= 0xE000 && address <= 0xFFFF)
     {
-        // audio - Japan only - not implemented
+        // audio - Japan only - not implemented - use USA version for now
     }
 }
 
-void CartMapper_69::systemTick(uint64_t cycleCount)
+float CartMapper_69::AudioOut()
+{
+    // Japan only - not implemented - use USA version for now
+    return 0.f;
+}
+
+void CartMapper_69::SystemTick(uint64_t cycleCount)
 {
     if(m_irqCounterDecrement && (cycleCount % 3) == 0)
     {

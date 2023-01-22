@@ -27,7 +27,8 @@ public:
     
     uint16_t GetMapperID() const;
     
-    virtual void systemTick(uint64_t cycleCount) override;
+    virtual void SystemTick(uint64_t cycleCount) override;
+    virtual float AudioOut() override;
     
 private:
 

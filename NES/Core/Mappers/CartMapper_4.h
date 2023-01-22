@@ -17,7 +17,7 @@ public:
     MAPPER_HEADER_DECL
     SERIALISABLE_DECL
     
-    virtual void systemTick(uint64_t cycleCount) override;
+    virtual void SystemTick(uint64_t cycleCount) override;
     
 private:
     void MM3Signal(uint16_t address);

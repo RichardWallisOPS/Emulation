@@ -27,7 +27,12 @@ void CartMapper_24::Initialise()
     m_chrBank6 = &m_pChr[0x0400 * 6];
     m_chrBank7 = &m_pChr[0x0400 * 7];
     
-    m_systemCycleCount = 0;
+    m_irqLatch = 0;
+    m_irqMode = 0;
+    m_irqEnable = 0;
+    m_irqEnableAfterAck = 0;
+    m_irqCounter = 0;
+    m_irqPrescaler = 0;
 }
 
 void CartMapper_24::Load(Archive& rArchive)
@@ -169,6 +174,70 @@ void CartMapper_24::cpuWrite(uint16_t address, uint8_t byte)
         }
 #endif
     }
+    // TODO: chr banking
+    // TODO: extra audio
+    else if(address == 0xF000)
+    {
+        m_irqLatch = byte;
+    }
+    else if(address == 0xF001)
+    {
+        m_irqEnableAfterAck = byte & 0b1;
+        m_irqEnable = (byte >> 1) & 0b1;
+        m_irqMode = (byte >> 2) & 0b1;      // 1 = M cycle (% 3 == 0), 0 = scanline ()
+        
+        m_bus.SignalIRQ(false);
+        
+        m_irqCounter = m_irqLatch;
+        m_irqPrescaler = 341;
+    }
+    else if(address == 0xF002)
+    {
+        m_bus.SignalIRQ(false);
+        m_irqEnable = m_irqEnableAfterAck;
+    }
+}
+
+void CartMapper_24::ClockIRQCounter()
+{
+    if(m_irqEnable)
+    {
+        if(m_irqCounter == 0xFF)
+        {
+            m_irqCounter = m_irqLatch;
+            //m_bus.SignalIRQ(true); // TODO enable
+        }
+        else
+        {
+            ++m_irqCounter;
+        }
+    }
+}
+
+void CartMapper_24::SystemTick(uint64_t cycleCount)
+{
+    if(m_irqMode == 1)
+    {
+        if((cycleCount % 3) == 0)
+        {
+            ClockIRQCounter();
+        }
+    }
+    else if(m_irqEnable)
+    {
+        --m_irqPrescaler;
+        if(m_irqPrescaler == 0)
+        {
+            m_irqPrescaler = 341;
+            ClockIRQCounter();
+        }
+    }
+}
+
+float CartMapper_24::AudioOut()
+{
+    // TODO:
+    return 0.f;
 }
 
 uint8_t CartMapper_24::ppuRead(uint16_t address)
@@ -242,9 +311,4 @@ void CartMapper_24::ppuWrite(uint16_t address, uint8_t byte)
     {
         m_chrBank7[address - 0x1C00] = byte;
     }
-}
-
-void CartMapper_24::systemTick(uint64_t cycleCount)
-{
-    m_systemCycleCount = cycleCount;
 }

@@ -442,7 +442,7 @@ void CartMapper_4::ppuWrite(uint16_t address, uint8_t byte)
     }
 }
 
-void CartMapper_4::systemTick(uint64_t cycleCount)
+void CartMapper_4::SystemTick(uint64_t cycleCount)
 {
     m_systemCycleCount = cycleCount;
 }
