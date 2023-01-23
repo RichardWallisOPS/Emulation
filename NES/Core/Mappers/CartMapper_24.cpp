@@ -294,6 +294,7 @@ void CartMapper_24::SystemTick(uint64_t cycleCount)
 float CartMapper_24::AudioOut()
 {
     // TODO: 2x pulse + 1x saw
+    // TODO: Linear mix: pulse1 + pulse2 + saw;
     return 0.f;
 }
 
