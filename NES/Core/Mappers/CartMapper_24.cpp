@@ -37,6 +37,8 @@ void CartMapper_24::Initialise()
 
 void CartMapper_24::Load(Archive& rArchive)
 {
+    // TODO
+        
     /*
     {
         uint8_t* pBasePrgAddress = &m_pPrg[0];
@@ -86,6 +88,8 @@ void CartMapper_24::Load(Archive& rArchive)
 
 void CartMapper_24::Save(Archive& rArchive) const
 {
+    // TODO
+        
     /*
     {
         uint8_t* pBasePrgAddress = &m_pPrg[0];
@@ -418,26 +422,51 @@ VRC6AudioPulseChannel::VRC6AudioPulseChannel()
 , m_volume(0)
 , m_duty(0)
 , m_period(0)
+, m_divider(0)
+, m_dutyCycle(0)
 {}
 
 void VRC6AudioPulseChannel::Load(Archive& rArchive)
 {
-
+    // TODO
 }
 
 void VRC6AudioPulseChannel::Save(Archive& rArchive) const
 {
-
+    // TODO
 }
 
 void VRC6AudioPulseChannel::Tick()
 {
-
+    if(m_divider > 0)
+    {
+        --m_divider;
+    }
+    else
+    {
+        m_divider = m_period;
+        
+        if(m_dutyCycle > 0)
+        {
+            --m_dutyCycle;
+        }
+        else
+        {
+            m_dutyCycle = 15;
+        }
+    }
 }
 
 uint8_t VRC6AudioPulseChannel::OutputValue()
 {
     // 4 bit value 0 - 15 same as PPU Pulse
+    if(m_enabled)
+    {
+        if(m_dutyCycle <= m_duty || m_mode == 1)
+        {
+            return m_volume;
+        }
+    }
     return 0;
 }
 
@@ -457,6 +486,9 @@ void VRC6AudioPulseChannel::SetRegister(uint16_t reg, uint8_t byte)
     {
         m_enabled = (byte >> 7) & 0b1;
         m_period = (m_period & 0x00FF) | (uint16_t(byte & 0b1111) << 8);
+        
+        m_divider = m_period;
+        m_dutyCycle = m_duty;
     }
 }
 
@@ -465,27 +497,60 @@ VRC6AudioSawChannel::VRC6AudioSawChannel()
 : m_enabled(0)
 , m_accumRate(0)
 , m_period(0)
+, m_divider(0)
+, m_accumTick(0)
+, m_accumulator(0)
 {}
 
 void VRC6AudioSawChannel::Load(Archive& rArchive)
 {
-
+    // TODO
 }
 
 void VRC6AudioSawChannel::Save(Archive& rArchive) const
 {
-
+    // TODO
 }
 
 void VRC6AudioSawChannel::Tick()
 {
-
+    if(m_divider > 0)
+    {
+        --m_divider;
+    }
+    else
+    {
+        m_divider = m_period;
+        
+        ++m_accumTick;
+        
+        if(m_accumTick % 2 == 1)
+        {
+            if(m_accumTick < 14)
+            {
+                m_accumulator += m_accumRate;
+            }
+            else
+            {
+                m_accumulator = 0;
+            }
+            
+            if(m_accumulator > 42)
+            {
+                m_accumulator -= 42;
+            }
+        }
+    }
 }
 
 uint8_t VRC6AudioSawChannel::OutputValue()
 {
-    // High order 5 bits
-    return 0 & 0b11111000;
+    if(m_enabled)
+    {
+        // High order 5 bits
+        return m_accumulator & 0b11111000;
+    }
+    return 0;
 }
 
 void VRC6AudioSawChannel::SetRegister(uint16_t reg, uint8_t byte)
@@ -502,5 +567,9 @@ void VRC6AudioSawChannel::SetRegister(uint16_t reg, uint8_t byte)
     {
         m_enabled = (byte >> 7) & 0b1;
         m_period = (m_period & 0x00FF) | (uint16_t(byte & 0b1111) << 8);
+        
+        m_divider = m_period;
+        m_accumTick = 0;
+        m_accumulator = 0;
     }
 }

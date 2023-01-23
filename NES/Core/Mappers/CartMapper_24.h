@@ -27,6 +27,9 @@ private:
     uint8_t m_volume;
     uint8_t m_duty;
     uint16_t m_period;
+    
+    uint16_t m_divider;
+    uint8_t m_dutyCycle;
 };
 
 class VRC6AudioSawChannel : public Serialisable
@@ -44,6 +47,10 @@ private:
     uint8_t m_enabled;
     uint8_t m_accumRate;
     uint16_t m_period;
+    
+    uint16_t m_divider;
+    uint8_t m_accumTick;
+    uint8_t m_accumulator;
 };
 
 class CartMapper_24 : public Mapper
