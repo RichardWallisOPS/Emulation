@@ -343,9 +343,8 @@ void CartMapper_24::SystemTick(uint64_t cycleCount)
 
 float CartMapper_24::AudioOut()
 {
-    uint8_t outputValue = (m_pulse1.OutputValue() + m_pulse2.OutputValue() + (m_saw.OutputValue() >> 3)) & 0b111111;
-    
-    return float(outputValue) / 32.f;
+    uint8_t outputValue = (m_pulse1.OutputValue() + m_pulse2.OutputValue() + m_saw.OutputValue());
+    return (float(outputValue) / 64.f) * 0.5;
 }
 
 void CartMapper_24::SetChrBank(uint8_t** pChrBank, uint8_t bank)
@@ -559,7 +558,7 @@ void VRC6AudioSawChannel::Tick()
         
         ++m_accumTick;
         
-        if(m_accumTick % 2 == 1)
+        if(m_accumTick % 2 == 0)
         {
             if(m_accumTick < 14)
             {
@@ -568,11 +567,7 @@ void VRC6AudioSawChannel::Tick()
             else
             {
                 m_accumulator = 0;
-            }
-            
-            if(m_accumulator > 42)
-            {
-                m_accumulator -= 42;
+                m_accumTick = 0;
             }
         }
     }
@@ -583,7 +578,7 @@ uint8_t VRC6AudioSawChannel::OutputValue()
     if(m_enabled)
     {
         // High order 5 bits
-        return m_accumulator & 0b11111000;
+        return m_accumulator >> 3;
     }
     return 0;
 }

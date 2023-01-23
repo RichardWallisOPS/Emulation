@@ -821,13 +821,6 @@ float APUNES::OutputValue()
     float fNoise = m_noise.OutputValue();
     float fDMC = m_dmc.OutputValue();
 
-    // Debug duck a channel
-//    fPulse1 = 0.f;
-//    fPulse2 = 0.f;
-//    fTriangle = 0.f;
-//    fNoise = 0.f;
-//    fDMC = 0.f;
-
 #if 0
     // Fast linear
     float fPulse = 0.00752f * (fPulse1 + fPulse2);
@@ -839,7 +832,7 @@ float APUNES::OutputValue()
 #endif
 
     float fExternalAudio = m_bus.AudioOut();
-
+    
     // TODO filters
     // A first-order high-pass filter at 90 Hz
     // Another first-order high-pass filter at 440 Hz
