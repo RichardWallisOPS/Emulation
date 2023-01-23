@@ -76,7 +76,7 @@ void ClearHistory()
 @property (nonatomic,readwrite) AVAudioSourceNode*  audioSourceNode;
 
 //
-@property (nonatomic, readwrite) NSString*  cartLoadPath;
+@property (nonatomic, readwrite) NSString*          cartLoadPath;
 
 @end
 
@@ -528,33 +528,25 @@ void ClearHistory()
         }
         else if(event.keyCode == 125)   // down - save into file
         {
-            NSProcessInfo* process = [NSProcessInfo processInfo];
-            NSArray* arguments = [process arguments];
-                
-            if(arguments.count > 1)
+            if(g_EmulationController.cartLoadPath != nil)
             {
                 [g_EmulationController stopAudio];
                  
                 Archive archive(ArchiveMode_Persistent);
                 g_NESConsole.Save(archive);
                 
-                NSString* cartPath = arguments[1];
-                NSString* savePath = [cartPath stringByAppendingString:@".SAVE"];
+                NSString* savePath = [g_EmulationController.cartLoadPath stringByAppendingString:@".SAVE"];
                 archive.Save([savePath cStringUsingEncoding:NSUTF8StringEncoding]);
             }
         }
         else if(event.keyCode == 126) // up - load from file
         {
-            NSProcessInfo* process = [NSProcessInfo processInfo];
-            NSArray* arguments = [process arguments];
-                
-            if(arguments.count > 1)
+            if(g_EmulationController.cartLoadPath != nil)
             {
                 [g_EmulationController stopAudio];
                  
                 Archive archive(ArchiveMode_Persistent);
-                NSString* cartPath = arguments[1];
-                NSString* loadPath = [cartPath stringByAppendingString:@".SAVE"];
+                NSString* loadPath = [g_EmulationController.cartLoadPath stringByAppendingString:@".SAVE"];
                 
                 if(archive.Load([loadPath cStringUsingEncoding:NSUTF8StringEncoding]))
                 {

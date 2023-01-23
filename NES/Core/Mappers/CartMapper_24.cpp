@@ -191,7 +191,7 @@ void CartMapper_24::cpuWrite(uint16_t address, uint8_t byte)
             *(volatile char*)(0) = 'V' | 'R' | 'C' | '6';
         }
         
-        // Test any features in the upper bits that are also not supported e.g Name tables from CIRAM (console nametable)
+        // Test any features in the upper bits that are also not supported e.g Name tables from NON-CIRAM (console nametable)
         if((byte >> 4) != 2)
         {
             *(volatile char*)(0) = 'V' | 'R' | 'C' | '6';
@@ -239,25 +239,20 @@ void CartMapper_24::cpuWrite(uint16_t address, uint8_t byte)
     {
         m_irqEnableAfterAck = byte & 0b1;
         m_irqEnable = (byte >> 1) & 0b1;
-        m_irqMode = (byte >> 2) & 0b1;      // 1 = M cycle (% 3 == 0), 0 = scanline ()
+        m_irqMode = (byte >> 2) & 0b1;      // 1 = M cycle (CPU tick), 0 = scanline
+        m_irqPrescaler = 341;
         
         m_bus.SignalIRQ(false);
-        
-        m_irqCounter = m_irqLatch;
-        m_irqPrescaler = 341;
+        if(m_irqEnable)
+        {
+            m_irqCounter = m_irqLatch;
+        }
     }
     else if(address == 0xF002)
     {
         m_bus.SignalIRQ(false);
         m_irqEnable = m_irqEnableAfterAck;
     }
-}
-
-void CartMapper_24::SetChrBank(uint8_t** pChrBank, uint8_t bank)
-{
-    bank = bank & ((m_nCharacterSize / 0x400) - 1);
-    uint32_t bankAddress = (uint32_t(bank) * 0x400);
-    *pChrBank = &m_pChr[bankAddress];
 }
 
 void CartMapper_24::ClockIRQCounter()
@@ -300,6 +295,13 @@ float CartMapper_24::AudioOut()
 {
     // TODO: 2x pulse + 1x saw
     return 0.f;
+}
+
+void CartMapper_24::SetChrBank(uint8_t** pChrBank, uint8_t bank)
+{
+    bank = bank & ((m_nCharacterSize / 0x400) - 1);
+    uint32_t bankAddress = (uint32_t(bank) * 0x400);
+    *pChrBank = &m_pChr[bankAddress];
 }
 
 uint8_t CartMapper_24::ppuRead(uint16_t address)
