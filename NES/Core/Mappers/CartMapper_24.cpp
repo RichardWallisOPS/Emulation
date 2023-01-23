@@ -259,7 +259,7 @@ void CartMapper_24::cpuWrite(uint16_t address, uint8_t byte)
     }
     else if(registerAddress >= 0x9000 && registerAddress <= 0x9002)
     {
-        m_pulse1.SetRegister(registerAddress, byte);
+        m_pulse1.SetRegister(registerAddress - 0x9000, byte);
     }
 #if DEBUG
     else if(registerAddress == 0x9003)
@@ -273,11 +273,11 @@ void CartMapper_24::cpuWrite(uint16_t address, uint8_t byte)
 #endif
     else if(registerAddress >= 0xA000 && registerAddress <= 0xA002)
     {
-        m_pulse2.SetRegister(registerAddress, byte);
+        m_pulse2.SetRegister(registerAddress - 0xA000, byte);
     }
     else if(registerAddress >= 0xB000 && registerAddress <= 0xB002)
     {
-        m_saw.SetRegister(registerAddress, byte);
+        m_saw.SetRegister(registerAddress - 0xB000, byte);
     }
 }
 
@@ -413,7 +413,8 @@ void CartMapper_24::ppuWrite(uint16_t address, uint8_t byte)
 
 
 VRC6AudioPulseChannel::VRC6AudioPulseChannel()
-: m_mode(0)
+: m_enabled(0)
+, m_mode(0)
 , m_volume(0)
 , m_duty(0)
 , m_period(0)
@@ -442,11 +443,28 @@ uint8_t VRC6AudioPulseChannel::OutputValue()
 
 void VRC6AudioPulseChannel::SetRegister(uint16_t reg, uint8_t byte)
 {
-
+    if(reg == 0)
+    {
+        m_mode = (byte >> 7) & 0b1;
+        m_volume = (byte >> 0) & 0b1111;
+        m_duty = (byte >> 4) & 0b111;
+    }
+    else if(reg == 1)
+    {
+        m_period = (m_period & 0xFF00) | uint16_t(byte);
+    }
+    else if(reg == 2)
+    {
+        m_enabled = (byte >> 7) & 0b1;
+        m_period = (m_period & 0x00FF) | (uint16_t(byte & 0b1111) << 8);
+    }
 }
 
 
 VRC6AudioSawChannel::VRC6AudioSawChannel()
+: m_enabled(0)
+, m_accumRate(0)
+, m_period(0)
 {}
 
 void VRC6AudioSawChannel::Load(Archive& rArchive)
@@ -472,5 +490,17 @@ uint8_t VRC6AudioSawChannel::OutputValue()
 
 void VRC6AudioSawChannel::SetRegister(uint16_t reg, uint8_t byte)
 {
-
+    if(reg == 0)
+    {
+        m_accumRate = byte & 0b00111111;
+    }
+    else if(reg == 1)
+    {
+        m_period = (m_period & 0xFF00) | uint16_t(byte);
+    }
+    else if(reg == 2)
+    {
+        m_enabled = (byte >> 7) & 0b1;
+        m_period = (m_period & 0x00FF) | (uint16_t(byte & 0b1111) << 8);
+    }
 }

@@ -22,6 +22,7 @@ public:
     void SetRegister(uint16_t reg, uint8_t byte);
 private:
 
+    uint8_t m_enabled;
     uint8_t m_mode;
     uint8_t m_volume;
     uint8_t m_duty;
@@ -39,6 +40,10 @@ public:
     void Tick();
     void SetRegister(uint16_t reg, uint8_t byte);
 private:
+
+    uint8_t m_enabled;
+    uint8_t m_accumRate;
+    uint16_t m_period;
 };
 
 class CartMapper_24 : public Mapper
