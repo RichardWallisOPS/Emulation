@@ -10,6 +10,37 @@
 
 #include "CartMapperFactory.h"
 
+class VRC6AudioPulseChannel : public Serialisable
+{
+public:
+    SERIALISABLE_DECL
+    
+    VRC6AudioPulseChannel();
+    uint8_t OutputValue();
+    
+    void Tick();
+    void SetRegister(uint16_t reg, uint8_t byte);
+private:
+
+    uint8_t m_mode;
+    uint8_t m_volume;
+    uint8_t m_duty;
+    uint16_t m_period;
+};
+
+class VRC6AudioSawChannel : public Serialisable
+{
+public:
+    SERIALISABLE_DECL
+    
+    VRC6AudioSawChannel();
+    uint8_t OutputValue();
+    
+    void Tick();
+    void SetRegister(uint16_t reg, uint8_t byte);
+private:
+};
+
 class CartMapper_24 : public Mapper
 {
 public:
@@ -47,6 +78,10 @@ private:
     uint8_t m_irqEnableAfterAck;
     uint8_t m_irqCounter;
     uint16_t m_irqPrescaler;
+    
+    VRC6AudioPulseChannel   m_pulse1;
+    VRC6AudioPulseChannel   m_pulse2;
+    VRC6AudioSawChannel     m_saw;
 };
 
 #endif /* CartMapper_24_h */

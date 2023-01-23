@@ -259,7 +259,7 @@ void CartMapper_24::cpuWrite(uint16_t address, uint8_t byte)
     }
     else if(registerAddress >= 0x9000 && registerAddress <= 0x9002)
     {
-        // Pulse 1
+        m_pulse1.SetRegister(registerAddress, byte);
     }
 #if DEBUG
     else if(registerAddress == 0x9003)
@@ -273,11 +273,11 @@ void CartMapper_24::cpuWrite(uint16_t address, uint8_t byte)
 #endif
     else if(registerAddress >= 0xA000 && registerAddress <= 0xA002)
     {
-        // Pulse 2
+        m_pulse2.SetRegister(registerAddress, byte);
     }
     else if(registerAddress >= 0xB000 && registerAddress <= 0xB002)
     {
-        // Saw
+        m_saw.SetRegister(registerAddress, byte);
     }
 }
 
@@ -299,9 +299,18 @@ void CartMapper_24::ClockIRQCounter()
 
 void CartMapper_24::SystemTick(uint64_t cycleCount)
 {
+    const bool bCPUTick = (cycleCount % 3) == 0;
+    
+    if(bCPUTick)
+    {
+        m_pulse1.Tick();
+        m_pulse2.Tick();
+        m_saw.Tick();
+    }
+    
     if(m_irqMode == 1)
     {
-        if((cycleCount % 3) == 0)
+        if(bCPUTick)
         {
             ClockIRQCounter();
         }
@@ -319,9 +328,7 @@ void CartMapper_24::SystemTick(uint64_t cycleCount)
 
 float CartMapper_24::AudioOut()
 {
-    // TODO: 2x pulse + 1x saw
-    // TODO: Linear mix: pulse1 + pulse2 + saw;
-    return 0.f;
+    return m_pulse1.OutputValue() + m_pulse2.OutputValue() + m_saw.OutputValue();
 }
 
 void CartMapper_24::SetChrBank(uint8_t** pChrBank, uint8_t bank)
@@ -402,4 +409,68 @@ void CartMapper_24::ppuWrite(uint16_t address, uint8_t byte)
     {
         m_chrBank7[address - 0x1C00] = byte;
     }
+}
+
+
+VRC6AudioPulseChannel::VRC6AudioPulseChannel()
+: m_mode(0)
+, m_volume(0)
+, m_duty(0)
+, m_period(0)
+{}
+
+void VRC6AudioPulseChannel::Load(Archive& rArchive)
+{
+
+}
+
+void VRC6AudioPulseChannel::Save(Archive& rArchive) const
+{
+
+}
+
+void VRC6AudioPulseChannel::Tick()
+{
+
+}
+
+uint8_t VRC6AudioPulseChannel::OutputValue()
+{
+    // 4 bit value 0 - 15 same as PPU Pulse
+    return 0;
+}
+
+void VRC6AudioPulseChannel::SetRegister(uint16_t reg, uint8_t byte)
+{
+
+}
+
+
+VRC6AudioSawChannel::VRC6AudioSawChannel()
+{}
+
+void VRC6AudioSawChannel::Load(Archive& rArchive)
+{
+
+}
+
+void VRC6AudioSawChannel::Save(Archive& rArchive) const
+{
+
+}
+
+void VRC6AudioSawChannel::Tick()
+{
+
+}
+
+uint8_t VRC6AudioSawChannel::OutputValue()
+{
+    // High order 5 bits
+    return 0 & 0b11111000;
+}
+
+void VRC6AudioSawChannel::SetRegister(uint16_t reg, uint8_t byte)
+{
+
 }
