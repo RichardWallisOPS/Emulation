@@ -235,7 +235,6 @@ void CartMapper_24::cpuWrite(uint16_t address, uint8_t byte)
     {
         SetChrBank(&m_chrBank7, byte);
     }
-    // TODO: extra audio
     else if(registerAddress == 0xF000)
     {
         m_irqLatch = byte;
@@ -257,6 +256,28 @@ void CartMapper_24::cpuWrite(uint16_t address, uint8_t byte)
     {
         m_bus.SignalIRQ(false);
         m_irqEnable = m_irqEnableAfterAck;
+    }
+    else if(registerAddress >= 0x9000 && registerAddress <= 0x9002)
+    {
+        // Pulse 1
+    }
+#if DEBUG
+    else if(registerAddress == 0x9003)
+    {
+        // Frequency scaling - only 0 supported
+        if(byte != 0)
+        {
+            *(volatile char*)(0) = 'V' | 'R' | 'C' | '6';
+        }
+    }
+#endif
+    else if(registerAddress >= 0xA000 && registerAddress <= 0xA002)
+    {
+        // Pulse 2
+    }
+    else if(registerAddress >= 0xB000 && registerAddress <= 0xB002)
+    {
+        // Saw
     }
 }
 
