@@ -332,7 +332,9 @@ void CartMapper_24::SystemTick(uint64_t cycleCount)
 
 float CartMapper_24::AudioOut()
 {
-    return m_pulse1.OutputValue() + m_pulse2.OutputValue() + m_saw.OutputValue();
+    uint8_t outputValue = (m_pulse1.OutputValue() + m_pulse2.OutputValue() + (m_saw.OutputValue() >> 3)) & 0b111111;
+    
+    return float(outputValue) / 32.f;
 }
 
 void CartMapper_24::SetChrBank(uint8_t** pChrBank, uint8_t bank)
