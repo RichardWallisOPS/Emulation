@@ -144,23 +144,28 @@ uint8_t CartMapper_24::cpuRead(uint16_t address)
 
 void CartMapper_24::cpuWrite(uint16_t address, uint8_t byte)
 {
+    // Only Address lines 0-1 and 12-15 are used
+    // Mask out irrelevant bits for register selecting
+    uint16_t addressMask = 0b1111000000000011;
+    uint16_t registerAddress = address & addressMask;
+
     if(address >= 0x6000 && address <= 0x7FFF && m_pCartPRGRAM != nullptr)
     {
         m_pCartPRGRAM[address - 0x6000] = byte;
     }
-    else if(address >= 0x8000 && address <= 0x8003)
+    else if(registerAddress >= 0x8000 && registerAddress <= 0x8003)
     {
         //16 KB switchable
         uint32_t bank = byte & 0b00001111;
         m_prgBank0 = &m_pPrg[bank * 0x4000];
     }
-    else if(address >= 0xC000 && address <= 0xC003)
+    else if(registerAddress >= 0xC000 && registerAddress <= 0xC003)
     {
         // 8 KB switchable
         uint32_t bank = byte & 0b00011111;
         m_prgBank1 = &m_pPrg[bank * 0x2000];
     }
-    else if(address == 0xB003)
+    else if(registerAddress == 0xB003)
     {
         uint8_t chrBankingMode = byte & 0b11;
 
@@ -198,44 +203,44 @@ void CartMapper_24::cpuWrite(uint16_t address, uint8_t byte)
         }
 #endif
     }
-    else if(address == 0xD000)
+    else if(registerAddress == 0xD000)
     {
         SetChrBank(&m_chrBank0, byte);
     }
-    else if(address == 0xD001)
+    else if(registerAddress == 0xD001)
     {
         SetChrBank(&m_chrBank1, byte);
     }
-    else if(address == 0xD002)
+    else if(registerAddress == 0xD002)
     {
         SetChrBank(&m_chrBank2, byte);
     }
-    else if(address == 0xD003)
+    else if(registerAddress == 0xD003)
     {
         SetChrBank(&m_chrBank3, byte);
     }
-    else if(address == 0xE000)
+    else if(registerAddress == 0xE000)
     {
         SetChrBank(&m_chrBank4, byte);
     }
-    else if(address == 0xE001)
+    else if(registerAddress == 0xE001)
     {
         SetChrBank(&m_chrBank5, byte);
     }
-    else if(address == 0xE002)
+    else if(registerAddress == 0xE002)
     {
         SetChrBank(&m_chrBank6, byte);
     }
-    else if(address == 0xE003)
+    else if(registerAddress == 0xE003)
     {
         SetChrBank(&m_chrBank7, byte);
     }
     // TODO: extra audio
-    else if(address == 0xF000)
+    else if(registerAddress == 0xF000)
     {
         m_irqLatch = byte;
     }
-    else if(address == 0xF001)
+    else if(registerAddress == 0xF001)
     {
         m_irqEnableAfterAck = byte & 0b1;
         m_irqEnable = (byte >> 1) & 0b1;
@@ -248,7 +253,7 @@ void CartMapper_24::cpuWrite(uint16_t address, uint8_t byte)
             m_irqCounter = m_irqLatch;
         }
     }
-    else if(address == 0xF002)
+    else if(registerAddress == 0xF002)
     {
         m_bus.SignalIRQ(false);
         m_irqEnable = m_irqEnableAfterAck;
