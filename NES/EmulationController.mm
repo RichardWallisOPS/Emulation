@@ -537,6 +537,8 @@ void ClearHistory()
                 
                 NSString* savePath = [g_EmulationController.cartLoadPath stringByAppendingString:@".SAVE"];
                 archive.Save([savePath cStringUsingEncoding:NSUTF8StringEncoding]);
+                
+                m_allowAudio = true;
             }
         }
         else if(event.keyCode == 126) // up - load from file
@@ -554,6 +556,7 @@ void ClearHistory()
                     {
                         ClearHistory();
                         g_NESConsole.Load(archive);
+                        m_allowAudio = true;
                     }
                 }
             }
