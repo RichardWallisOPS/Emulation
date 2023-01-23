@@ -37,9 +37,17 @@ void CartMapper_24::Initialise()
 
 void CartMapper_24::Load(Archive& rArchive)
 {
-    // TODO
-        
-    /*
+    rArchive >> m_irqLatch;
+    rArchive >> m_irqMode;
+    rArchive >> m_irqEnable;
+    rArchive >> m_irqEnableAfterAck;
+    rArchive >> m_irqCounter;
+    rArchive >> m_irqPrescaler;
+    
+    rArchive >> m_pulse1;
+    rArchive >> m_pulse2;
+    rArchive >> m_saw;
+
     {
         uint8_t* pBasePrgAddress = &m_pPrg[0];
         size_t offsetBank0 = 0;
@@ -53,7 +61,6 @@ void CartMapper_24::Load(Archive& rArchive)
         m_prgBank0 = pBasePrgAddress + offsetBank0;
         m_prgBank1 = pBasePrgAddress + offsetBank1;
         m_prgBank2 = pBasePrgAddress + offsetBank2;
-        m_prgBank3 = pBasePrgAddress + offsetBank3;
     }
 
     {
@@ -83,24 +90,29 @@ void CartMapper_24::Load(Archive& rArchive)
         m_chrBank6 = pBaseChrAddress + offsetBank6;
         m_chrBank7 = pBaseChrAddress + offsetBank7;
     }
-    */
 }
 
 void CartMapper_24::Save(Archive& rArchive) const
 {
-    // TODO
+    rArchive << m_irqLatch;
+    rArchive << m_irqMode;
+    rArchive << m_irqEnable;
+    rArchive << m_irqEnableAfterAck;
+    rArchive << m_irqCounter;
+    rArchive << m_irqPrescaler;
+    
+    rArchive << m_pulse1;
+    rArchive << m_pulse2;
+    rArchive << m_saw;
         
-    /*
     {
         uint8_t* pBasePrgAddress = &m_pPrg[0];
         size_t offsetBank0 = m_prgBank0 - pBasePrgAddress;
         size_t offsetBank1 = m_prgBank1 - pBasePrgAddress;
         size_t offsetBank2 = m_prgBank2 - pBasePrgAddress;
-        size_t offsetBank3 = m_prgBank3 - pBasePrgAddress;
         rArchive << offsetBank0;
         rArchive << offsetBank1;
         rArchive << offsetBank2;
-        rArchive << offsetBank3;
     }
 
     {
@@ -122,7 +134,6 @@ void CartMapper_24::Save(Archive& rArchive) const
         rArchive << offsetBank6;
         rArchive << offsetBank7;
     }
-    */
 }
 
 uint8_t CartMapper_24::cpuRead(uint16_t address)
@@ -430,12 +441,24 @@ VRC6AudioPulseChannel::VRC6AudioPulseChannel()
 
 void VRC6AudioPulseChannel::Load(Archive& rArchive)
 {
-    // TODO
+    rArchive >> m_enabled;
+    rArchive >> m_mode;
+    rArchive >> m_volume;
+    rArchive >> m_duty;
+    rArchive >> m_period;
+    rArchive >> m_divider;
+    rArchive >> m_dutyCycle;
 }
 
 void VRC6AudioPulseChannel::Save(Archive& rArchive) const
 {
-    // TODO
+    rArchive << m_enabled;
+    rArchive << m_mode;
+    rArchive << m_volume;
+    rArchive << m_duty;
+    rArchive << m_period;
+    rArchive << m_divider;
+    rArchive << m_dutyCycle;
 }
 
 void VRC6AudioPulseChannel::Tick()
@@ -506,12 +529,22 @@ VRC6AudioSawChannel::VRC6AudioSawChannel()
 
 void VRC6AudioSawChannel::Load(Archive& rArchive)
 {
-    // TODO
+    rArchive >> m_enabled;
+    rArchive >> m_accumRate;
+    rArchive >> m_period;
+    rArchive >> m_divider;
+    rArchive >> m_accumTick;
+    rArchive >> m_accumulator;
 }
 
 void VRC6AudioSawChannel::Save(Archive& rArchive) const
 {
-    // TODO
+    rArchive << m_enabled;
+    rArchive << m_accumRate;
+    rArchive << m_period;
+    rArchive << m_divider;
+    rArchive << m_accumTick;
+    rArchive << m_accumulator;
 }
 
 void VRC6AudioSawChannel::Tick()
