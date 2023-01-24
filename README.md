@@ -2,11 +2,13 @@
 
 Thanks to https://www.nesdev.org/ and all the people who contributed to the information contained there.  All internal NES hardware info for this implementation taken from that source.  Again many thanks.  This implementation is my own take on that information.  The goal was to make it fairly accurate.  There are however some edge cases not accounted for. And there will be bugs!
 
-This is a project I just wanted to do for fun - lots of people have already done this and probably better in many/most cases!  Feel free to use this code for personal use.  Not for commerical use.  People who did the reverse engineering hard work at nesdev deserve that more.
+PUBLIC DOMAIN CRT STYLED SCAN-LINE SHADER, Original by Timothy Lottes published on ShaderToy - ported to Metal and only very slightly modified here. (To remove the shader CRT effect change "fragCopy_Monitor" to "fragCopy" in the Metal library function creation).
+
+This is a project I just wanted to do for fun - lots of people have already done this and probably better in many/most cases!  Feel free to use this code for personal use only, not for sale.  Not for commerical use.  People noted above deserve that more.
 
 ### Controls
 
-(This may change so I really need to keep this section up to date!)
+(This may change - so I really need to keep this section up to date!)
 
 Supports the game controllers supported by macOS.  Controllers are assigned the same order as they are given in GCGameController.
 
