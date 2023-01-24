@@ -431,7 +431,7 @@ uint8_t Cartridge::cpuRead(uint16_t address)
     }
     return 0x00;
 }
-    
+
 void Cartridge::cpuWrite(uint16_t address, uint8_t byte)
 {
     if(m_pMapper != nullptr)

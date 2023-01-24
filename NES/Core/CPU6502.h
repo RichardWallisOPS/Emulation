@@ -12,16 +12,6 @@
 #include "IOBus.h"
 #include "Serialise.h"
 
-// Implementation notes:
-
-// Instruction cycle Tn states taken from 6502 data sheet
-// Registers, memory, address and data buses values try to follow the rules for these states
-// This means some Tn operations look superfluous but this is trying to be cpu register state cycle "accurate"
-// However some operations on the data bus that would be discared are not always done
-// No instruction implements T0 as that is the generic opCode fetch and is handled by the core update
-// NOTE: Decimal mode is not implemented - it and any illegal op-codes will error in Debug and NOP in Release
-// NOTE: Illegal opcode are not implemented
-
 class CPU6502 : public Serialisable
 {
 public:
