@@ -304,7 +304,7 @@ void CartMapper_24::ClockIRQCounter()
 {
     if(m_irqEnable)
     {
-        if(m_irqCounter == 0x00)
+        if(m_irqCounter == 0xFF)
         {
             m_irqCounter = m_irqLatch;
             m_bus.SignalIRQ(true);
