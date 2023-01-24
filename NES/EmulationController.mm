@@ -239,14 +239,12 @@ void ClearHistory()
                     float* pOutputFloatBuffer = (float*)pOutputAudioBuffer->mData;
                     
                     APUAudioBuffer* pInputAudioBuffer = &m_audioBuffers[m_readAudioBuffer];
-                    pInputAudioBuffer->FillUnusedSamples();
                     
-                    float* pInputFloatBuffer = pInputAudioBuffer->GetSampleBuffer();
-                    
-                    size_t samplesWritten = pInputAudioBuffer->GetSamplesWritten();
-                    
-                    if(samplesWritten == frameCount)
+                    if(pInputAudioBuffer->IsReady())
                     {
+                        float* pInputFloatBuffer = pInputAudioBuffer->GetSampleBuffer();
+                        const size_t samplesWritten = pInputAudioBuffer->GetSamplesWritten();
+                        
                         if(pInputAudioBuffer->ShouldReverseBuffer())
                         {
                             for(size_t sampleIdx = 0;sampleIdx < samplesWritten;++sampleIdx)
@@ -258,13 +256,14 @@ void ClearHistory()
                         {
                             memcpy(pOutputFloatBuffer, pInputFloatBuffer, samplesWritten * sizeof(float));
                         }
+                        
+                        pInputAudioBuffer->Reset();
+                        m_readAudioBuffer = (m_readAudioBuffer + 1) % m_audioBufferCount;
                     }
                     else
                     {
-                        memset(pOutputFloatBuffer, 0x00, frameCount * sizeof(float));
+                        memset(pOutputFloatBuffer, 0x0, frameCount * sizeof(float));
                     }
-                    
-                    m_readAudioBuffer = (m_readAudioBuffer + 1) % m_audioBufferCount;
                 }
                 return 0;
             }];
@@ -354,8 +353,7 @@ void ClearHistory()
             // Audio
             {
                 APUAudioBuffer* pCurrentAudioBuffer = &m_audioBuffers[m_writeAudioBuffer];
-                
-                // Always update reverse flag for next buffer
+                                
                 pCurrentAudioBuffer->SetShouldReverseBuffer(m_emulationDirection < 0);
                 
                 g_NESConsole.SetAudioOutputBuffer(pCurrentAudioBuffer);
@@ -371,7 +369,7 @@ void ClearHistory()
             g_NESConsole.Tick();
         }
         
-        if(m_allowAudio && !self.audioEngine.isRunning && m_writeAudioBuffer > 3)
+        if(m_allowAudio && !self.audioEngine.isRunning && m_writeAudioBuffer > 2)
         {
             self.audioEngine.mainMixerNode.outputVolume = 0.f;
             if(![self.audioEngine startAndReturnError:nil])

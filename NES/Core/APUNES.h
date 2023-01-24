@@ -20,6 +20,7 @@ public:
     : m_bufferSize(size)
     , m_samplesWritten(0)
     , m_bReverseFlag(false)
+    , m_bReady(false)
     {
         m_pBuffer = new float[m_bufferSize];
     }
@@ -46,6 +47,11 @@ public:
     void Reset()
     {
         m_samplesWritten = 0;
+        m_bReady = false;
+    }
+    bool IsReady() const
+    {
+        return m_bReady;
     }
     void AddSample(float fSample)
     {
@@ -54,7 +60,7 @@ public:
             m_pBuffer[m_samplesWritten++] = fSample;
         }
     }
-    void FillUnusedSamples()
+    void Finialise()
     {
         if(m_samplesWritten > 0)
         {
@@ -64,6 +70,11 @@ public:
                 ++m_samplesWritten;
             }
         }
+        else
+        {
+            memset(m_pBuffer, 0x0, m_bufferSize);
+        }
+        m_bReady = true;
     }
     void SetShouldReverseBuffer(bool bReverse)
     {
@@ -83,6 +94,7 @@ private:
     size_t m_bufferSize;
     size_t m_samplesWritten;
     bool   m_bReverseFlag;
+    std::atomic<bool> m_bReady;
 };
 
 class APUPulseChannel : public Serialisable

@@ -1017,11 +1017,17 @@ void APUNES::cpuWrite(uint16_t address, uint8_t byte)
 
 void APUNES::SetAudioOutputBuffer(APUAudioBuffer* pAudioBuffer)
 {
-    m_audioOutDataCounter = 0;
+    if(m_pAudioBuffer != nullptr)
+    {
+        m_pAudioBuffer->Finialise();
+    }
+
     m_pAudioBuffer = pAudioBuffer;
     
     if(m_pAudioBuffer != nullptr)
     {
         m_pAudioBuffer->Reset();
     }
+    
+    m_audioOutDataCounter = 0;
 }

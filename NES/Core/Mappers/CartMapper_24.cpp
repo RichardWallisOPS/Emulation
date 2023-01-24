@@ -171,13 +171,15 @@ void CartMapper_24::cpuWrite(uint16_t address, uint8_t byte)
     else if(registerAddress >= 0x8000 && registerAddress <= 0x8003)
     {
         //16 KB switchable
-        uint32_t bank = byte & 0b00001111;
+        uint32_t max16kBanks = m_nProgramSize / 0x4000;
+        uint32_t bank = (byte & 0b00001111) & (max16kBanks - 1);
         m_prgBank0 = &m_pPrg[bank * 0x4000];
     }
     else if(registerAddress >= 0xC000 && registerAddress <= 0xC003)
     {
         // 8 KB switchable
-        uint32_t bank = byte & 0b00011111;
+        uint32_t max8kBanks = m_nProgramSize / 0x2000;
+        uint32_t bank = (byte & 0b00011111) & (max8kBanks - 1);
         m_prgBank1 = &m_pPrg[bank * 0x2000];
     }
     else if(registerAddress == 0xB003)
@@ -256,12 +258,14 @@ void CartMapper_24::cpuWrite(uint16_t address, uint8_t byte)
     }
     else if(registerAddress == 0xF001)
     {
+        m_bus.SignalIRQ(false);
+        
         m_irqEnableAfterAck = byte & 0b1;
         m_irqEnable = (byte >> 1) & 0b1;
         m_irqMode = (byte >> 2) & 0b1;      // 1 = M cycle (CPU tick), 0 = scanline
+        
         m_irqPrescaler = 341;
         
-        m_bus.SignalIRQ(false);
         if(m_irqEnable)
         {
             m_irqCounter = m_irqLatch;
@@ -314,6 +318,7 @@ void CartMapper_24::ClockIRQCounter()
 
 void CartMapper_24::SystemTick(uint64_t cycleCount)
 {
+    // actually ppu tick but hey
     const bool bCPUTick = (cycleCount % 3) == 0;
     
     if(bCPUTick)
@@ -343,14 +348,20 @@ void CartMapper_24::SystemTick(uint64_t cycleCount)
 
 float CartMapper_24::AudioOut()
 {
-    uint8_t outputValue = (m_pulse1.OutputValue() + m_pulse2.OutputValue() + m_saw.OutputValue());
-    return (float(outputValue) / 64.f) * 0.5;
+    float pulse1 = m_pulse1.OutputValue();
+    float pulse2 = m_pulse2.OutputValue();
+    float saw = m_saw.OutputValue();
+    
+    float fPulse = (pulse1 + pulse2) * 0.00752f;
+    float fSaw = saw * 0.00851f;
+    
+    return fPulse + fSaw;
 }
 
 void CartMapper_24::SetChrBank(uint8_t** pChrBank, uint8_t bank)
 {
-    bank = bank & ((m_nCharacterSize / 0x400) - 1);
-    uint32_t bankAddress = (uint32_t(bank) * 0x400);
+    uint32_t bankIndex = uint32_t(bank) & ((m_nCharacterSize / 0x400) - 1);
+    uint32_t bankAddress = bankIndex * 0x400;
     *pChrBank = &m_pChr[bankAddress];
 }
 
