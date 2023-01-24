@@ -53,11 +53,9 @@ void CartMapper_24::Load(Archive& rArchive)
         size_t offsetBank0 = 0;
         size_t offsetBank1 = 0;
         size_t offsetBank2 = 0;
-        size_t offsetBank3 = 0;
         rArchive >> offsetBank0;
         rArchive >> offsetBank1;
         rArchive >> offsetBank2;
-        rArchive >> offsetBank3;
         m_prgBank0 = pBasePrgAddress + offsetBank0;
         m_prgBank1 = pBasePrgAddress + offsetBank1;
         m_prgBank2 = pBasePrgAddress + offsetBank2;
