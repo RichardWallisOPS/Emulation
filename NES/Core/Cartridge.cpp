@@ -161,7 +161,7 @@ void Cartridge::Initialise(SystemIOBus& bus, const char* pCartPath)
         }
     }
 
-    // Mirror mode for cart wiring - mapper can override - unless wired to 4-Screen
+    // Mirror mode for cart wiring - mapper can override
     bus.SetMirrorMode(vramMirror);
 
     // Create specific mapper for this cart

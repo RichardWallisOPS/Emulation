@@ -178,11 +178,7 @@ void PPUNES::SetCompatabilityMode(uint8_t flag)
 
 void PPUNES::SetMirrorMode(MirrorMode mode)
 {
-    // Can be changed - unless we are set to 4-NameTables
-    if(m_mirrorMode != VRAM_MIRROR_CART4)
-    {
-        m_mirrorMode = mode;
-    }
+    m_mirrorMode = mode;
 }
 
 void PPUNES::SetFlag(uint8_t flag, uint8_t& ppuRegister)
@@ -228,9 +224,6 @@ void PPUNES::PowerOn()
     memset(m_vram, 0x00, sizeof(m_vram));
     memset(m_primaryOAM, 0xFF, sizeof(m_primaryOAM));
     memset(m_secondaryOAM, 0xFF, sizeof(m_secondaryOAM));
-    
-    m_compatibiltyMode = 0;
-    m_mirrorMode = VRAM_MIRROR_H;
 }
 
 void PPUNES::Reset()
@@ -260,10 +253,7 @@ void PPUNES::Reset()
     
     memset(m_vram, 0x00, sizeof(m_vram));
     memset(m_primaryOAM, 0xFF, sizeof(m_primaryOAM));
-    memset(m_secondaryOAM, 0xFF, sizeof(m_secondaryOAM));
-    
-    m_compatibiltyMode = 0;
-    m_mirrorMode = VRAM_MIRROR_H;
+    memset(m_secondaryOAM, 0xFF, sizeof(m_secondaryOAM));    
 }
 
 void PPUNES::Tick()
