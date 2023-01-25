@@ -23,9 +23,6 @@ class PPUNES : public Serialisable
 {
 public:
     SERIALISABLE_DECL
-    
-    static const uint32_t nVRamSize = 0x0800;
-    static const uint32_t nPalletteSize = 0x20;
 
     PPUNES(SystemIOBus& bus);
     ~PPUNES();
@@ -78,8 +75,8 @@ private:
     MirrorMode m_mirrorMode;
     
     // Nametable + Pallette RAM
-    uint8_t m_vram[nVRamSize];                      // 2x 1024 byte name tables - last 64 bytes of each are the attribute tables
-    uint8_t m_pallette[nPalletteSize];
+    uint8_t m_vram[2048];                           // 2x 1024 byte name tables - last 64 bytes of each are the attribute tables
+    uint8_t m_pallette[32];
     
     // OAM RAM
     uint8_t m_primaryOAM[256];                      // object attribute ram

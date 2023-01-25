@@ -25,7 +25,7 @@ SystemNES::SystemNES()
 , m_dmaAddress(0xFFFF)
 , m_DMAMode(DMA_OFF)
 {
-    memset(m_ram, 0x00, nRamSize);
+    memset(m_ram, 0x00, sizeof(m_ram));
 }
 
 SystemNES::~SystemNES()
@@ -38,7 +38,7 @@ void SystemNES::Load(Archive& rArchive)
     uint8_t cartInfo = 0;
     rArchive >> cartInfo;
     
-    if(cartInfo == kArchiveSentinalHasData)
+    if(cartInfo == kArchiveSentinelHasData)
     {
         if(m_pCart != nullptr && rArchive.GetArchiveMode() == ArchiveMode_History)
         {
@@ -57,7 +57,7 @@ void SystemNES::Load(Archive& rArchive)
     
     rArchive >> m_bPowerOn;
     rArchive >> m_cycleCount;
-    rArchive.ReadBytes(m_ram, nRamSize);
+    rArchive.ReadBytes(m_ram, sizeof(m_ram));
     rArchive >> m_controller1;
     rArchive >> m_controller2;
     rArchive >> m_controllerLatch1;
@@ -75,17 +75,17 @@ void SystemNES::Save(Archive& rArchive) const
 {
     if(m_pCart != nullptr)
     {
-        rArchive << kArchiveSentinalHasData;
+        rArchive << kArchiveSentinelHasData;
         m_pCart->Save(rArchive);
     }
     else
     {
-        rArchive << kArchiveSentinalNoData;
+        rArchive << kArchiveSentinelNoData;
     }
     
     rArchive << m_bPowerOn;
     rArchive << m_cycleCount;
-    rArchive.WriteBytes(m_ram, nRamSize);
+    rArchive.WriteBytes(m_ram, sizeof(m_ram));
     rArchive << m_controller1;
     rArchive << m_controller2;
     rArchive << m_controllerLatch1;
@@ -113,7 +113,7 @@ void SystemNES::PowerOn()
     m_controllerLatch1 = 0;
     m_controllerLatch2 = 0;
     
-    memset(m_ram, 0x00, nRamSize);
+    memset(m_ram, 0x00, sizeof(m_ram));
     
     m_bPowerOn = true;
 }

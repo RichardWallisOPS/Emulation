@@ -54,10 +54,10 @@ void CartMapper_7::cpuWrite(uint16_t address, uint8_t byte)
 
 uint8_t CartMapper_7::ppuRead(uint16_t address)
 {
-    return m_pChr[address & (m_nCharacterSize - 1)];
+    return m_pCartCHRRAM[address & (m_nCharacterSize - 1)];
 }
 
 void CartMapper_7::ppuWrite(uint16_t address, uint8_t byte)
 {
-     m_pChr[address & (m_nCharacterSize - 1)] = byte;
+     m_pCartCHRRAM[address & (m_nCharacterSize - 1)] = byte;
 }

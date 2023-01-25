@@ -180,6 +180,7 @@ Cartridge::Cartridge(SystemIOBus& bus, const char* pCartPath)
 , m_fileDataSize(0)
 , m_pFileData(nullptr)
 , m_pPakData(nullptr)
+, m_cartVRAMAccessed(0)
 , m_pCartPRGRAM(nullptr)
 , m_pCartCHRRAM(nullptr)
 {
@@ -196,6 +197,7 @@ Cartridge::Cartridge(SystemIOBus& bus, Archive& rArchive)
 , m_fileDataSize(0)
 , m_pFileData(nullptr)
 , m_pPakData(nullptr)
+, m_cartVRAMAccessed(0)
 , m_pCartPRGRAM(nullptr)
 , m_pCartCHRRAM(nullptr)
 {
@@ -224,6 +226,18 @@ void Cartridge::Load(Archive& rArchive)
     // m_cartVRAM
     if(m_pMapper != nullptr)
     {
+        {
+            rArchive >> m_cartVRAMAccessed;
+            if(m_cartVRAMAccessed)
+            {
+                rArchive.ReadBytes(m_cartVRAM, sizeof(m_cartVRAM));
+            }
+            else
+            {
+                memset(m_cartVRAM, 0x00, sizeof(m_cartVRAM));
+            }
+        }
+        
         {
             uint32_t prgRamSize = 0;
             rArchive >> prgRamSize;
@@ -262,7 +276,7 @@ void Cartridge::Load(Archive& rArchive)
             uint8_t mapperInfo = 0;
             rArchive >> mapperInfo;
             
-            if(mapperInfo == kArchiveSentinalHasData)
+            if(mapperInfo == kArchiveSentinelHasData)
             {
                 // We should already have a mapper object - History or Saved Data
                 // Mappers don't handle memory, just offsets into this carts memory
@@ -292,8 +306,13 @@ void Cartridge::Save(Archive& rArchive) const
             rArchive.WriteBytes(m_pCartPath, pathLen);
         }
         
-        // TODO: When or if required
-        // m_cartVRAM
+        {
+            rArchive << m_cartVRAMAccessed;
+            if(m_cartVRAMAccessed)
+            {
+                rArchive.WriteBytes(m_cartVRAM, sizeof(m_cartVRAM));
+            }
+        }
         
         {
             uint32_t prgRamSize = m_pMapper->GetPrgRamSize();
@@ -315,44 +334,69 @@ void Cartridge::Save(Archive& rArchive) const
 
         if(m_pMapper != nullptr)
         {
-            rArchive << kArchiveSentinalHasData;
+            rArchive << kArchiveSentinelHasData;
             m_pMapper->Save(rArchive);
         }
         else
         {
-            rArchive << kArchiveSentinalNoData;
+            rArchive << kArchiveSentinelNoData;
         }
     }
 }
 
 void Cartridge::LoadNVRAM()
 {
-    if(m_pMapper != nullptr && m_pMapper->GetNVPrgRAMSize() > 0)
+    if(m_pMapper != nullptr)
     {
-        FileStack fileLoad(fopen(m_pNVRAMPath, "r"));
-        if(fileLoad.handle() != nullptr)
+        const size_t nvPrgRamSize = m_pMapper->GetNVPrgRAMSize();
+        const size_t nvChrRamSize = m_pMapper->GetNVChrRAMSize();
+        
+        if(nvPrgRamSize + nvChrRamSize > 0)
         {
-            fread(m_pCartPRGRAM, 1, m_pMapper->GetNVPrgRAMSize(), fileLoad.handle());
+            FileStack fileLoad(fopen(m_pNVRAMPath, "r"));
+            if(fileLoad.handle() != nullptr)
+            {
+                if(nvPrgRamSize > 0)
+                {
+                    fread(m_pCartPRGRAM, 1, nvPrgRamSize, fileLoad.handle());
+                }
+                if(nvChrRamSize > 0)
+                {
+                    fread(m_pCartCHRRAM, 1, nvChrRamSize, fileLoad.handle());
+                }
+            }
         }
     }
 }
 
 void Cartridge::SaveNVRAM()
 {
-    if(m_pMapper != nullptr && m_pMapper->GetNVPrgRAMSize() > 0)
+    if(m_pMapper != nullptr)
     {
-        FileStack fileSave(fopen(m_pNVRAMPath, "w"));
-        if(fileSave.handle() != nullptr)
+        const size_t nvPrgRamSize = m_pMapper->GetNVPrgRAMSize();
+        const size_t nvChrRamSize = m_pMapper->GetNVChrRAMSize();
+        
+        if(nvPrgRamSize + nvChrRamSize > 0)
         {
-            fwrite(m_pCartPRGRAM, 1, m_pMapper->GetNVPrgRAMSize(), fileSave.handle());
+            FileStack fileSave(fopen(m_pNVRAMPath, "w"));
+            if(fileSave.handle() != nullptr)
+            {
+                if(nvPrgRamSize > 0)
+                {
+                    fwrite(m_pCartPRGRAM, 1, nvPrgRamSize, fileSave.handle());
+                }
+                if(nvChrRamSize > 0)
+                {
+                    fwrite(m_pCartCHRRAM, 1, nvChrRamSize, fileSave.handle());
+                }
+            }
         }
     }
 }
 
 Cartridge::~Cartridge()
 {
-    // TODO: more often than stutdown?
-    // Every update is too often - maybe the end of a frame or each second?
+    // TODO: more often than stutdown?  Every update is too often - maybe the end of a frame or each second?
     SaveNVRAM();
     
     if(m_pCartPath != nullptr)
@@ -451,6 +495,7 @@ uint8_t Cartridge::ppuRead(uint16_t address)
     }
     else if(address >= 0x2000 && address <= 0x3EFF)
     {
+        m_cartVRAMAccessed = 1;
         uint32_t cartAddress = (address - 0x2000) % 4096;
         return m_cartVRAM[cartAddress];
     }
@@ -468,6 +513,7 @@ void Cartridge::ppuWrite(uint16_t address, uint8_t byte)
     }
     else if(address >= 0x2000 && address <= 0x3EFF)
     {
+        m_cartVRAMAccessed = 1;
         uint32_t cartAddress = (address - 0x2000) % 4096;
         m_cartVRAM[cartAddress] = byte;
     }

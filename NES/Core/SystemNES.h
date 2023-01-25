@@ -40,8 +40,6 @@ public:
         DMA_WRITE
     };
 
-    static const uint32_t nRamSize = 0x0800;
-
     SystemNES();
     virtual ~SystemNES();
     
@@ -70,7 +68,7 @@ public:
 private:
     bool        m_bPowerOn;
     uint64_t    m_cycleCount;
-    uint8_t     m_ram[nRamSize];
+    uint8_t     m_ram[2048];
 
     CPU6502     m_cpu;
     PPUNES      m_ppu;

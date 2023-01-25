@@ -32,8 +32,8 @@ private:
     FILE* m_pHandle;
 };
 
-const uint8_t kArchiveSentinalNoData = 0x00;
-const uint8_t kArchiveSentinalHasData = 0xFF;
+const uint8_t kArchiveSentinelNoData = 0x00;
+const uint8_t kArchiveSentinelHasData = 0xFF;
 
 enum ArchiveMode
 {

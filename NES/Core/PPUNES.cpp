@@ -87,7 +87,7 @@ PPUNES::PPUNES(SystemIOBus& bus)
 , m_bgPalletteShift1(0)
 , m_pVideoOutput(nullptr)
 {
-    memset(m_vram, 0x00, nVRamSize);
+    memset(m_vram, 0x00, sizeof(m_vram));
     memset(m_primaryOAM, 0xFF, sizeof(m_primaryOAM));
     memset(m_secondaryOAM, 0xFF, sizeof(m_secondaryOAM));
 }
@@ -101,8 +101,8 @@ void PPUNES::Load(Archive& rArchive)
 {
     rArchive >> m_compatibiltyMode;
     rArchive >> m_mirrorMode;
-    rArchive.ReadBytes(m_vram, nVRamSize);
-    rArchive.ReadBytes(m_pallette, nPalletteSize);
+    rArchive.ReadBytes(m_vram, sizeof(m_vram));
+    rArchive.ReadBytes(m_pallette, sizeof(m_pallette));
     rArchive.ReadBytes(m_primaryOAM, 256);
     rArchive.ReadBytes(m_secondaryOAM, 32);
     rArchive >> m_secondaryOAMWrite;
@@ -132,8 +132,8 @@ void PPUNES::Save(Archive& rArchive) const
 {
     rArchive << m_compatibiltyMode;
     rArchive << m_mirrorMode;
-    rArchive.WriteBytes(m_vram, nVRamSize);
-    rArchive.WriteBytes(m_pallette, nPalletteSize);
+    rArchive.WriteBytes(m_vram, sizeof(m_vram));
+    rArchive.WriteBytes(m_pallette, sizeof(m_pallette));
     rArchive.WriteBytes(m_primaryOAM, 256);
     rArchive.WriteBytes(m_secondaryOAM, 32);
     rArchive << m_secondaryOAMWrite;
@@ -221,7 +221,7 @@ void PPUNES::PowerOn()
     m_bgPalletteShift0 = 0;
     m_bgPalletteShift1 = 0;
     
-    memset(m_vram, 0x00, nVRamSize);
+    memset(m_vram, 0x00, sizeof(m_vram));
     memset(m_primaryOAM, 0xFF, sizeof(m_primaryOAM));
     memset(m_secondaryOAM, 0xFF, sizeof(m_secondaryOAM));
 }
@@ -251,7 +251,7 @@ void PPUNES::Reset()
     m_bgPalletteShift0 = 0;
     m_bgPalletteShift1 = 0;
     
-    memset(m_vram, 0x00, nVRamSize);
+    memset(m_vram, 0x00, sizeof(m_vram));
     memset(m_primaryOAM, 0xFF, sizeof(m_primaryOAM));
     memset(m_secondaryOAM, 0xFF, sizeof(m_secondaryOAM));
 }
@@ -568,7 +568,7 @@ uint8_t PPUNES::ppuReadAddress(uint16_t address)
         else
         {
             uint16_t vRamOffset = vRamAddress - 0x2000;
-            if(vRamOffset < nVRamSize)
+            if(vRamOffset < sizeof(m_vram))
             {
                 data = m_vram[vRamOffset];
             }
@@ -582,7 +582,7 @@ uint8_t PPUNES::ppuReadAddress(uint16_t address)
     }
     else if(address >= 0x3F00 && address <= 0x3FFF)
     {
-        uint16_t palletteIndex = (address - 0x3F00) % nPalletteSize;
+        uint16_t palletteIndex = (address - 0x3F00) % sizeof(m_pallette);
         data = m_pallette[palletteIndex];
     }
     
@@ -614,7 +614,7 @@ void PPUNES::ppuWriteAddress(uint16_t address, uint8_t byte)
         else
         {
             uint16_t vRamOffset = vRamAddress - 0x2000;
-            if(vRamOffset < nVRamSize)
+            if(vRamOffset < sizeof(m_vram))
             {
                 m_vram[vRamOffset] = byte;
             }
@@ -630,7 +630,7 @@ void PPUNES::ppuWriteAddress(uint16_t address, uint8_t byte)
     {
         // Pallete index is a 6 bit value
         uint8_t palletteLUT = byte & 0b00111111;
-        uint16_t palletteIndex = (address - 0x3F00) % nPalletteSize;
+        uint16_t palletteIndex = (address - 0x3F00) % sizeof(m_pallette);
         
         m_pallette[palletteIndex] = palletteLUT;
         
@@ -1003,11 +1003,6 @@ uint16_t PPUNES::absoluteAddressToVRAMAddress(uint16_t address)
                 address -= 0x0800;
             }
         }
-        else if(m_mirrorMode == VRAM_MIRROR_CART4)
-        {
-            // no mirroring all exist on cart ram
-            // does the cart handle the 0x3000 to 0x3EFF mirror?
-        }
         else if(m_mirrorMode == VRAM_MIRROR_SINGLEA)
         {
             if(address >= 0x2400 && address <= 0x27FF)
@@ -1037,6 +1032,10 @@ uint16_t PPUNES::absoluteAddressToVRAMAddress(uint16_t address)
             {
                 address -= 0x0800;
             }
+        }
+        else if(m_mirrorMode == VRAM_MIRROR_CART4)
+        {
+            // no mirroring - all exista via on cart ram
         }
     }
     return address;
