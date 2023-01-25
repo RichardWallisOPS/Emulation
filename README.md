@@ -12,12 +12,12 @@ This is a project I just wanted to do for fun - lots of people have already done
 
 Supports the game controllers supported by macOS.  Controllers are assigned the same order as they are given in GCGameController.
 
-Player NES Pad keyboard controls:
+NES Pad keyboard controls:<br>
 W,S,A,D = D-Pad<br>
 6,7     = Select | Start<br>
 O,P     = B | A<br>
 
-Emulation controls:
+Emulation controls:<br>
 Return  = Swap keyboard controls above between Player1 <=> Player2<br>
 &#8595; = save snap shot<br>
 &#8593; = load snap shot<br>
