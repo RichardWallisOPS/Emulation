@@ -161,7 +161,7 @@ void Cartridge::Initialise(SystemIOBus& bus, const char* pCartPath)
         }
     }
 
-    // Mirror mode for cart wiring - mapper can override
+    // Mirror mode for cart wiring - mapper can override - unless wired to 4-Screen
     bus.SetMirrorMode(vramMirror);
 
     // Create specific mapper for this cart
@@ -231,10 +231,6 @@ void Cartridge::Load(Archive& rArchive)
             if(m_cartVRAMAccessed)
             {
                 rArchive.ReadBytes(m_cartVRAM, sizeof(m_cartVRAM));
-            }
-            else
-            {
-                memset(m_cartVRAM, 0x00, sizeof(m_cartVRAM));
             }
         }
         

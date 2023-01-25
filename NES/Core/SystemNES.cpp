@@ -101,6 +101,9 @@ void SystemNES::Save(Archive& rArchive) const
 
 void SystemNES::PowerOn()
 {
+    m_ppu.Reset();
+    m_cpu.Reset();
+
     m_cycleCount = 0;
     m_dmaAddress = 0xFFFF;
     m_DMAMode = DMA_OFF;
@@ -127,7 +130,7 @@ void SystemNES::EjectCartridge()
 {
     m_bPowerOn = false;
     
-     if(m_pCart != nullptr)
+    if(m_pCart != nullptr)
     {
         delete m_pCart;
         m_pCart = nullptr;
