@@ -28,6 +28,7 @@ public:
     ~PPUNES();
     
     void SetMirrorMode(MirrorMode mode);
+    MirrorMode GetMirrorMode() const;
     
     void PowerOn();
     void Reset();

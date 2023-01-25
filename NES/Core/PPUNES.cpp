@@ -181,6 +181,11 @@ void PPUNES::SetMirrorMode(MirrorMode mode)
     m_mirrorMode = mode;
 }
 
+MirrorMode PPUNES::GetMirrorMode() const
+{
+    return m_mirrorMode;
+}
+
 void PPUNES::SetFlag(uint8_t flag, uint8_t& ppuRegister)
 {
     ppuRegister |= flag;

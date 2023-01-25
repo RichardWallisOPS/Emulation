@@ -180,7 +180,19 @@ void SystemNES::SignalIRQ(bool bSignal)
 
 void SystemNES::SetMirrorMode(MirrorMode mode)
 {
-    m_ppu.SetMirrorMode(mode);
+    if(m_bPowerOn)
+    {
+        // While the power is on - can't override Cart4 VRAM
+        if(m_ppu.GetMirrorMode() != VRAM_MIRROR_CART4)
+        {
+            m_ppu.SetMirrorMode(mode);
+        }
+    }
+    else
+    {
+        // Power off - allow
+        m_ppu.SetMirrorMode(mode);
+    }
 }
 
 void SystemNES::SetControllerBits(uint8_t port, uint8_t bits)
