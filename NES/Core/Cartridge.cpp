@@ -114,8 +114,6 @@ void Cartridge::Initialise(SystemIOBus& bus, const char* pCartPath)
     }
 
     // Setup cartridge data and rom mapping
-    memset(m_cartVRAM, 0x00, sizeof(m_cartVRAM));
-
     uint8_t* pPrg = m_pPakData + 0;
     uint8_t* pChr = m_pPakData + nProgramSize;
     
@@ -163,6 +161,12 @@ void Cartridge::Initialise(SystemIOBus& bus, const char* pCartPath)
 
     // Mirror mode for cart wiring - mapper can override
     bus.SetMirrorMode(vramMirror);
+    
+    if(vramMirror == VRAM_MIRROR_CART4)
+    {
+        m_pCartVRAM = new uint8_t[4096];
+        memset(m_pCartVRAM, 0x00, 4096);
+    }
 
     // Create specific mapper for this cart
     m_pMapper = Mapper::CreateMapper(   bus, mapperID,
@@ -180,7 +184,7 @@ Cartridge::Cartridge(SystemIOBus& bus, const char* pCartPath)
 , m_fileDataSize(0)
 , m_pFileData(nullptr)
 , m_pPakData(nullptr)
-, m_cartVRAMAccessed(0)
+, m_pCartVRAM(nullptr)
 , m_pCartPRGRAM(nullptr)
 , m_pCartCHRRAM(nullptr)
 {
@@ -193,11 +197,12 @@ Cartridge::Cartridge(SystemIOBus& bus, const char* pCartPath)
 
 Cartridge::Cartridge(SystemIOBus& bus, Archive& rArchive)
 : m_pCartPath(nullptr)
+, m_pNVRAMPath(nullptr)
 , m_pMapper(nullptr)
 , m_fileDataSize(0)
 , m_pFileData(nullptr)
 , m_pPakData(nullptr)
-, m_cartVRAMAccessed(0)
+, m_pCartVRAM(nullptr)
 , m_pCartPRGRAM(nullptr)
 , m_pCartCHRRAM(nullptr)
 {
@@ -221,16 +226,15 @@ Cartridge::Cartridge(SystemIOBus& bus, Archive& rArchive)
 void Cartridge::Load(Archive& rArchive)
 {
     // Path or cart data is handled in the Archive Constructor
-    
-    // TODO: When or if required
-    // m_cartVRAM
     if(m_pMapper != nullptr)
     {
         {
-            rArchive >> m_cartVRAMAccessed;
-            if(m_cartVRAMAccessed)
+            uint8_t hasVRAMData = 0;
+            rArchive >> hasVRAMData;
+            
+            if(hasVRAMData == kArchiveSentinelHasData)
             {
-                rArchive.ReadBytes(m_cartVRAM, sizeof(m_cartVRAM));
+                rArchive.ReadBytes(m_pCartVRAM, 4096);
             }
         }
         
@@ -295,18 +299,24 @@ void Cartridge::Save(Archive& rArchive) const
 {
     if(m_pMapper != nullptr)
     {
-        if(rArchive.GetArchiveMode() == ArchiveMode_Persistent)
         {
-            uint32_t pathLen = (uint32_t)strlen(m_pCartPath);
-            rArchive << pathLen;
-            rArchive.WriteBytes(m_pCartPath, pathLen);
+            if(rArchive.GetArchiveMode() == ArchiveMode_Persistent)
+            {
+                uint32_t pathLen = (uint32_t)strlen(m_pCartPath);
+                rArchive << pathLen;
+                rArchive.WriteBytes(m_pCartPath, pathLen);
+            }
         }
         
         {
-            rArchive << m_cartVRAMAccessed;
-            if(m_cartVRAMAccessed)
+            if(m_pCartVRAM != nullptr)
             {
-                rArchive.WriteBytes(m_cartVRAM, sizeof(m_cartVRAM));
+                rArchive << kArchiveSentinelHasData;
+                rArchive.WriteBytes(m_pCartVRAM, 4096);
+            }
+            else
+            {
+                rArchive << kArchiveSentinelNoData;
             }
         }
         
@@ -328,14 +338,16 @@ void Cartridge::Save(Archive& rArchive) const
             }
         }
 
-        if(m_pMapper != nullptr)
         {
-            rArchive << kArchiveSentinelHasData;
-            m_pMapper->Save(rArchive);
-        }
-        else
-        {
-            rArchive << kArchiveSentinelNoData;
+            if(m_pMapper != nullptr)
+            {
+                rArchive << kArchiveSentinelHasData;
+                m_pMapper->Save(rArchive);
+            }
+            else
+            {
+                rArchive << kArchiveSentinelNoData;
+            }
         }
     }
 }
@@ -430,6 +442,12 @@ Cartridge::~Cartridge()
         delete [] m_pFileData;
         m_pFileData = nullptr;
     }
+    
+    if(m_pCartVRAM != nullptr)
+    {
+        delete [] m_pCartVRAM;
+        m_pCartVRAM = nullptr;
+    }
 }
 
 bool Cartridge::IsValid() const
@@ -489,11 +507,10 @@ uint8_t Cartridge::ppuRead(uint16_t address)
             return m_pMapper->ppuRead(address);
         }
     }
-    else if(address >= 0x2000 && address <= 0x3EFF)
+    else if(address >= 0x2000 && address <= 0x3EFF && m_pCartVRAM != nullptr)
     {
-        m_cartVRAMAccessed = 1;
         uint32_t cartAddress = (address - 0x2000) % 4096;
-        return m_cartVRAM[cartAddress];
+        return m_pCartVRAM[cartAddress];
     }
     return address & 0xFF; // open bus low byte return
 }
@@ -507,10 +524,9 @@ void Cartridge::ppuWrite(uint16_t address, uint8_t byte)
             m_pMapper->ppuWrite(address, byte);
         }
     }
-    else if(address >= 0x2000 && address <= 0x3EFF)
+    else if(address >= 0x2000 && address <= 0x3EFF && m_pCartVRAM != nullptr)
     {
-        m_cartVRAMAccessed = 1;
         uint32_t cartAddress = (address - 0x2000) % 4096;
-        m_cartVRAM[cartAddress] = byte;
+        m_pCartVRAM[cartAddress] = byte;
     }
 }

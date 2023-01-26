@@ -56,8 +56,7 @@ private:
     uint8_t*    m_pPakData;
     
     // Extra VRAM tables for certain carts
-    uint8_t     m_cartVRAMAccessed;
-    uint8_t     m_cartVRAM[4096];
+    uint8_t*    m_pCartVRAM;
     
     // On cart RAM (optional)
     uint8_t*    m_pCartPRGRAM;
