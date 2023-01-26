@@ -96,12 +96,10 @@ void Cartridge::Initialise(SystemIOBus& bus, const char* pCartPath)
         *(m_pNVRAMPath + cartPathLen + nvSaveExensionLen) = 0;
     }
     
+    // Which header type have we got
     bool iNes2_0 = ((pHeader->m_flags7 >> 2) & 0x3) == 2;
     
-    // VRAM Name table mirror mode
-    MirrorMode vramMirror = (pHeader->m_flags6 & 1) == 0 ? VRAM_MIRROR_H : VRAM_MIRROR_V;
-    vramMirror = (pHeader->m_flags6 & 1 << 3) != 0 ? VRAM_MIRROR_CART4 : vramMirror;
-    
+    // Fetch Mapper
     uint8_t mapperID = (pHeader->m_flags7 & 0xF0) | ((pHeader->m_flags6 & 0xF0) >> 4);
     
     // iNes 1.0 size
@@ -160,12 +158,18 @@ void Cartridge::Initialise(SystemIOBus& bus, const char* pCartPath)
     }
 
     // Mirror mode for cart wiring - mapper can override
-    bus.SetMirrorMode(vramMirror);
-    
-    if(vramMirror == VRAM_MIRROR_CART4)
     {
-        m_pCartVRAM = new uint8_t[4096];
-        memset(m_pCartVRAM, 0x00, 4096);
+        // VRAM Name table mirror mode
+        MirrorMode vramMirror = (pHeader->m_flags6 & 1) == 0 ? VRAM_MIRROR_H : VRAM_MIRROR_V;
+        vramMirror = (pHeader->m_flags6 & 1 << 3) != 0 ? VRAM_MIRROR_CART4 : vramMirror;
+        
+        bus.SetMirrorMode(vramMirror);
+    
+        if(vramMirror == VRAM_MIRROR_CART4)
+        {
+            m_pCartVRAM = new uint8_t[4096];
+            memset(m_pCartVRAM, 0x00, 4096);
+        }
     }
 
     // Create specific mapper for this cart
