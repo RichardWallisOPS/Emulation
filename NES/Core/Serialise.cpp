@@ -3,7 +3,6 @@
 //  NES
 //
 //  Created by Richard Wallis on 02/01/2023.
-//  Copyright © 2023 openplanetsoftware. All rights reserved.
 //
 
 #include <cstdint>

@@ -3,7 +3,6 @@
 //  NES
 //
 //  Created by Richard Wallis on 15/12/2022.
-//  Copyright © 2022 openplanetsoftware. All rights reserved.
 //
 
 #include "CartMapper_66.h"

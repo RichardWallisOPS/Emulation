@@ -1,9 +1,8 @@
 //
-//  CartMapper_2.h
+//  CartMapper_0.h
 //  NES
 //
 //  Created by Richard Wallis on 13/12/2022.
-//  Copyright © 2022 openplanetsoftware. All rights reserved.
 //
 
 #ifndef CartMapper_0_h

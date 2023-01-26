@@ -1,5 +1,5 @@
 //
-//  CartMapper_66.hpp
+//  CartMapper_66.h
 //  NES
 //
 //  Created by Richard Wallis on 15/12/2022.
