@@ -4,13 +4,11 @@ Thanks to https://www.nesdev.org/ and all the people who contributed to the info
 
 PUBLIC DOMAIN CRT STYLED SCAN-LINE SHADER, Original by Timothy Lottes published on ShaderToy - ported to Metal and only very slightly modified here. (To remove the shader CRT effect change "fragCopy_Monitor" to "fragCopy" in the Metal library function creation).
 
-This is a project I just wanted to do for fun - lots of people have already done this and probably better.  It is completely unofficial.  You are free to use this code for personal use only.  You may not redistribute, publish, sublicense, sell, rent or transfer.  Not for commerical use.  Use of this code is at your own risk.  Please note: At a minimum - you must physically own any games used on this emulator and make that backup you intend to use from your original copy.
+This is a project I just wanted to do for fun - lots of people have already done this and probably better.  It is completely unofficial.  You are free to use this code for personal use only.  You may not redistribute, publish, sublicense, sell, rent or transfer.  Not for commerical use.  Use of this code is at your own risk.  Please note: At a minimum - you must physically own any games you use and any backups are created from your original copy.
 
 ### Controls
 
-(This may change - so I really need to keep this section up to date!)
-
-Supports the game controllers supported by macOS.  Controllers are assigned the same order as they are given in GCGameController.
+Supports game controllers supported by macOS.  Controllers are assigned the same order as they are given in GCGameController, as such disconnecting a controller while in use may re-order the rest of the in use controllers.  I won't fix this. However there are also basic keyboard mappings:
 
 NES Pad keyboard controls:<br>
 W,S,A,D = D-Pad<br>
