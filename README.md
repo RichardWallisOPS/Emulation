@@ -4,7 +4,7 @@ Thanks to https://www.nesdev.org/ and all the people who contributed to the info
 
 PUBLIC DOMAIN CRT STYLED SCAN-LINE SHADER, Original by Timothy Lottes published on ShaderToy - ported to Metal and only very slightly modified here. (To remove the shader CRT effect change "fragCopy_Monitor" to "fragCopy" in the Metal library function creation).
 
-This is a project I just wanted to do for fun - lots of people have already done this and probably better.  It is completely unofficial.  You are free to use this code for personal use only.  You may not redistribute, publish, sublicense, sell, rent or transfer.  Not for commerical use.  Use of this code is at your own risk.
+This is a project I just wanted to do for fun - lots of people have already done this and probably better.  It is completely unofficial.  You are free to use this code for personal use only.  You may not redistribute, publish, sublicense, sell, rent or transfer.  Not for commerical use.  Use of this code is at your own risk.  Please note: At a minimum - you must physically own any games used on this emulator and make that backup you intend to use from your original copy.
 
 ### Controls
 
@@ -27,7 +27,7 @@ N       = Open file load dialogue (opens automatically on start if no file load 
 
 ### Goal
 
-Decently accurate emulation, try to have most "Top 50" games working well.  But ignore stuff or games I don't care about. Please note: At a minimum - you must physically own any games used and make that backup you intend to use yourself.
+Decently accurate emulation, try to have most "Top 50" games working well.  But ignore stuff or games I don't care about.
 
 ### Random Thoughts
 
