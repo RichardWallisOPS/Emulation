@@ -4,7 +4,7 @@ Thanks to https://www.nesdev.org/ and all the people who contributed to the info
 
 PUBLIC DOMAIN CRT STYLED SCAN-LINE SHADER, Original by Timothy Lottes published on ShaderToy - ported to Metal and only very slightly modified here. (To remove the shader CRT effect change "fragCopy_Monitor" to "fragCopy" in the Metal library function creation).
 
-This is a project I just wanted to do for fun - lots of people have already done this and probably better in many/most cases!  Feel free to use this code for personal use only, not for sale.  Not for commerical use.  People noted above deserve that more.
+This is a project I just wanted to do for fun - lots of people have already done this and probably better.  It is completely unofficial.  You are free to use this code for personal use only.  You may not redistribute, publish, sublicense, sell, rent or transfer.  Not for commerical use.  Use of this code is at your own risk.
 
 ### Controls
 
@@ -27,7 +27,7 @@ N       = Open file load dialogue (opens automatically on start if no file load 
 
 ### Goal
 
-Decently accurate emulation, try to have most "Top 50" games working well.  But ignore stuff or games I don't care about.
+Decently accurate emulation, try to have most "Top 50" games working well.  But ignore stuff or games I don't care about. Please note: At a minimum - you must physically own any games used and make that backup you intend to use yourself.
 
 ### Random Thoughts
 
@@ -35,7 +35,8 @@ Decently accurate emulation, try to have most "Top 50" games working well.  But 
 2) Looking like NMI (and maybe IRQ?) signals should be held back some amount of ticks.  Must be as the H/W take time to pull the lines low.  Look at moving any wait logic into the System::SignalXXX() functiions before signaling the CPU
 3) FME-7 (Mapper 69) is missing 5B audio - use the other version of the game.
 4) Looking for MMC5 support? Doesn't exist - Mapper 24 (VRC6) is available though for that game and it supports the extra audio too!
-5) EmulationController needs refactoring but I probably won't bother.
+5) EmulationController needs refactoring but I probably won't bother - it's not the interesting part.
+6) Wrapper App is very bare bones.  It was the emulation core that interested me.
 
 ### Implementation Notes for 6502
 
