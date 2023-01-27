@@ -236,10 +236,17 @@ void Cartridge::Load(Archive& rArchive)
             uint8_t hasVRAMData = 0;
             rArchive >> hasVRAMData;
             
-            if(hasVRAMData == kArchiveSentinelHasData)
+            if(m_pCartVRAM != nullptr && hasVRAMData == kArchiveSentinelHasData)
             {
                 rArchive.ReadBytes(m_pCartVRAM, 4096);
             }
+    #if DEBUG
+            else if(hasVRAMData == kArchiveSentinelHasData || m_pCartVRAM != nullptr)
+            {
+                // Something has gone wrong
+                *(volatile char*)(0) = 'C' | 'A' | 'R' | 'T';
+            }
+    #endif
         }
         
         {
