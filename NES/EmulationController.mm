@@ -31,8 +31,8 @@ Archive         m_ArchiveBuffer[m_kArchiveCount];
 // Audio buffers
 volatile size_t m_readAudioBuffer = 0;
 volatile size_t m_writeAudioBuffer = 0;
-const size_t    m_audioBufferCount = 8;
-APUAudioBuffer  m_audioBuffers[m_audioBufferCount];
+const size_t    m_kAudioBufferCount = 8;
+APUAudioBuffer  m_audioBuffers[m_kAudioBufferCount];
 const float     m_outputMixerVolume = 0.5;
 bool            m_allowAudio = false;
 
@@ -82,6 +82,12 @@ void ClearHistory()
 
 
 @implementation EmulationController
+
+- (void) setCartLoadPath:(NSString*)cartLoadPath
+{
+    _cartLoadPath = cartLoadPath;
+    [[[NSApplication sharedApplication] mainWindow] setTitle:cartLoadPath.lastPathComponent.stringByDeletingPathExtension];
+}
 
 - (id<MTLTexture>) nextTextureOutput
 {
@@ -258,7 +264,7 @@ void ClearHistory()
                         }
                         
                         pInputAudioBuffer->Reset();
-                        m_readAudioBuffer = (m_readAudioBuffer + 1) % m_audioBufferCount;
+                        m_readAudioBuffer = (m_readAudioBuffer + 1) % m_kAudioBufferCount;
                     }
                     else
                     {
@@ -357,14 +363,14 @@ void ClearHistory()
                 pCurrentAudioBuffer->SetShouldReverseBuffer(m_emulationDirection < 0);
                 
                 g_NESConsole.SetAudioOutputBuffer(pCurrentAudioBuffer);
-                m_writeAudioBuffer = (m_writeAudioBuffer + 1) % m_audioBufferCount;
+                m_writeAudioBuffer = (m_writeAudioBuffer + 1) % m_kAudioBufferCount;
             }
         }
         
         // Tick emulation
         // 341 x 262 = [scanline time + hBlank time in scanline dots] X [scanline count + vBlank time in scanlines]
-        const size_t nNumPPUTicksPerFrame = 89342;
-        for(size_t i = 0;i < nNumPPUTicksPerFrame;++i)
+        const size_t kNumPPUTicksPerFrame = 89342;
+        for(size_t i = 0;i < kNumPPUTicksPerFrame;++i)
         {
             g_NESConsole.Tick();
         }
