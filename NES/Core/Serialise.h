@@ -34,6 +34,7 @@ private:
 
 const uint8_t kArchiveSentinelNoData = 0x00;
 const uint8_t kArchiveSentinelHasData = 0xFF;
+const size_t kArchiveMemoryIncrement = 1024 * 128;
 
 enum ArchiveMode
 {
@@ -76,7 +77,7 @@ public:
         
         if(objSize + m_writeHead >= m_memSize)
         {
-            IncreaseAllocation();
+            IncreaseAllocation(objSize);
         }
         
         T* pWriteObjectPtr = (T*)(&m_pMem[m_writeHead]);
@@ -89,7 +90,7 @@ public:
     {
         if(count + m_writeHead >= m_memSize)
         {
-            IncreaseAllocation();
+            IncreaseAllocation(count);
         }
         
         memcpy(&m_pMem[m_writeHead], pBytes, count);
@@ -121,16 +122,24 @@ public:
     
 private:
 
-    void IncreaseAllocation()
+    void IncreaseAllocation(size_t AddingByteCount)
     {
-        uint8_t* pOldMem = m_pMem;
-            
-        m_memSize = m_memSize * 2;
-        m_pMem = new uint8_t[m_memSize];
+        const size_t minRequiredSize = m_memSize + AddingByteCount;
         
-        memcpy(m_pMem, pOldMem, m_writeHead);
+        while(m_memSize < minRequiredSize)
+        {
+            m_memSize += kArchiveMemoryIncrement;
+        }
         
-        delete [] pOldMem;
+        uint8_t* pNewMem = new uint8_t[m_memSize];
+        
+        if(m_pMem != nullptr)
+        {
+            memcpy(pNewMem, m_pMem, m_writeHead);
+            delete [] m_pMem;
+        }
+        
+        m_pMem = pNewMem;
     }
 
 private:

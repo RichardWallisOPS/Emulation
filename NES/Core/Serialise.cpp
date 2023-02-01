@@ -16,7 +16,7 @@ Archive::Archive(ArchiveMode mode /*= ArchiveMode_History*/)
 , m_readHead(0)
 , m_writeHead(0)
 {
-    m_memSize = 1024 * 1024;
+    m_memSize = kArchiveMemoryIncrement;
     m_pMem = new uint8_t[m_memSize];
 }
 
