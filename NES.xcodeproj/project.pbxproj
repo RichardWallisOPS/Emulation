@@ -30,6 +30,7 @@
 		A176D194297D9EC600299058 /* CartMapper_24.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A176D192297D9EC600299058 /* CartMapper_24.cpp */; };
 		A179F4582967682D00F613AD /* AVFAudio.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A179F4572967682D00F613AD /* AVFAudio.framework */; };
 		A19FF263294B5BA800B4DCD1 /* CartMapper_1.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A19FF262294B5BA800B4DCD1 /* CartMapper_1.cpp */; };
+		A1B0BE9B2997E9A5004C3E22 /* CartMapper_23.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A1B0BE992997E9A5004C3E22 /* CartMapper_23.cpp */; };
 		A1D57EED1DDB715200CA09B7 /* AppDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = A1D57EEC1DDB715200CA09B7 /* AppDelegate.m */; };
 		A1D57EF01DDB715200CA09B7 /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = A1D57EEF1DDB715200CA09B7 /* main.m */; };
 		A1D57EF31DDB715200CA09B7 /* ViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = A1D57EF21DDB715200CA09B7 /* ViewController.m */; };
@@ -82,6 +83,8 @@
 		A179F4572967682D00F613AD /* AVFAudio.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AVFAudio.framework; path = System/Library/Frameworks/AVFAudio.framework; sourceTree = SDKROOT; };
 		A19FF261294B5B8700B4DCD1 /* CartMapper_1.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = CartMapper_1.h; sourceTree = "<group>"; };
 		A19FF262294B5BA800B4DCD1 /* CartMapper_1.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = CartMapper_1.cpp; sourceTree = "<group>"; };
+		A1B0BE992997E9A5004C3E22 /* CartMapper_23.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = CartMapper_23.cpp; sourceTree = "<group>"; };
+		A1B0BE9A2997E9A5004C3E22 /* CartMapper_23.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = CartMapper_23.h; sourceTree = "<group>"; };
 		A1D57EE81DDB715200CA09B7 /* NES.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = NES.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		A1D57EEB1DDB715200CA09B7 /* AppDelegate.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = AppDelegate.h; sourceTree = "<group>"; };
 		A1D57EEC1DDB715200CA09B7 /* AppDelegate.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = AppDelegate.m; sourceTree = "<group>"; };
@@ -128,6 +131,8 @@
 				A1147D0F2974639D00B8D8CD /* CartMapper_7.cpp */,
 				A14A9B942971FB7D005209FB /* CartMapper_9.h */,
 				A14A9B932971FB7D005209FB /* CartMapper_9.cpp */,
+				A1B0BE9A2997E9A5004C3E22 /* CartMapper_23.h */,
+				A1B0BE992997E9A5004C3E22 /* CartMapper_23.cpp */,
 				A176D193297D9EC600299058 /* CartMapper_24.h */,
 				A176D192297D9EC600299058 /* CartMapper_24.cpp */,
 				A1733DB3294BBE9200D1B296 /* CartMapper_66.h */,
@@ -300,6 +305,7 @@
 				A175D4C3294A019F0073E3D6 /* CartMapperFactory.cpp in Sources */,
 				A1D57EF01DDB715200CA09B7 /* main.m in Sources */,
 				A172111A292434130055A57A /* Cartridge.cpp in Sources */,
+				A1B0BE9B2997E9A5004C3E22 /* CartMapper_23.cpp in Sources */,
 				A14F253529531983007ED30F /* Controller.m in Sources */,
 				A120529E294F7B730030D93C /* CartMapper_4.cpp in Sources */,
 				84907F3D20D902CD005E174C /* shaders.metal in Sources */,
