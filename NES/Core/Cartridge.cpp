@@ -388,7 +388,7 @@ void Cartridge::LoadNVRAM()
     }
 }
 
-void Cartridge::SaveNVRAM()
+void Cartridge::SaveNVRAM() const
 {
     if(m_pMapper != nullptr)
     {

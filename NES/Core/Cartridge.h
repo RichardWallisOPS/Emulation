@@ -23,8 +23,9 @@ public:
     Cartridge(SystemIOBus& bus, Archive& rArchive);
     ~Cartridge();
     
-    bool IsValid() const;
+    void SaveNVRAM() const;
     
+    bool IsValid() const;
     uint16_t GetMapperID() const;
     
     virtual void SystemTick(uint64_t cycleCount) override;
@@ -33,9 +34,7 @@ public:
 private:
 
     void Initialise(SystemIOBus& bus, const char* pCartPath);
-
     void LoadNVRAM();
-    void SaveNVRAM();
     
 private:
 
