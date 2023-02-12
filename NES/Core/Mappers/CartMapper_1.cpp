@@ -11,15 +11,13 @@ void CartMapper_1::Initialise()
 {
     m_shiftRegister = 0;
     m_shiftCount = 0;
-    m_ctrl = 0;
     m_chrBank0 = 0;
     m_chrBank1 = 0;
-    m_prgBank =0;
-
-    m_prgBank = 0x06;
-    m_chrBank0 = 0x00;
-    m_ctrl = 0b11111;
+    m_prgBank = 0;
     
+    // Power on PRG mode 3, switchable at 0x8000 and last bank at 0xC000
+    m_ctrl = 0b11111;
+
     // Using 8k CHR RAM
     if(m_nCharacterSize == 0)
     {
@@ -67,9 +65,7 @@ uint8_t CartMapper_1::cpuRead(uint16_t address)
             // 32k at 0x8000 - ignore low bit of control
             if(address >= 0x8000 && address <= 0xFFFF)
             {
-                progBank = progBank >> 1; // TODO: Untested
-                uint32_t bankAddress = (progBank * 0x8000) + (address - 0x8000);
-            
+                uint32_t bankAddress = ((progBank >> 1) * 0x8000) + (address - 0x8000);
                 return m_pPrg[bankAddress];
             }
         }
@@ -143,13 +139,11 @@ void CartMapper_1::cpuWrite(uint16_t address, uint8_t byte)
                     uint8_t mirrorMode = m_ctrl & 0b11;
                     if(mirrorMode == 0)
                     {
-                        //TODO
-                         m_bus.SetMirrorMode(VRAM_MIRROR_V);
+                         m_bus.SetMirrorMode(VRAM_MIRROR_SINGLEA);
                     }
                     else if(mirrorMode == 1)
                     {
-                        // TODO
-                         m_bus.SetMirrorMode(VRAM_MIRROR_V);
+                         m_bus.SetMirrorMode(VRAM_MIRROR_SINGLEB);
                     }
                     else if(mirrorMode == 2)
                     {
