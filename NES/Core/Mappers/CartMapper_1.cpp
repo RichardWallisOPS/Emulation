@@ -177,6 +177,7 @@ void CartMapper_1::cpuWrite(uint16_t address, uint8_t byte)
 uint8_t CartMapper_1::ppuRead(uint16_t address)
 {
     uint8_t chrBankMode = (m_ctrl >> 4) & 1;
+    uint32_t addressRange = m_nCharacterSize > 0 ? m_nCharacterSize - 1 : GetChrRamSize() - 1;
     
     if(chrBankMode == 1)
     {
@@ -184,12 +185,12 @@ uint8_t CartMapper_1::ppuRead(uint16_t address)
         if(address >= 0x0000 && address <= 0x0FFF)
         {
             uint32_t bankAddress = (uint32_t(m_chrBank0) * 0x1000) + address;
-            return m_pChr[bankAddress];
+            return m_pChr[bankAddress & addressRange];
         }
         else if(address >= 0x1000 && address <= 0x1FFF)
         {
             uint32_t bankAddress = (uint32_t(m_chrBank1) * 0x1000) + (address - 0x1000);
-            return m_pChr[bankAddress];
+            return m_pChr[bankAddress & addressRange];
         }
     }
     else if(chrBankMode == 0)
@@ -198,7 +199,7 @@ uint8_t CartMapper_1::ppuRead(uint16_t address)
         if(address >= 0x0000 && address <= 0x1FFF)
         {
             uint32_t bankAddress = ((uint32_t(m_chrBank0) >> 1) * 0x2000) + address;
-            return m_pChr[bankAddress];
+            return m_pChr[bankAddress & addressRange];
         }
     }
     
@@ -208,6 +209,7 @@ uint8_t CartMapper_1::ppuRead(uint16_t address)
 void CartMapper_1::ppuWrite(uint16_t address, uint8_t byte)
 {
     uint8_t chrBankMode = (m_ctrl >> 4) & 1;
+    uint32_t addressRange = m_nCharacterSize > 0 ? m_nCharacterSize - 1 : GetChrRamSize() - 1;
     
     if(chrBankMode == 1)
     {
@@ -215,12 +217,12 @@ void CartMapper_1::ppuWrite(uint16_t address, uint8_t byte)
         if(address >= 0x0000 && address <= 0x0FFF)
         {
             uint32_t bankAddress = (uint32_t(m_chrBank0) * 0x1000) + address;
-            m_pChr[bankAddress] = byte;
+            m_pChr[bankAddress & addressRange] = byte;
         }
         else if(address >= 0x1000 && address <= 0x1FFF)
         {
             uint32_t bankAddress = (uint32_t(m_chrBank1) * 0x1000) + (address - 0x1000);
-            m_pChr[bankAddress] = byte;
+            m_pChr[bankAddress & addressRange] = byte;
         }
     }
     else if(chrBankMode == 0)
@@ -229,7 +231,7 @@ void CartMapper_1::ppuWrite(uint16_t address, uint8_t byte)
         if(address >= 0x0000 && address <= 0x1FFF)
         {
             uint32_t bankAddress = ((uint32_t(m_chrBank0) >> 1) * 0x2000) + address;
-            m_pChr[bankAddress] = byte;
+            m_pChr[bankAddress & addressRange] = byte;
         }
     }
 }

@@ -358,7 +358,8 @@ float CartMapper_24::AudioOut()
 
 void CartMapper_24::SetChrBank(uint8_t** pChrBank, uint8_t bank)
 {
-    uint32_t bankIndex = uint32_t(bank) & ((m_nCharacterSize / 0x400) - 1);
+    uint32_t maxBanks = (m_nCharacterSize > 0 ? m_nCharacterSize : GetChrRamSize()) / 0x400;
+    uint32_t bankIndex = uint32_t(bank) & (maxBanks - 1);
     uint32_t bankAddress = bankIndex * 0x400;
     *pChrBank = &m_pChr[bankAddress];
 }

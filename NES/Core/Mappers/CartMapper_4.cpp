@@ -210,7 +210,7 @@ void CartMapper_4::cpuWrite(uint16_t address, uint8_t byte)
                 uint32_t chrBankSize = 0x0400;
                 uint8_t chrBankMode = (m_bankSelect >> 7) & 1;
                 
-                uint32_t maxBanks = m_nCharacterSize / 0x0400;
+                uint32_t maxBanks = (m_nCharacterSize > 0 ? m_nCharacterSize : GetChrRamSize()) / 0x400;
                 uint32_t bankData = m_bankData % maxBanks;
 
                 if(chrBankMode == 0)

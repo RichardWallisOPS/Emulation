@@ -11,7 +11,6 @@ void CartMapper_0::Initialise()
 {
     if(m_nCharacterSize == 0)
     {
-        m_nCharacterSize = m_nChrRamSize;
         m_pChr = m_pCartCHRRAM;
     }
 }
@@ -40,10 +39,12 @@ void CartMapper_0::cpuWrite(uint16_t address, uint8_t byte)
 
 uint8_t CartMapper_0::ppuRead(uint16_t address)
 {
-    return m_pChr[address & (m_nCharacterSize - 1)];
+    uint16_t addressRange = m_nCharacterSize > 0 ? m_nCharacterSize - 1 : GetChrRamSize() - 1;
+    return m_pChr[address & addressRange];
 }
 
 void CartMapper_0::ppuWrite(uint16_t address, uint8_t byte)
 {
-    m_pChr[address & (m_nCharacterSize - 1)] = byte;
+    uint16_t addressRange = m_nCharacterSize > 0 ? m_nCharacterSize - 1 : GetChrRamSize() - 1;
+    m_pChr[address & addressRange] = byte;
 }
