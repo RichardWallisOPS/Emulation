@@ -8,7 +8,7 @@
 #ifndef IOBus_h
 #define IOBus_h
 
-#include <cstdint>
+#include "CoreDefines.h"
 
 // Common bus functions
 class IOBus
@@ -29,16 +29,6 @@ public:
                             virtual void cpuWrite(uint16_t address, uint8_t byte) override; \
                             virtual uint8_t ppuRead(uint16_t address) override; \
                             virtual void ppuWrite(uint16_t address, uint8_t byte) override; \
-                            
-enum MirrorMode : uint8_t
-{
-    VRAM_MIRROR_H = 0,
-    VRAM_MIRROR_V,
-    VRAM_MIRROR_CART4,
-    
-    VRAM_MIRROR_SINGLEA,
-    VRAM_MIRROR_SINGLEB
-};
 
 // Core System has extra features
 class SystemIOBus : public IOBus

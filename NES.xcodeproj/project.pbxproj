@@ -60,6 +60,7 @@
 		A14F253629531999007ED30F /* Controller.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Controller.h; sourceTree = "<group>"; };
 		A14F253829531B4D007ED30F /* GameController.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = GameController.framework; path = System/Library/Frameworks/GameController.framework; sourceTree = SDKROOT; };
 		A152647F292A9DD60015068B /* CPU6502-ITable.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = "CPU6502-ITable.cpp"; sourceTree = "<group>"; };
+		A165B22B299A5BA300A5B4F0 /* CoreDefines.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = CoreDefines.h; sourceTree = "<group>"; };
 		A16FA7F92965B7A400880309 /* APUNES.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = APUNES.cpp; sourceTree = "<group>"; };
 		A16FA7FA2965B7A400880309 /* APUNES.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = APUNES.h; sourceTree = "<group>"; };
 		A16FF7902979AF23003DA65C /* CartMapper_69.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = CartMapper_69.cpp; sourceTree = "<group>"; };
@@ -158,6 +159,7 @@
 			children = (
 				A135E75929634A73006F9C5E /* Serialise.h */,
 				A135E75A29634B7D006F9C5E /* Serialise.cpp */,
+				A165B22B299A5BA300A5B4F0 /* CoreDefines.h */,
 				A1721114292427380055A57A /* IOBus.h */,
 				A17210F229241C400055A57A /* SystemNES.h */,
 				A17210F129241C400055A57A /* SystemNES.cpp */,

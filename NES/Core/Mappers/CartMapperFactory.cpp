@@ -5,8 +5,6 @@
 //  Created by Richard Wallis on 14/12/2022.
 //
 
-#include <stdio.h>
-
 #include "CartMapperFactory.h"
 #include "CartMapper_0.h"
 #include "CartMapper_1.h"

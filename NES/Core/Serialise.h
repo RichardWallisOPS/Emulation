@@ -8,8 +8,10 @@
 #ifndef Serialise_h
 #define Serialise_h
 
-#include <cstdint>
-#include <string>
+#ifdef __cplusplus
+    #include <cstdint>
+    #include <string>
+#endif
 
 class FileStack
 {

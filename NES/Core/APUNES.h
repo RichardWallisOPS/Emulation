@@ -8,9 +8,9 @@
 #ifndef APUNES_h
 #define APUNES_h
 
-#include <cstdint>
 #include "IOBus.h"
 #include "Serialise.h"
+#include <atomic>
 
 class APUAudioBuffer
 {

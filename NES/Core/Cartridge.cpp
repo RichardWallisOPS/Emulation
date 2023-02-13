@@ -5,12 +5,10 @@
 //  Created by richardwallis on 15/11/2022.
 //
 
-#include <string>
 
 #include "Cartridge.h"
 #include "Mappers/CartMapperFactory.h"
 
-// Parse header
 struct iNesheader
 {
     uint8_t m_constant[4];
@@ -192,10 +190,10 @@ Cartridge::Cartridge(SystemIOBus& bus, const char* pCartPath)
 , m_pCartPRGRAM(nullptr)
 , m_pCartCHRRAM(nullptr)
 {
-    // Setup for cart
+    // Setup for cold cart insert/startup
     Initialise(bus, pCartPath);
     
-    // All setup - load any saved NV RAM data
+    // All setup - load any saved NVRAM data
     LoadNVRAM();
 }
 
@@ -210,21 +208,20 @@ Cartridge::Cartridge(SystemIOBus& bus, Archive& rArchive)
 , m_pCartPRGRAM(nullptr)
 , m_pCartCHRRAM(nullptr)
 {
-    // Reload last cart
-    // Could have just saved cart data instead... safer?
+    // Setup for archive load, fetch last cart data path
     char Buffer[512];
     uint32_t pathLen = 0;
     rArchive >> pathLen;
     rArchive.ReadBytes(Buffer, pathLen);
     Buffer[pathLen] = 0;
     
-    // Initialise as usual
+    // Initialise as usual using archived cart path
     Initialise(bus, Buffer);
     
     // Load saved state
     Load(rArchive);
     
-    // SnapShot - don't load NVRAM
+    // SnapShot - don't load NVRAM - data is in the archive
 }
 
 void Cartridge::Load(Archive& rArchive)
@@ -415,7 +412,7 @@ void Cartridge::SaveNVRAM() const
 
 Cartridge::~Cartridge()
 {
-    // TODO: more often than stutdown?  Every update is too often - maybe the end of a frame or each second?
+    // TODO: more often than stutdown without causing problems
     SaveNVRAM();
     
     if(m_pCartPath != nullptr)

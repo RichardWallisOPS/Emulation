@@ -5,16 +5,16 @@
 //  Created by Richard Wallis on 21/12/2022.
 //
 
-
 #import "Controller.h"
 #import "GameController/GameController.h"
+#include "CoreDefines.h"
 
 @implementation PlayerControllerManager
 
-// See SystemNES.h
-+ (uint32_t) controllerBitsForNESController:(uint8_t)port
+
++ (uint8_t) controllerBitsForNESController:(uint8_t)port
 {
-    uint32_t result = 0;
+    uint8_t result = 0;
     
     NSArray<GCController*>* connectedControllers = [GCController controllers];
     if(connectedControllers != nil && port < connectedControllers.count)
@@ -28,10 +28,10 @@
                 GCControllerDirectionPad* dpad = gamePad.dpad;
                 if(dpad != nil)
                 {
-                    if(dpad.left.pressed)   result |= 1 << 6;
-                    if(dpad.right.pressed)  result |= 1 << 7;
-                    if(dpad.up.pressed)     result |= 1 << 4;
-                    if(dpad.down.pressed)   result |= 1 << 5;
+                    if(dpad.left.pressed)   result |= 1 << Controller_Left;
+                    if(dpad.right.pressed)  result |= 1 << Controller_Right;
+                    if(dpad.up.pressed)     result |= 1 << Controller_Up;
+                    if(dpad.down.pressed)   result |= 1 << Controller_Down;
                 }
                 
                 GCControllerDirectionPad* leftThumb = gamePad.leftThumbstick;
@@ -39,23 +39,21 @@
                 {
                     const float deadZone = 0.5f;
                     
-                    if(leftThumb.left.value > deadZone)   result |= 1 << 6;
-                    if(leftThumb.right.value > deadZone)  result |= 1 << 7;
-                    if(leftThumb.up.value > deadZone)     result |= 1 << 4;
-                    if(leftThumb.down.value > deadZone)   result |= 1 << 5;
+                    if(leftThumb.left.value > deadZone)   result |= 1 << Controller_Left;
+                    if(leftThumb.right.value > deadZone)  result |= 1 << Controller_Right;
+                    if(leftThumb.up.value > deadZone)     result |= 1 << Controller_Up;
+                    if(leftThumb.down.value > deadZone)   result |= 1 << Controller_Down;
                 }
                 
-                if(gamePad.buttonMenu.pressed)      result |= 1 << 3;
-                if(gamePad.buttonOptions.pressed)   result |= 1 << 2;
+                if(gamePad.buttonMenu.pressed)      result |= 1 << Controller_Start;
+                if(gamePad.buttonOptions.pressed)   result |= 1 << Controller_Select;
                 
-                if(gamePad.buttonB.pressed)         result |= 1 << 0;
-                if(gamePad.buttonA.pressed)         result |= 1 << 0;
+                if(gamePad.buttonB.pressed)         result |= 1 << Controller_A;
+                if(gamePad.buttonA.pressed)         result |= 1 << Controller_A;
                 
-                if(gamePad.buttonY.pressed)         result |= 1 << 1;
-                if(gamePad.buttonX.pressed)         result |= 1 << 1;
+                if(gamePad.buttonY.pressed)         result |= 1 << Controller_B;
+                if(gamePad.buttonX.pressed)         result |= 1 << Controller_B;
             }
-            
-            result |= ControllerInfo_Valid;
         }
     }
     

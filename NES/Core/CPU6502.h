@@ -8,7 +8,6 @@
 #ifndef CPU6502_h
 #define CPU6502_h
 
-#include <cstdint>
 #include "IOBus.h"
 #include "Serialise.h"
 

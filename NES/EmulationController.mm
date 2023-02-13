@@ -299,10 +299,13 @@ void ClearHistory()
         for(uint32_t port = 0;port < 2;++port)
         {
             // Get controller
-            uint32_t controllerBits = [PlayerControllerManager controllerBitsForNESController:port];
+            uint8_t controllerBits = [PlayerControllerManager controllerBitsForNESController:port];
             
-            // Mask out info and merge with keyboard
-            uint8_t portBits = (controllerBits & ControllerInfo_DataMask_08) | m_keyboardController[port];
+            // Get keyboard controller emulation
+            uint8_t keyboardBits = m_keyboardController[port];
+            
+            // Merge controller and keyboard
+            uint8_t portBits = controllerBits | keyboardBits;
             
             // Set current controller instantious - upto game when it latches internally
             g_NESConsole.SetControllerBits(port, portBits);
@@ -500,35 +503,35 @@ void ClearHistory()
     {
         if(event.keyCode == 26)
         {
-            m_keyboardController[m_keyboardPort] |= 1 << SystemNES::Controller_Start;
+            m_keyboardController[m_keyboardPort] |= 1 << Controller_Start;
         }
         else if(event.keyCode == 22)
         {
-            m_keyboardController[m_keyboardPort] |= 1 << SystemNES::Controller_Select;
+            m_keyboardController[m_keyboardPort] |= 1 << Controller_Select;
         }
         else if(event.keyCode == 31)
         {
-            m_keyboardController[m_keyboardPort] |= 1 << SystemNES::Controller_B;
+            m_keyboardController[m_keyboardPort] |= 1 << Controller_B;
         }
         else if(event.keyCode == 35)
         {
-            m_keyboardController[m_keyboardPort] |= 1 << SystemNES::Controller_A;
+            m_keyboardController[m_keyboardPort] |= 1 << Controller_A;
         }
         else if(event.keyCode == 2)
         {
-            m_keyboardController[m_keyboardPort] |= 1 << SystemNES::Controller_Right;
+            m_keyboardController[m_keyboardPort] |= 1 << Controller_Right;
         }
         else if(event.keyCode == 0)
         {
-            m_keyboardController[m_keyboardPort] |= 1 << SystemNES::Controller_Left;
+            m_keyboardController[m_keyboardPort] |= 1 << Controller_Left;
         }
         else if(event.keyCode == 1)
         {
-            m_keyboardController[m_keyboardPort] |= 1 << SystemNES::Controller_Down;
+            m_keyboardController[m_keyboardPort] |= 1 << Controller_Down;
         }
         else if(event.keyCode == 13)
         {
-            m_keyboardController[m_keyboardPort] |= 1 << SystemNES::Controller_Up;
+            m_keyboardController[m_keyboardPort] |= 1 << Controller_Up;
         }
         else if(event.keyCode == 125)   // down - save into file
         {
@@ -599,35 +602,35 @@ void ClearHistory()
 {
     if(event.keyCode == 26)
     {
-        m_keyboardController[m_keyboardPort] &= ~(1 << SystemNES::Controller_Start);
+        m_keyboardController[m_keyboardPort] &= ~(1 << Controller_Start);
     }
     else if(event.keyCode == 22)
     {
-        m_keyboardController[m_keyboardPort] &= ~(1 << SystemNES::Controller_Select);
+        m_keyboardController[m_keyboardPort] &= ~(1 << Controller_Select);
     }
     else if(event.keyCode == 31)
     {
-        m_keyboardController[m_keyboardPort] &= ~(1 << SystemNES::Controller_B);
+        m_keyboardController[m_keyboardPort] &= ~(1 << Controller_B);
     }
     else if(event.keyCode == 35)
     {
-        m_keyboardController[m_keyboardPort] &= ~(1 << SystemNES::Controller_A);
+        m_keyboardController[m_keyboardPort] &= ~(1 << Controller_A);
     }
     else if(event.keyCode == 2)
     {
-        m_keyboardController[m_keyboardPort] &= ~(1 << SystemNES::Controller_Right);
+        m_keyboardController[m_keyboardPort] &= ~(1 << Controller_Right);
     }
     else if(event.keyCode == 0)
     {
-        m_keyboardController[m_keyboardPort] &= ~(1 << SystemNES::Controller_Left);
+        m_keyboardController[m_keyboardPort] &= ~(1 << Controller_Left);
     }
     else if(event.keyCode == 1)
     {
-        m_keyboardController[m_keyboardPort] &= ~(1 << SystemNES::Controller_Down);
+        m_keyboardController[m_keyboardPort] &= ~(1 << Controller_Down);
     }
     else if(event.keyCode == 13)
     {
-        m_keyboardController[m_keyboardPort] &= ~(1 << SystemNES::Controller_Up);
+        m_keyboardController[m_keyboardPort] &= ~(1 << Controller_Up);
     }
     else if(event.keyCode == 45)
     {

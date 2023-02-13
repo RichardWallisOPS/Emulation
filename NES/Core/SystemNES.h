@@ -21,18 +21,6 @@ public:
     BUS_HEADER_DECL
     SERIALISABLE_DECL
 
-    enum ControllerButton : uint8_t
-    {
-        Controller_Right    = 7,
-        Controller_Left     = 6,
-        Controller_Down     = 5,
-        Controller_Up       = 4,
-        Controller_Start    = 3,
-        Controller_Select   = 2,
-        Controller_B        = 1,
-        Controller_A        = 0
-    };
-
     enum DMAMODE : uint8_t
     {
         DMA_OFF = 0,
