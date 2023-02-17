@@ -21,7 +21,7 @@ public:
     BUS_HEADER_DECL
     SERIALISABLE_DECL
 
-    enum DMAMODE : uint8_t
+    enum DMA_MODE : uint8_t
     {
         DMA_OFF = 0,
         DMA_READ,
@@ -72,7 +72,7 @@ private:
     // DMA
     uint16_t    m_dmaAddress;
     uint8_t     m_dmaData;
-    DMAMODE     m_DMAMode;
+    DMA_MODE    m_dmaMode;
 };
 
 #endif /* SystemNES_h */
