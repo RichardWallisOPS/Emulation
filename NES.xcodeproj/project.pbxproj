@@ -462,7 +462,6 @@
 				INFOPLIST_FILE = NES/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks";
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
-				MTL_OPTIMIZATION_LEVEL = 0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.richardwallis.NES;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
@@ -478,8 +477,6 @@
 				DEVELOPMENT_TEAM = M9JFG3A3EG;
 				INFOPLIST_FILE = NES/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks";
-				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
-				MTL_OPTIMIZATION_LEVEL = 0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.richardwallis.NES;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
