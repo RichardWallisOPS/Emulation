@@ -230,13 +230,11 @@ void ClearHistory()
 
             AVAudioNode* outputNode = self.audioEngine.outputNode;
             AVAudioFormat* outputFormat = [outputNode inputFormatForBus:0];
-            AVAudioFormat* inputFormat = [[AVAudioFormat alloc] initWithCommonFormat:outputFormat.commonFormat // CHECK: We want AVAudioPCMFormatFloat32
-                                                                          sampleRate:outputFormat.sampleRate
+            AVAudioFormat* inputFormat = [[AVAudioFormat alloc] initWithCommonFormat:outputFormat.commonFormat  // TODO-CHECK: We want AVAudioPCMFormatFloat32
+                                                                          sampleRate:outputFormat.sampleRate    // TODO-CHECK: We have 48000Hz
                                                                             channels:1
                                                                          interleaved:outputFormat.isInterleaved];
                                                                          
-                                                                         
-
             self.audioSourceNode = [[AVAudioSourceNode alloc] initWithRenderBlock:^OSStatus(BOOL* pIsSilence, const AudioTimeStamp* pTimestamp, AVAudioFrameCount frameCount, AudioBufferList* pOutputData)
             {
                 if(pOutputData->mNumberBuffers > 0)
@@ -245,11 +243,11 @@ void ClearHistory()
                     float* pOutputFloatBuffer = (float*)pOutputAudioBuffer->mData;
                     
                     APUAudioBuffer* pInputAudioBuffer = &m_audioBuffers[m_readAudioBuffer];
+                    const size_t samplesWritten = pInputAudioBuffer->GetSamplesWritten();
                     
-                    if(pInputAudioBuffer->IsReady())
+                    if(pInputAudioBuffer->IsReady() && samplesWritten == frameCount)
                     {
                         float* pInputFloatBuffer = pInputAudioBuffer->GetSampleBuffer();
-                        const size_t samplesWritten = pInputAudioBuffer->GetSamplesWritten();
                         
                         if(pInputAudioBuffer->ShouldReverseBuffer())
                         {
@@ -268,6 +266,7 @@ void ClearHistory()
                     }
                     else
                     {
+                        // If things don't match or the current buffer is not ready then output nothing
                         memset(pOutputFloatBuffer, 0x0, frameCount * sizeof(float));
                     }
                 }
