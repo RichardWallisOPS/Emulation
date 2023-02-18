@@ -29,12 +29,13 @@ const size_t    m_kArchiveCount = 5 * 60;
 Archive         m_ArchiveBuffer[m_kArchiveCount];
 
 // Audio buffers
-volatile size_t m_readAudioBuffer = 0;
-volatile size_t m_writeAudioBuffer = 0;
-const size_t    m_kAudioBufferCount = 8;
-APUAudioBuffer  m_audioBuffers[m_kAudioBufferCount];
-const float     m_outputMixerVolume = 0.5;
-bool            m_allowAudio = false;
+const float             m_kOutputMixerVolume = 0.5;
+const int32_t           m_kAudioBufferCount = 8;
+bool                    m_allowAudio;
+std::atomic<bool>       m_audioSynced;
+std::atomic<int32_t>    m_readAudioBuffer;
+std::atomic<int32_t>    m_writeAudioBuffer;
+APUAudioBuffer          m_audioBuffers[m_kAudioBufferCount];
 
 // Keyboard controller support
 uint8_t m_keyboardPort = 0;
@@ -50,7 +51,7 @@ Vertex const g_quadVerts[] = {  {{-1.f,-1.f,0.f,1.f},   {0.f,1.f}},
 
 size_t          m_textureId = 0;
 const size_t    m_renderTextureCount = 2;
-id<MTLTexture>  m_emulationOutput[m_renderTextureCount];
+id<MTLTexture>  m_emulationVideoOut[m_renderTextureCount];
 
 void ClearHistory()
 {
@@ -92,7 +93,7 @@ void ClearHistory()
 - (id<MTLTexture>) nextTextureOutput
 {
     m_textureId = (m_textureId + 1) % m_renderTextureCount;
-    return m_emulationOutput[m_textureId];
+    return m_emulationVideoOut[m_textureId];
 }
 
 - (BOOL) isAppleSilicon
@@ -102,13 +103,19 @@ void ClearHistory()
 
 - (void) stopAudio
 {
-    m_allowAudio = false;
-    
     self.audioEngine.mainMixerNode.outputVolume = 0.f;
     [self.audioEngine pause];
     
+    m_allowAudio = false;
+    m_audioSynced = false;
+    
     m_readAudioBuffer = 0;
     m_writeAudioBuffer = 0;
+    
+     for(size_t i = 0;i < m_kAudioBufferCount;++i)
+    {
+        m_audioBuffers[i].Reset();
+    }
 }
 
 - (void) openNew
@@ -165,7 +172,7 @@ void ClearHistory()
         for(size_t idx = 0; idx < m_renderTextureCount; ++idx)
         {
             id<MTLBuffer> backingBuffer = [self.device newBufferWithLength:bufferBytes options: bAppleSilicon ? MTLResourceStorageModeShared : MTLResourceStorageModeManaged];
-            m_emulationOutput[idx] = [backingBuffer newTextureWithDescriptor:outputTextureDesc offset:0 bytesPerRow: outputTextureDesc.width * 4];
+            m_emulationVideoOut[idx] = [backingBuffer newTextureWithDescriptor:outputTextureDesc offset:0 bytesPerRow: outputTextureDesc.width * 4];
         }
 
         self.cmdQueue = [self.device newCommandQueue];
@@ -239,32 +246,46 @@ void ClearHistory()
             {
                 if(pOutputData->mNumberBuffers > 0)
                 {
+                    bool bOutputBufferWritten = false;
+
                     AudioBuffer* pOutputAudioBuffer = &pOutputData->mBuffers[0];
                     float* pOutputFloatBuffer = (float*)pOutputAudioBuffer->mData;
+                                        
+                    const bool bAudioSynced = m_audioSynced;
+                    int32_t bufferIndexDiff = abs(m_writeAudioBuffer - m_readAudioBuffer);
                     
-                    APUAudioBuffer* pInputAudioBuffer = &m_audioBuffers[m_readAudioBuffer];
-                    const size_t samplesWritten = pInputAudioBuffer->GetSamplesWritten();
-                    
-                    if(pInputAudioBuffer->IsReady() && samplesWritten == frameCount)
+                    if (    (!bAudioSynced && bufferIndexDiff > ((m_kAudioBufferCount / 2) - 1)) ||
+                            ( bAudioSynced && bufferIndexDiff > 1))
                     {
-                        float* pInputFloatBuffer = pInputAudioBuffer->GetSampleBuffer();
+                        APUAudioBuffer* pInputAudioBuffer = &m_audioBuffers[m_readAudioBuffer];
+                        const size_t samplesWritten = pInputAudioBuffer->GetSamplesWritten();
                         
-                        if(pInputAudioBuffer->ShouldReverseBuffer())
+                        if(pInputAudioBuffer->IsReady() && samplesWritten == frameCount)
                         {
-                            for(size_t sampleIdx = 0;sampleIdx < samplesWritten;++sampleIdx)
+                            float* pInputFloatBuffer = pInputAudioBuffer->GetSampleBuffer();
+                            
+                            if(pInputAudioBuffer->ShouldReverseBuffer())
                             {
-                                pOutputFloatBuffer[sampleIdx] = pInputFloatBuffer[samplesWritten - sampleIdx - 1];
+                                for(size_t sampleIdx = 0;sampleIdx < samplesWritten;++sampleIdx)
+                                {
+                                    pOutputFloatBuffer[sampleIdx] = pInputFloatBuffer[samplesWritten - sampleIdx - 1];
+                                }
                             }
+                            else
+                            {
+                                memcpy(pOutputFloatBuffer, pInputFloatBuffer, samplesWritten * sizeof(float));
+                            }
+                                                        
+                            pInputAudioBuffer->Reset();
+                            m_readAudioBuffer = (m_readAudioBuffer + 1) % m_kAudioBufferCount;
+
+                            bOutputBufferWritten = true;
                         }
-                        else
-                        {
-                            memcpy(pOutputFloatBuffer, pInputFloatBuffer, samplesWritten * sizeof(float));
-                        }
-                        
-                        pInputAudioBuffer->Reset();
-                        m_readAudioBuffer = (m_readAudioBuffer + 1) % m_kAudioBufferCount;
                     }
-                    else
+
+                    m_audioSynced = bOutputBufferWritten;
+                    
+                    if(!bOutputBufferWritten)
                     {
                         // If things don't match or the current buffer is not ready then output nothing
                         memset(pOutputFloatBuffer, 0x0, frameCount * sizeof(float));
@@ -334,18 +355,18 @@ void ClearHistory()
     }
     
     //Update Audio level - silence when paused - otherwise normal
-    if(m_emulationDirection == 0)
+    if(m_emulationDirection == 0 || !m_audioSynced)
     {
-        if(self.audioEngine.mainMixerNode.outputVolume != 0)
+        if(self.audioEngine.mainMixerNode.outputVolume != 0.f)
         {
             self.audioEngine.mainMixerNode.outputVolume = 0.f;
         }
     }
-    else
+    else if(m_allowAudio && m_audioSynced)
     {
-        if(m_allowAudio && self.audioEngine.running && self.audioEngine.mainMixerNode.outputVolume <= 0.f)
+        if(self.audioEngine.running && self.audioEngine.mainMixerNode.outputVolume <= 0.f)
         {
-            self.audioEngine.mainMixerNode.outputVolume = m_outputMixerVolume;
+            self.audioEngine.mainMixerNode.outputVolume = m_kOutputMixerVolume;
         }
     }
     
@@ -377,7 +398,7 @@ void ClearHistory()
             g_NESConsole.Tick();
         }
         
-        if(m_allowAudio && !self.audioEngine.isRunning && m_writeAudioBuffer > 2)
+        if(m_allowAudio && !self.audioEngine.isRunning)
         {
             self.audioEngine.mainMixerNode.outputVolume = 0.f;
             if(![self.audioEngine startAndReturnError:nil])

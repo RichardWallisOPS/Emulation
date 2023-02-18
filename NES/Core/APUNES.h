@@ -46,8 +46,8 @@ public:
     }
     void Reset()
     {
-        m_samplesWritten = 0;
         m_bReady = false;
+        m_samplesWritten = 0;
     }
     bool IsReady() const
     {
