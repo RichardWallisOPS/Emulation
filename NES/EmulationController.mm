@@ -272,8 +272,10 @@ Vertex const    kQuadVerts[]        = {{{-1.f,-1.f,0.f,1.f},    {0.f,1.f}},
                     const bool bAudioSynced = self->m_audioSynced;
                     int32_t bufferIndexDiff = abs(self->m_writeAudioBuffer - self->m_readAudioBuffer);
                     
+                    // Audio not currently synced - try to use optimal readbuffer vs writebuffer index before syncing
+                    // Audio currently synced - try to keep going - as long as we have valid data
                     if (    (!bAudioSynced && bufferIndexDiff > ((kAudioBufferCount / 2) - 1)) ||
-                            ( bAudioSynced && bufferIndexDiff > 1))
+                            ( bAudioSynced && bufferIndexDiff > 0))
                     {
                         APUAudioBuffer* pInputAudioBuffer = &self->m_audioBuffers[self->m_readAudioBuffer];
                         const size_t samplesWritten = pInputAudioBuffer->GetSamplesWritten();
@@ -302,12 +304,7 @@ Vertex const    kQuadVerts[]        = {{{-1.f,-1.f,0.f,1.f},    {0.f,1.f}},
                     }
 
                     self->m_audioSynced = bOutputBufferWritten;
-                    
-                    if(!bOutputBufferWritten)
-                    {
-                        // If things don't match or the current buffer is not ready then output nothing
-                        memset(pOutputFloatBuffer, 0x0, frameCount * sizeof(float));
-                    }
+                    *pIsSilence = !bOutputBufferWritten;
                 }
                 return 0;
             }];
