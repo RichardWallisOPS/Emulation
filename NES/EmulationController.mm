@@ -195,12 +195,20 @@ Vertex const    kQuadVerts[]        = {{{-1.f,-1.f,0.f,1.f},    {0.f,1.f}},
     }];
 }
 
+- (void) applicationWillTerminate:(NSNotification*)NSNotification
+{
+    m_NESConsole.EjectCartridge();
+}
+
 - (instancetype) initWithView:(EmulationMetalView*)metalView
 {
     self = [super init];
     
     if(self != nil)
     {
+        // Want to know if there is a shutdown for saving Cartridge NVRAM
+        [NSApplication sharedApplication].delegate = self;
+    
         // IVar init
         {
             m_textureId = 0;
@@ -664,6 +672,10 @@ Vertex const    kQuadVerts[]        = {{{-1.f,-1.f,0.f,1.f},    {0.f,1.f}},
         else if(event.keyCode == 53) // esc - console reset button
         {
              [emuController usrResetConsole];
+        }
+        if(event.keyCode == 12 && (event.modifierFlags & NSEventModifierFlagCommand) != 0)
+        {
+            [[NSApplication sharedApplication] terminate:self];
         }
     }
 }

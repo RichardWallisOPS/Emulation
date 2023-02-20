@@ -10,8 +10,6 @@
 @interface EmulationMetalView : MTKView
 @end
 
-@interface EmulationController : NSObject <MTKViewDelegate>
-
+@interface EmulationController : NSObject <MTKViewDelegate, NSApplicationDelegate>
 - (instancetype) initWithView:(EmulationMetalView*)metalView;
-
 @end
