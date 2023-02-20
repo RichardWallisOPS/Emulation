@@ -28,13 +28,11 @@ Vertex const    kQuadVerts[]        = {{{-1.f,-1.f,0.f,1.f},    {0.f,1.f}},
 
 @interface EmulationController()
 {
-
-@public
+@private
     // Keyboard controller support
     uint8_t m_keyboardPort;
     uint8_t m_keyboardController[2];
 
-@private
     // Double buffering
     size_t          m_textureId;
     id<MTLTexture>  m_emulationVideoOut[kRenderTextureCount];
@@ -73,6 +71,23 @@ Vertex const    kQuadVerts[]        = {{{-1.f,-1.f,0.f,1.f},    {0.f,1.f}},
 
 
 @implementation EmulationController
+
+- (void) gameControllerKeyboardButtonDown:(ControllerButton)button
+{
+    m_keyboardController[m_keyboardPort] |= 1 << button;
+}
+
+- (void) gameControllerKeyboardButtonUp:(ControllerButton)button
+{
+    m_keyboardController[m_keyboardPort] &= ~(1 << button);
+}
+
+- (void) gameControllerKeyboardSwapPort
+{
+    m_keyboardController[m_keyboardPort] = 0;
+    m_keyboardPort = (m_keyboardPort + 1) % 2;
+    m_keyboardController[m_keyboardPort] = 0;
+}
 
 - (void) clearHistory
 {
@@ -573,35 +588,35 @@ Vertex const    kQuadVerts[]        = {{{-1.f,-1.f,0.f,1.f},    {0.f,1.f}},
     {
         if(event.keyCode == 26)
         {
-            emuController->m_keyboardController[emuController->m_keyboardPort] |= 1 << Controller_Start;
+            [emuController gameControllerKeyboardButtonDown:Controller_Start];
         }
         else if(event.keyCode == 22)
         {
-            emuController->m_keyboardController[emuController->m_keyboardPort] |= 1 << Controller_Select;
+            [emuController gameControllerKeyboardButtonDown:Controller_Select];
         }
         else if(event.keyCode == 31)
         {
-            emuController->m_keyboardController[emuController->m_keyboardPort] |= 1 << Controller_B;
+            [emuController gameControllerKeyboardButtonDown:Controller_B];
         }
         else if(event.keyCode == 35)
         {
-            emuController->m_keyboardController[emuController->m_keyboardPort] |= 1 << Controller_A;
+            [emuController gameControllerKeyboardButtonDown:Controller_A];
         }
         else if(event.keyCode == 2)
         {
-            emuController->m_keyboardController[emuController->m_keyboardPort] |= 1 << Controller_Right;
+            [emuController gameControllerKeyboardButtonDown:Controller_Right];
         }
         else if(event.keyCode == 0)
         {
-            emuController->m_keyboardController[emuController->m_keyboardPort] |= 1 << Controller_Left;
+            [emuController gameControllerKeyboardButtonDown:Controller_Left];
         }
         else if(event.keyCode == 1)
         {
-            emuController->m_keyboardController[emuController->m_keyboardPort] |= 1 << Controller_Down;
+            [emuController gameControllerKeyboardButtonDown:Controller_Down];
         }
         else if(event.keyCode == 13)
         {
-            emuController->m_keyboardController[emuController->m_keyboardPort] |= 1 << Controller_Up;
+            [emuController gameControllerKeyboardButtonDown:Controller_Up];
         }
         else if(event.keyCode == 125)   // down - save into file
         {
@@ -638,23 +653,13 @@ Vertex const    kQuadVerts[]        = {{{-1.f,-1.f,0.f,1.f},    {0.f,1.f}},
                 }
             }
         }
-        else if(event.keyCode == 124) // right
-        {
-
-        }
         else if(event.keyCode == 123) // left - go back in time
         {
             [emuController beginRewind];
         }
-        else if(event.keyCode == 49) // space
-        {
-
-        }
         else if(event.keyCode == 36) // enter - swap keyboard for player 1<->2
         {
-            emuController->m_keyboardController[emuController->m_keyboardPort] = 0;
-            emuController->m_keyboardPort = (emuController->m_keyboardPort + 1) % 2;
-            emuController->m_keyboardController[emuController->m_keyboardPort] = 0;
+            [emuController gameControllerKeyboardSwapPort];
         }
         else if(event.keyCode == 53) // esc - console reset button
         {
@@ -669,43 +674,39 @@ Vertex const    kQuadVerts[]        = {{{-1.f,-1.f,0.f,1.f},    {0.f,1.f}},
      
     if(event.keyCode == 26)
     {
-        emuController->m_keyboardController[emuController->m_keyboardPort] &= ~(1 << Controller_Start);
+        [emuController gameControllerKeyboardButtonUp:Controller_Start];
     }
     else if(event.keyCode == 22)
     {
-        emuController->m_keyboardController[emuController->m_keyboardPort] &= ~(1 << Controller_Select);
+        [emuController gameControllerKeyboardButtonUp:Controller_Select];
     }
     else if(event.keyCode == 31)
     {
-        emuController->m_keyboardController[emuController->m_keyboardPort] &= ~(1 << Controller_B);
+        [emuController gameControllerKeyboardButtonUp:Controller_B];
     }
     else if(event.keyCode == 35)
     {
-        emuController->m_keyboardController[emuController->m_keyboardPort] &= ~(1 << Controller_A);
+        [emuController gameControllerKeyboardButtonUp:Controller_A];
     }
     else if(event.keyCode == 2)
     {
-        emuController->m_keyboardController[emuController->m_keyboardPort] &= ~(1 << Controller_Right);
+        [emuController gameControllerKeyboardButtonUp:Controller_Right];
     }
     else if(event.keyCode == 0)
     {
-        emuController->m_keyboardController[emuController->m_keyboardPort] &= ~(1 << Controller_Left);
+        [emuController gameControllerKeyboardButtonUp:Controller_Left];
     }
     else if(event.keyCode == 1)
     {
-        emuController->m_keyboardController[emuController->m_keyboardPort] &= ~(1 << Controller_Down);
+        [emuController gameControllerKeyboardButtonUp:Controller_Down];
     }
     else if(event.keyCode == 13)
     {
-        emuController->m_keyboardController[emuController->m_keyboardPort] &= ~(1 << Controller_Up);
+        [emuController gameControllerKeyboardButtonUp:Controller_Up];
     }
     else if(event.keyCode == 45)
     {
         [emuController openNew];
-    }
-    else if(event.keyCode == 124)
-    {
-    
     }
     else if(event.keyCode == 123)
     {
