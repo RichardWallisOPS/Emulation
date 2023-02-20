@@ -251,8 +251,6 @@ Vertex const    kQuadVerts[]        = {{{-1.f,-1.f,0.f,1.f},    {0.f,1.f}},
         metalView.device = self.device;
         metalView.clearColor = MTLClearColorMake(1.f,1.f,1.f,1.f);
         metalView.colorPixelFormat = MTLPixelFormatBGRA8Unorm;
-        metalView.depthStencilPixelFormat = MTLPixelFormatDepth32Float_Stencil8;
-        metalView.clearStencil = 0;
         
         id <MTLLibrary> library = [self.device newDefaultLibrary];
         
