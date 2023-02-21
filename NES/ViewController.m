@@ -21,18 +21,15 @@
     [super viewDidLoad];
 
     self.metalView = [EmulationMetalView new];
+    self.systemController = [[EmulationController alloc] initWithView:self.metalView];
+    self.metalView.delegate = self.systemController;
+    
+    [self.view addSubview:self.metalView];
 }
 
 - (void) viewWillAppear
 {
-    if(self.systemController == nil)
-    {
-        [self.view addSubview:self.metalView];
-        self.metalView.frame = self.view.frame;
-        
-        self.systemController = [[EmulationController alloc] initWithView:self.metalView];
-        self.metalView.delegate = self.systemController;
-    }
+    self.metalView.frame = self.view.frame;
 }
 
 - (void) viewWillLayout

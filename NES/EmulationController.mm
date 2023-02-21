@@ -192,7 +192,7 @@ Vertex const    kQuadVerts[]        = {{{-1.f,-1.f,0.f,1.f},    {0.f,1.f}},
 {
 	BOOL bResult = NO;
 	
-	if([cartPath rangeOfString:@".nes" options:NSCaseInsensitiveSearch].length != 0)
+	if([cartPath.pathExtension rangeOfString:@"nes" options:NSCaseInsensitiveSearch].length != 0)
 	{
 		[self stopAudio];
 	
@@ -206,8 +206,28 @@ Vertex const    kQuadVerts[]        = {{{-1.f,-1.f,0.f,1.f},    {0.f,1.f}},
 			m_NESConsole.PowerOn();
 		}
 		
-		m_allowAudio = true;
+		[self allowAudio];
 	}
+    else if([cartPath rangeOfString:@".nes.save" options:NSCaseInsensitiveSearch].length != 0)
+    {
+        [self stopAudio];
+        
+        Archive archive(ArchiveMode_Persistent);
+        if(archive.Load([cartPath cStringUsingEncoding:NSUTF8StringEncoding]))
+        {
+            if(archive.ByteCount() > 0)
+            {
+                bResult = YES;
+                
+                m_NESConsole.Load(archive);
+                
+                self.cartLoadPath = [cartPath stringByDeletingPathExtension];
+                [self clearHistory];
+            }
+        }
+        
+        [self allowAudio];
+    }
 	
 	return bResult;
 }
@@ -658,9 +678,10 @@ Vertex const    kQuadVerts[]        = {{{-1.f,-1.f,0.f,1.f},    {0.f,1.f}},
                     {
                         [emuController clearHistory];
                         [emuController loadConsoleStateFromArchive:&archive];
-                        [emuController allowAudio];
                     }
                 }
+                
+                [emuController allowAudio];
             }
         }
         else if(event.keyCode == 123) // left - go back in time
