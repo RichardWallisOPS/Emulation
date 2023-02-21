@@ -169,30 +169,47 @@ Vertex const    kQuadVerts[]        = {{{-1.f,-1.f,0.f,1.f},    {0.f,1.f}},
     m_allowAudio = true;
 }
 
-- (void) openNew
+- (void) showOpenNewDialogue
 {
-    [self stopAudio];
-    
-    NSOpenPanel* panel = [NSOpenPanel openPanel];
-    [panel beginWithCompletionHandler: ^(NSInteger result)
-    {
-        if(result == NSModalResponseOK)
-        {
-            NSURL* urlPath = [[panel URLs] objectAtIndex:0];
-            if(urlPath != nil)
-            {
-                NSString* path = urlPath.path;
-                if(self->m_NESConsole.InsertCartridge([path cStringUsingEncoding:NSUTF8StringEncoding]))
-                {
-                    [self clearHistory];
-                    self.cartLoadPath = path;
-                    self->m_NESConsole.PowerOn();
-                }
-            }
-        }
-        
-        self->m_allowAudio = true;
-    }];
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.25 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^
+	{
+		NSOpenPanel* panel = [NSOpenPanel openPanel];
+		[panel beginWithCompletionHandler: ^(NSInteger result)
+		{
+			if(result == NSModalResponseOK)
+			{
+				NSURL* url = [[panel URLs] objectAtIndex:0];
+				if(url != nil)
+				{
+					[self insertCartridge:url.path];
+				}
+			}
+		}];
+	});
+}
+
+- (BOOL) insertCartridge:(NSString*)cartPath
+{
+	BOOL bResult = NO;
+	
+	if([cartPath rangeOfString:@".nes" options:NSCaseInsensitiveSearch].length != 0)
+	{
+		[self stopAudio];
+	
+		if(m_NESConsole.InsertCartridge([cartPath cStringUsingEncoding:NSUTF8StringEncoding]))
+		{
+			bResult = YES;
+			
+			self.cartLoadPath = cartPath;
+			[self clearHistory];
+			
+			m_NESConsole.PowerOn();
+		}
+		
+		m_allowAudio = true;
+	}
+	
+	return bResult;
 }
 
 - (void) applicationWillTerminate:(NSNotification*)NSNotification
@@ -206,10 +223,10 @@ Vertex const    kQuadVerts[]        = {{{-1.f,-1.f,0.f,1.f},    {0.f,1.f}},
     
     if(self != nil)
     {
-        // Want to know if there is a shutdown for saving Cartridge NVRAM
+        // App delegate callbacks - want to know if there is a shutdown for saving Cartridge NVRAM
         [NSApplication sharedApplication].delegate = self;
     
-        // IVar init
+        // IVar C++ core object setup
         {
             m_textureId = 0;
             m_emulationDirection = 1;
@@ -224,46 +241,48 @@ Vertex const    kQuadVerts[]        = {{{-1.f,-1.f,0.f,1.f},    {0.f,1.f}},
             m_keyboardController[0] = m_keyboardController[1] = 0;
         }
     
-        if(self.device == nil)
-        {
-            self.device = MTLCreateSystemDefaultDevice();
-        }
-        
-        bool const bAppleSilicon = [self isAppleSilicon];
-
-        MTLTextureDescriptor* outputTextureDesc = [MTLTextureDescriptor new];
-        outputTextureDesc.width = 256;
-        outputTextureDesc.height = 240;
-        outputTextureDesc.pixelFormat = MTLPixelFormatBGRA8Unorm;
-        outputTextureDesc.storageMode = bAppleSilicon ? MTLStorageModeShared : MTLStorageModeManaged;
-        
-        size_t bufferBytes = outputTextureDesc.width * outputTextureDesc.height * 4;
-        
-        for(size_t idx = 0; idx < kRenderTextureCount; ++idx)
-        {
-            id<MTLBuffer> backingBuffer = [self.device newBufferWithLength:bufferBytes options: bAppleSilicon ? MTLResourceStorageModeShared : MTLResourceStorageModeManaged];
-            m_emulationVideoOut[idx] = [backingBuffer newTextureWithDescriptor:outputTextureDesc offset:0 bytesPerRow: outputTextureDesc.width * 4];
-        }
-
+        self.device = MTLCreateSystemDefaultDevice();
         self.cmdQueue = [self.device newCommandQueue];
         
-        //setup view
-        metalView.device = self.device;
-        metalView.clearColor = MTLClearColorMake(1.f,1.f,1.f,1.f);
-        metalView.colorPixelFormat = MTLPixelFormatBGRA8Unorm;
+		// Setup view
+		{
+			metalView.device = self.device;
+			metalView.clearColor = MTLClearColorMake(1.f,1.f,1.f,1.f);
+			metalView.colorPixelFormat = MTLPixelFormatBGRA8Unorm;
+		}
         
-        id <MTLLibrary> library = [self.device newDefaultLibrary];
-        
-         MTLRenderPipelineDescriptor* pipelineEmulationOutputToFrameBufferTextureDesc = [MTLRenderPipelineDescriptor new];
+        // Setup render resources
+        {
+			bool const bAppleSilicon = [self isAppleSilicon];
 
-        pipelineEmulationOutputToFrameBufferTextureDesc.vertexFunction = [library newFunctionWithName: @"vertPassThrough"];
-        pipelineEmulationOutputToFrameBufferTextureDesc.fragmentFunction = [library newFunctionWithName:@"fragCopy_Monitor"];
-        pipelineEmulationOutputToFrameBufferTextureDesc.colorAttachments[0].pixelFormat = metalView.colorPixelFormat;
-        pipelineEmulationOutputToFrameBufferTextureDesc.depthAttachmentPixelFormat = metalView.depthStencilPixelFormat;
-        pipelineEmulationOutputToFrameBufferTextureDesc.stencilAttachmentPixelFormat = metalView.depthStencilPixelFormat;
-    
-        self.pipelineEmulationOutputToFrameBufferTexture = [self.device newRenderPipelineStateWithDescriptor:pipelineEmulationOutputToFrameBufferTextureDesc error:nil];
-        
+			MTLTextureDescriptor* outputTextureDesc = [MTLTextureDescriptor new];
+			outputTextureDesc.width = 256;
+			outputTextureDesc.height = 240;
+			outputTextureDesc.pixelFormat = MTLPixelFormatBGRA8Unorm;
+			outputTextureDesc.storageMode = bAppleSilicon ? MTLStorageModeShared : MTLStorageModeManaged;
+			
+			size_t bufferBytes = outputTextureDesc.width * outputTextureDesc.height * 4;
+			
+			for(size_t idx = 0; idx < kRenderTextureCount; ++idx)
+			{
+				id<MTLBuffer> backingBuffer = [self.device newBufferWithLength:bufferBytes options: bAppleSilicon ? MTLResourceStorageModeShared : MTLResourceStorageModeManaged];
+				m_emulationVideoOut[idx] = [backingBuffer newTextureWithDescriptor:outputTextureDesc offset:0 bytesPerRow: outputTextureDesc.width * 4];
+			}
+
+			id <MTLLibrary> library = [self.device newDefaultLibrary];
+			
+			MTLRenderPipelineDescriptor* pipelineEmulationOutputToFrameBufferTextureDesc = [MTLRenderPipelineDescriptor new];
+
+			pipelineEmulationOutputToFrameBufferTextureDesc.vertexFunction = [library newFunctionWithName: @"vertPassThrough"];
+			pipelineEmulationOutputToFrameBufferTextureDesc.fragmentFunction = [library newFunctionWithName:@"fragCopy_Monitor"];
+			pipelineEmulationOutputToFrameBufferTextureDesc.colorAttachments[0].pixelFormat = metalView.colorPixelFormat;
+			pipelineEmulationOutputToFrameBufferTextureDesc.depthAttachmentPixelFormat = metalView.depthStencilPixelFormat;
+			pipelineEmulationOutputToFrameBufferTextureDesc.stencilAttachmentPixelFormat = metalView.depthStencilPixelFormat;
+		
+			self.pipelineEmulationOutputToFrameBufferTexture = [self.device newRenderPipelineStateWithDescriptor:pipelineEmulationOutputToFrameBufferTextureDesc error:nil];
+		}
+		
+        // Setup audio
         {
             // https://developer.apple.com/documentation/avfaudio/avaudioengine?language=objc
             // https://developer.apple.com/documentation/avfaudio/audio_engine/building_a_signal_generator
@@ -298,12 +317,12 @@ Vertex const    kQuadVerts[]        = {{{-1.f,-1.f,0.f,1.f},    {0.f,1.f}},
                     if (    (!bAudioSynced && bufferIndexDiff > ((kAudioBufferCount / 2) - 1)) ||
                             ( bAudioSynced && bufferIndexDiff > 0))
                     {
-                        APUAudioBuffer* pInputAudioBuffer = &self->m_audioBuffers[self->m_readAudioBuffer];
+                        APUAudioBuffer const* pInputAudioBuffer = &self->m_audioBuffers[self->m_readAudioBuffer];
                         const size_t samplesWritten = pInputAudioBuffer->GetSamplesWritten();
                         
                         if(pInputAudioBuffer->IsReady() && samplesWritten == frameCount)
                         {
-                            float* pInputFloatBuffer = pInputAudioBuffer->GetSampleBuffer();
+                            float const* pInputFloatBuffer = pInputAudioBuffer->GetSampleBuffer();
                             
                             if(pInputAudioBuffer->ShouldReverseBuffer())
                             {
@@ -316,10 +335,8 @@ Vertex const    kQuadVerts[]        = {{{-1.f,-1.f,0.f,1.f},    {0.f,1.f}},
                             {
                                 memcpy(pOutputFloatBuffer, pInputFloatBuffer, samplesWritten * sizeof(float));
                             }
-                                                        
-                            pInputAudioBuffer->Reset();
-                            self->m_readAudioBuffer = (self->m_readAudioBuffer + 1) % kAudioBufferCount;
 
+                            self->m_readAudioBuffer = (self->m_readAudioBuffer + 1) % kAudioBufferCount;
                             bOutputBufferWritten = true;
                         }
                     }
@@ -338,7 +355,7 @@ Vertex const    kQuadVerts[]        = {{{-1.f,-1.f,0.f,1.f},    {0.f,1.f}},
         
         // Try load cart data from the command line otherwise throw up a file picker automatically
         {
-            bool bGameLoaded = false;
+            BOOL bGameLoaded = false;
             
             // Command line check
             NSProcessInfo* process = [NSProcessInfo processInfo];
@@ -346,27 +363,14 @@ Vertex const    kQuadVerts[]        = {{{-1.f,-1.f,0.f,1.f},    {0.f,1.f}},
             
             if(arguments.count > 1)
             {
-                NSString* path = arguments[1];
-                if([path rangeOfString:@".nes"].length != 0)
-                {
-                    if(m_NESConsole.InsertCartridge([path cStringUsingEncoding:NSUTF8StringEncoding]))
-                    {
-                        self.cartLoadPath = path;
-                        m_NESConsole.PowerOn();
-                        m_allowAudio = true;
-                        bGameLoaded = true;
-                    }
-                }
+                bGameLoaded = [self insertCartridge:arguments[1]];
             }
             
             // No game - show file picker
             if(!bGameLoaded)
             {
-                dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.5 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^
-                {
-                    [self openNew];
-                });
-            }
+                [self showOpenNewDialogue];
+			}
         }
     }
     
@@ -716,7 +720,7 @@ Vertex const    kQuadVerts[]        = {{{-1.f,-1.f,0.f,1.f},    {0.f,1.f}},
     }
     else if(event.keyCode == 45)
     {
-        [emuController openNew];
+        [emuController showOpenNewDialogue];
     }
     else if(event.keyCode == 123)
     {

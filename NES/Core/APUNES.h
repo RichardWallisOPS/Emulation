@@ -40,14 +40,11 @@ public:
     {
         return m_samplesWritten;
     }
-    size_t GetSamplesToWrite() const
-    {
-        return m_bufferSize - m_samplesWritten;
-    }
     void Reset()
     {
         m_bReady = false;
         m_samplesWritten = 0;
+        m_bReverseFlag = false;
     }
     bool IsReady() const
     {
@@ -69,12 +66,9 @@ public:
                 m_pBuffer[m_samplesWritten] = m_pBuffer[m_samplesWritten - 1];
                 ++m_samplesWritten;
             }
+            
+            m_bReady = true;
         }
-        else
-        {
-            memset(m_pBuffer, 0x0, m_bufferSize);
-        }
-        m_bReady = true;
     }
     void SetShouldReverseBuffer(bool bReverse)
     {
@@ -84,7 +78,7 @@ public:
     {
         return m_bReverseFlag;
     }
-    float* GetSampleBuffer()
+    float const* GetSampleBuffer() const
     {
         return m_pBuffer;
     }
