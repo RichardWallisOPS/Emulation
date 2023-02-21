@@ -190,28 +190,23 @@ Vertex const    kQuadVerts[]        = {{{-1.f,-1.f,0.f,1.f},    {0.f,1.f}},
 
 - (BOOL) insertCartridge:(NSString*)cartPath
 {
-	BOOL bResult = NO;
+    [self stopAudio];
+    [self clearHistory];
+    
+    BOOL bResult = NO;
 	
 	if([cartPath.pathExtension rangeOfString:@"nes" options:NSCaseInsensitiveSearch].length != 0)
 	{
-		[self stopAudio];
-	
 		if(m_NESConsole.InsertCartridge([cartPath cStringUsingEncoding:NSUTF8StringEncoding]))
 		{
-			bResult = YES;
-			
-			self.cartLoadPath = cartPath;
-			[self clearHistory];
-			
+            bResult = YES;
+            
 			m_NESConsole.PowerOn();
+            self.cartLoadPath = cartPath;
 		}
-		
-		[self allowAudio];
 	}
     else if([cartPath rangeOfString:@".nes.save" options:NSCaseInsensitiveSearch].length != 0)
     {
-        [self stopAudio];
-        
         Archive archive(ArchiveMode_Persistent);
         if(archive.Load([cartPath cStringUsingEncoding:NSUTF8StringEncoding]))
         {
@@ -220,14 +215,12 @@ Vertex const    kQuadVerts[]        = {{{-1.f,-1.f,0.f,1.f},    {0.f,1.f}},
                 bResult = YES;
                 
                 m_NESConsole.Load(archive);
-                
                 self.cartLoadPath = [cartPath stringByDeletingPathExtension];
-                [self clearHistory];
             }
         }
-        
-        [self allowAudio];
     }
+    
+    [self allowAudio];
 	
 	return bResult;
 }
