@@ -210,13 +210,10 @@ Vertex const    kQuadVerts[]        = {{{-1.f,-1.f,0.f,1.f},    {0.f,1.f}},
         Archive archive(ArchiveMode_Persistent);
         if(archive.Load([cartPath cStringUsingEncoding:NSUTF8StringEncoding]))
         {
-            if(archive.ByteCount() > 0)
-            {
-                bResult = YES;
+            bResult = YES;
                 
-                m_NESConsole.Load(archive);
-                self.cartLoadPath = [cartPath stringByDeletingPathExtension];
-            }
+            m_NESConsole.Load(archive);
+            self.cartLoadPath = [cartPath stringByDeletingPathExtension];
         }
     }
     
