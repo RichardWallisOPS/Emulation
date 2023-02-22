@@ -174,15 +174,16 @@ Vertex const    kQuadVerts[]        = {{{-1.f,-1.f,0.f,1.f},    {0.f,1.f}},
     dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.25 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^
 	{
 		NSOpenPanel* panel = [NSOpenPanel openPanel];
+  
+        panel.allowsMultipleSelection = NO;
+        panel.canChooseDirectories = NO;
+        panel.prompt = @"Load [.nes[.save]]";
+        
 		[panel beginWithCompletionHandler: ^(NSInteger result)
 		{
 			if(result == NSModalResponseOK)
 			{
-				NSURL* url = [[panel URLs] objectAtIndex:0];
-				if(url != nil)
-				{
-					[self insertCartridge:url.path];
-				}
+                [self insertCartridge:panel.URL.path];
 			}
 		}];
 	});
@@ -190,34 +191,37 @@ Vertex const    kQuadVerts[]        = {{{-1.f,-1.f,0.f,1.f},    {0.f,1.f}},
 
 - (BOOL) insertCartridge:(NSString*)cartPath
 {
-    [self stopAudio];
-    [self clearHistory];
-    
     BOOL bResult = NO;
-	
-	if([cartPath.pathExtension rangeOfString:@"nes" options:NSCaseInsensitiveSearch].length != 0)
-	{
-		if(m_NESConsole.InsertCartridge([cartPath cStringUsingEncoding:NSUTF8StringEncoding]))
-		{
-            bResult = YES;
-            
-			m_NESConsole.PowerOn();
-            self.cartLoadPath = cartPath;
-		}
-	}
-    else if([cartPath rangeOfString:@".nes.save" options:NSCaseInsensitiveSearch].length != 0)
-    {
-        Archive archive(ArchiveMode_Persistent);
-        if(archive.Load([cartPath cStringUsingEncoding:NSUTF8StringEncoding]))
-        {
-            bResult = YES;
-                
-            m_NESConsole.Load(archive);
-            self.cartLoadPath = [cartPath stringByDeletingPathExtension];
-        }
-    }
     
-    [self allowAudio];
+    if(cartPath != nil)
+    {
+        [self stopAudio];
+        [self clearHistory];
+        
+        if([cartPath.pathExtension rangeOfString:@"nes" options:NSCaseInsensitiveSearch].length != 0)
+        {
+            if(m_NESConsole.InsertCartridge([cartPath cStringUsingEncoding:NSUTF8StringEncoding]))
+            {
+                bResult = YES;
+                
+                m_NESConsole.PowerOn();
+                self.cartLoadPath = cartPath;
+            }
+        }
+        else if([cartPath rangeOfString:@".nes.save" options:NSCaseInsensitiveSearch].length != 0)
+        {
+            Archive archive(ArchiveMode_Persistent);
+            if(archive.Load([cartPath cStringUsingEncoding:NSUTF8StringEncoding]))
+            {
+                bResult = YES;
+                    
+                m_NESConsole.Load(archive);
+                self.cartLoadPath = [cartPath stringByDeletingPathExtension];
+            }
+        }
+        
+        [self allowAudio];
+    }
 	
 	return bResult;
 }
