@@ -7,7 +7,15 @@
 
 #include "Serialise.h"
 
-Archive::Archive(ArchiveMode mode /*= ArchiveMode_History*/)
+Archive::Archive()
+: m_mode(ArchiveMode_Invalid)
+, m_pMem(nullptr)
+, m_memSize(0)
+, m_readHead(0)
+, m_writeHead(0)
+{}
+
+Archive::Archive(ArchiveMode mode)
 : m_mode(mode)
 , m_pMem(nullptr)
 , m_memSize(0)

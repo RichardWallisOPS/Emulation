@@ -177,7 +177,7 @@ Vertex const    kQuadVerts[]        = {{{-1.f,-1.f,0.f,1.f},    {0.f,1.f}},
   
         panel.allowsMultipleSelection = NO;
         panel.canChooseDirectories = NO;
-        panel.prompt = @"Load [.nes[.save]]";
+        panel.prompt = @"Load (.nes[.save])";
         
 		[panel beginWithCompletionHandler: ^(NSInteger result)
 		{
@@ -253,6 +253,18 @@ Vertex const    kQuadVerts[]        = {{{-1.f,-1.f,0.f,1.f},    {0.f,1.f}},
             m_writeAudioBuffer = 0;
             m_keyboardPort = 0;
             m_keyboardController[0] = m_keyboardController[1] = 0;
+            
+            // Initalise our rewind history archive mode objects
+            for(size_t i = 0;i < kArchiveCount;++i)
+            {
+                new (&m_ArchiveBuffer[i]) Archive(ArchiveMode_History);
+            }
+            
+            // Initialise our audio buffer objects, 48000 KHz each frame 1/60 second = x samples per video frame
+            for(size_t i = 0;i < kAudioBufferCount;++i)
+            {
+                new (&m_audioBuffers[i]) APUAudioBuffer(48000 / 60);
+            }
         }
     
         self.device = MTLCreateSystemDefaultDevice();

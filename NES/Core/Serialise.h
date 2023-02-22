@@ -40,6 +40,8 @@ const size_t kArchiveMemoryIncrement = 1024 * 128;
 
 enum ArchiveMode
 {
+    ArchiveMode_Invalid = -1,
+    
     // Only save items that are required for prev frame in current loaded cart etc
     ArchiveMode_History = 0,
     
@@ -50,7 +52,8 @@ enum ArchiveMode
 class Archive
 {
 public:
-    Archive(ArchiveMode mode = ArchiveMode_History);
+    Archive();
+    Archive(ArchiveMode mode);
     ~Archive();
     
     ArchiveMode GetArchiveMode() const

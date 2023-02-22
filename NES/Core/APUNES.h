@@ -15,9 +15,16 @@
 class APUAudioBuffer
 {
 public:
-    // 48000 KHz each frame 1/60 second = x samples per video frame
-    APUAudioBuffer(size_t size = 48000 / 60)
+    APUAudioBuffer()
+    : m_bufferSize(0)
+    , m_pBuffer(nullptr)
+    , m_samplesWritten(0)
+    , m_bReverseFlag(false)
+    , m_bReady(false)
+    {}
+    APUAudioBuffer(size_t size)
     : m_bufferSize(size)
+    , m_pBuffer(nullptr)
     , m_samplesWritten(0)
     , m_bReverseFlag(false)
     , m_bReady(false)
