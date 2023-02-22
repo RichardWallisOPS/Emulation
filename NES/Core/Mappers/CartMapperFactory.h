@@ -14,13 +14,14 @@
 class Mapper : public IOBus, public Serialisable
 {
 public:
-    Mapper( SystemIOBus& bus, uint16_t mapperID,
+    Mapper( SystemIOBus& bus, uint16_t mapperID, uint16_t submapperID,
             uint8_t* pPrg, uint32_t nProgramSize,
             uint8_t* pChr, uint32_t nCharacterSize,
             uint8_t* pCartPRGRAM, uint32_t nPrgRamSize, uint32_t nNVPrgRamSize,
             uint8_t* pCartCHRRAM, uint32_t nChrRamSize, uint32_t nNVChrRamSize)
     : m_bus(bus)
     , m_mapperID(mapperID)
+    , m_submapperID(submapperID)
     , m_pPrg(pPrg)
     , m_pChr(pChr)
     , m_nProgramSize(nProgramSize)
@@ -50,7 +51,7 @@ public:
     // Just the Non volatile chr ram
     uint32_t GetNVChrRAMSize() const { return m_nNVChrRamSize; }
     
-    static Mapper* CreateMapper(SystemIOBus& bus, uint16_t mapperID,
+    static Mapper* CreateMapper(SystemIOBus& bus, uint16_t mapperID, uint16_t submapperID,
                                     uint8_t* pPrg, uint32_t nProgramSize,
                                     uint8_t* pChr, uint32_t nCharacterSize,
                                     uint8_t* pCartPRGRAM, uint32_t nPrgRamSize, uint32_t nNVPrgRamSize,
@@ -61,6 +62,7 @@ protected:
     SystemIOBus& m_bus;
     
     uint16_t    m_mapperID;
+    uint16_t    m_submapperID;
     
     uint8_t*    m_pPrg;
     uint8_t*    m_pChr;

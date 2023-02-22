@@ -97,8 +97,16 @@ void Cartridge::Initialise(SystemIOBus& bus, const char* pCartPath)
     // Which header type have we got
     bool iNes2_0 = ((pHeader->m_flags7 >> 2) & 0x3) == 2;
     
-    // Fetch Mapper
-    uint8_t mapperID = (pHeader->m_flags7 & 0xF0) | ((pHeader->m_flags6 & 0xF0) >> 4);
+    // Fetch Mapper info
+    uint16_t mapperID = (pHeader->m_flags7 & 0xF0) | ((pHeader->m_flags6 & 0xF0) >> 4);
+    uint16_t submapperID = 0;
+    
+    if(iNes2_0)
+    {
+        uint16_t extendedMapperInfo = pHeader->m_flags8;
+        mapperID |= (extendedMapperInfo & 0xF) << 4;
+        submapperID = (extendedMapperInfo & 0xF0) >> 4;
+    }
     
     // iNes 1.0 size
     uint32_t nProgramSize = (16384 * (uint32_t)pHeader->m_prg16KChunks);
@@ -171,7 +179,7 @@ void Cartridge::Initialise(SystemIOBus& bus, const char* pCartPath)
     }
 
     // Create specific mapper for this cart
-    m_pMapper = Mapper::CreateMapper(   bus, mapperID,
+    m_pMapper = Mapper::CreateMapper(   bus, mapperID, submapperID,
                                         pPrg, nProgramSize,
                                         pChr, nCharacterSize,
                                         m_pCartPRGRAM, nPrgRamSize, nNVPrgRamSize,
