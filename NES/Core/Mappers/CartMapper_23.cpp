@@ -164,23 +164,27 @@ uint8_t CartMapper_23::cpuRead(uint16_t address)
 
 void CartMapper_23::cpuWrite(uint16_t address, uint8_t byte)
 {
+    // Note: VRC2 submapper 3 + VRC4e submapper 2 := A0, A1 mapped as expected
+    // Note VRC4f A0, A1 := wired to A2, A3.  i.e regAddress = (address & 0xF000) | ((address >> 2) & 0x3);
+    uint16_t regAddress = address & 0xF003;
+    
     if(address >= 0x6000 && address <= 0x6FFF)
     {
         m_microWireLatch = byte & 0b1;
     }
-    else if(address >= 0x8000 && address <= 0x8003)
+    else if(regAddress >= 0x8000 && regAddress <= 0x8003)
     {
         uint32_t bankIndex = (byte & 0b11111) & ((m_nProgramSize / 8192) - 1);
         uint32_t bankAddress = bankIndex * 8192;
         m_prgBank0 = &m_pPrg[bankAddress];
     }
-    else if(address >= 0xA000 && address <= 0xA003)
+    else if(regAddress >= 0xA000 && regAddress <= 0xA003)
     {
         uint32_t bankIndex = (byte & 0b11111) & ((m_nProgramSize / 8192) - 1);
         uint32_t bankAddress = bankIndex * 8192;
         m_prgBank1 = &m_pPrg[bankAddress];
     }
-    else if(address >= 0x9000 && address <= 0x9003)
+    else if(regAddress >= 0x9000 && regAddress <= 0x9003)
     {
         uint8_t mirror = (byte >> 1) & 0b1;
         if(mirror == 0)
@@ -192,82 +196,82 @@ void CartMapper_23::cpuWrite(uint16_t address, uint8_t byte)
             m_bus.SetMirrorMode(VRAM_MIRROR_H);
         }
     }
-    else if(address == 0xB000)
+    else if(regAddress == 0xB000)
     {
         m_regChrBank0 = (m_regChrBank0 & 0xF0) | (byte & 0x0F);
         SetChrBank(&m_chrBank0, m_regChrBank0);
     }
-    else if(address == 0xB001)
+    else if(regAddress == 0xB001)
     {
         m_regChrBank0 = (m_regChrBank0 & 0x0F) | ((byte & 0x0F) << 4);
         SetChrBank(&m_chrBank0, m_regChrBank0);
     }
-    else if(address == 0xB002)
+    else if(regAddress == 0xB002)
     {
         m_regChrBank1 = (m_regChrBank1 & 0xF0) | (byte & 0x0F);
         SetChrBank(&m_chrBank1, m_regChrBank1);
     }
-    else if(address == 0xB003)
+    else if(regAddress == 0xB003)
     {
         m_regChrBank1 = (m_regChrBank1 & 0x0F) | ((byte & 0x0F) << 4);
         SetChrBank(&m_chrBank1, m_regChrBank1);
     }
-    else if(address == 0xC000)
+    else if(regAddress == 0xC000)
     {
         m_regChrBank2 = (m_regChrBank2 & 0xF0) | (byte & 0x0F);
         SetChrBank(&m_chrBank2, m_regChrBank2);
     }
-    else if(address == 0xC001)
+    else if(regAddress == 0xC001)
     {
         m_regChrBank2 = (m_regChrBank2 & 0x0F) | ((byte & 0x0F) << 4);
         SetChrBank(&m_chrBank2, m_regChrBank2);
     }
-    else if(address == 0xC002)
+    else if(regAddress == 0xC002)
     {
         m_regChrBank3 = (m_regChrBank3 & 0xF0) | (byte & 0x0F);
         SetChrBank(&m_chrBank3, m_regChrBank3);
     }
-    else if(address == 0xC003)
+    else if(regAddress == 0xC003)
     {
         m_regChrBank3 = (m_regChrBank3 & 0x0F) | ((byte & 0x0F) << 4);
         SetChrBank(&m_chrBank3, m_regChrBank3);
     }
-    else if(address == 0xD000)
+    else if(regAddress == 0xD000)
     {
         m_regChrBank4 = (m_regChrBank4 & 0xF0) | (byte & 0x0F);
         SetChrBank(&m_chrBank4, m_regChrBank4);
     }
-    else if(address == 0xD001)
+    else if(regAddress == 0xD001)
     {
         m_regChrBank4 = (m_regChrBank4 & 0x0F) | ((byte & 0x0F) << 4);
         SetChrBank(&m_chrBank4, m_regChrBank4);
     }
-    else if(address == 0xD002)
+    else if(regAddress == 0xD002)
     {
         m_regChrBank5 = (m_regChrBank5 & 0xF0) | (byte & 0x0F);
         SetChrBank(&m_chrBank5, m_regChrBank5);
     }
-    else if(address == 0xD003)
+    else if(regAddress == 0xD003)
     {
         m_regChrBank5 = (m_regChrBank5 & 0x0F) | ((byte & 0x0F) << 4);
         SetChrBank(&m_chrBank5, m_regChrBank5);
     }
-    else if(address == 0xE000)
+    else if(regAddress == 0xE000)
     {
         m_regChrBank6 = (m_regChrBank6 & 0xF0) | (byte & 0x0F);
         SetChrBank(&m_chrBank6, m_regChrBank6);
     }
-    else if(address == 0xE001)
+    else if(regAddress == 0xE001)
     {
         m_regChrBank6 = (m_regChrBank6 & 0x0F) | ((byte & 0x0F) << 4);
         SetChrBank(&m_chrBank6, m_regChrBank6);
     }
-    else if(address == 0xE002)
+    else if(regAddress == 0xE002)
     {
         m_regChrBank7 = (m_regChrBank7 & 0xF0) | (byte & 0x0F);
         SetChrBank(&m_chrBank7, m_regChrBank7);
     }
-    else if(address == 0xE003)
+    else if(regAddress == 0xE003)
     {
         m_regChrBank7 = (m_regChrBank7 & 0x0F) | ((byte & 0x0F) << 4);
         SetChrBank(&m_chrBank7, m_regChrBank7);
