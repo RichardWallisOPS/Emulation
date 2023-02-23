@@ -88,7 +88,8 @@ private:
     
 private:
 
-    const uint8_t nTnPreNextOpCodeFetch = 0xFF;
+    const uint8_t kTnPreNextOpCodeFetch = 0xFF;
+    const uint8_t kTnOpCodeMax          = 0xFC;
 
     void InitInstructions();
     bool ERROR(uint8_t Tn);
