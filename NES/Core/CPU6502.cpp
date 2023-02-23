@@ -273,6 +273,7 @@ void CPU6502::Tick()
     bool bInstructionTStatesCompleted = false;
     if(m_instructionCycle == 0)
     {
+        // Tn == 0
         m_opCode = 0;
         m_dataBus = 0;
         m_addressBusH = 0;
@@ -286,7 +287,7 @@ void CPU6502::Tick()
         
         if(m_bSignalReset || m_bSignalNMI || (m_bSignalIRQ && TestFlag(Flag_IRQDisable) == false))
         {
-            // Does a hardware interrupt still advance the program counter? Currently assuming not
+            // External signal detected
             m_opCode = 0;
             ClearFlag(Flag_Break);
         }
@@ -320,17 +321,28 @@ void CPU6502::Tick()
 
 bool CPU6502::ERROR(uint8_t Tn)
 {
-#if DEBUG
 #ifdef EMULATION_LOG
-    LineBuffer[LinePosition] = 0;
-    printf("%s", LineBuffer);
+    if(LinePosition > 0 && Tn == 1)
+    {
+        LineBuffer[LinePosition] = 0;
+        printf("%s\n", LineBuffer);
+        LinePosition = 0;
+    }
 #endif
-    CPUInstruction& instruction = m_Instructions[m_opCode];
-    printf("  Halted on instruction Tn=%d opCode=0x%02X %s %s\n", Tn, m_opCode, instruction.m_opStr, instruction.m_opAddressModeStr);
-    *(volatile char*)(0) = 65 | 02;
+
+#if DEBUG
+    if(Tn == 1)
+    {
+        CPUInstruction& instruction = m_Instructions[m_opCode];
+        printf("6502: Halted on instruction Tn=%d opCode=0x%02X %s %s\n", Tn, m_opCode, instruction.m_opStr, instruction.m_opAddressModeStr);
+    }
 #endif
+
+    // Keep the instruction T state count from overflowing back to zero
+    m_instructionCycle = 128;
     
-    return NOP(Tn);
+    // Never complete this instruction
+    return false;
 }
 
 void CPU6502::ASL(uint8_t& cpuReg)
