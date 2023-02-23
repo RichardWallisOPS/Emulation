@@ -19,6 +19,9 @@ const size_t    kArchiveCount       = 5 * 60;
 const int32_t   kAudioBufferCount   = 8;
 const float     kOutputMixerVolume  = 0.5;
 const int       kRewindFlashFrames  = 8;
+const uint32_t  kAudioPrecessingSampleRate = 48000;
+const uint32_t  kAudioSampleBuffserElementSize = kAudioPrecessingSampleRate / 60;
+
 Vertex const    kQuadVerts[]        = {{{-1.f,-1.f,0.f,1.f},    {0.f,1.f}},
                                         {{1.f,1.f,0.f,1.f},     {1.f,0.f}},
                                         {{-1.f,1.f,0.f,1.f},    {0.f,0.f}},
@@ -263,7 +266,7 @@ Vertex const    kQuadVerts[]        = {{{-1.f,-1.f,0.f,1.f},    {0.f,1.f}},
             // Initialise our audio buffer objects, 48000 KHz each frame 1/60 second = x samples per video frame
             for(size_t i = 0;i < kAudioBufferCount;++i)
             {
-                new (&m_audioBuffers[i]) APUAudioBuffer(48000 / 60);
+                new (&m_audioBuffers[i]) APUAudioBuffer(kAudioSampleBuffserElementSize);
             }
         }
     
@@ -310,73 +313,73 @@ Vertex const    kQuadVerts[]        = {{{-1.f,-1.f,0.f,1.f},    {0.f,1.f}},
 		
         // Setup audio
         {
-            // https://developer.apple.com/documentation/avfaudio/avaudioengine?language=objc
-            // https://developer.apple.com/documentation/avfaudio/audio_engine/building_a_signal_generator
-            // https://developer.apple.com/documentation/avfaudio/avaudiosourcenode?language=objc
-            
             self.audioEngine = [AVAudioEngine new];
             
-            uint32_t buffserSize = 48000 / 60;
-            AudioUnitSetProperty(self.audioEngine.inputNode.audioUnit, kAudioDevicePropertyBufferFrameSize, kAudioUnitScope_Global, 0, &buffserSize, sizeof(buffserSize));
-
+            AudioUnitSetProperty(self.audioEngine.inputNode.audioUnit, kAudioDevicePropertyBufferFrameSize, kAudioUnitScope_Global, 0, &kAudioSampleBuffserElementSize, sizeof(kAudioSampleBuffserElementSize));
+                        
             AVAudioNode* outputNode = self.audioEngine.outputNode;
             AVAudioFormat* outputFormat = [outputNode inputFormatForBus:0];
-            AVAudioFormat* inputFormat = [[AVAudioFormat alloc] initWithCommonFormat:outputFormat.commonFormat  // TODO-CHECK: We want AVAudioPCMFormatFloat32
-                                                                          sampleRate:outputFormat.sampleRate    // TODO-CHECK: We have 48000Hz
-                                                                            channels:1
-                                                                         interleaved:outputFormat.isInterleaved];
-                                                                         
-            self.audioSourceNode = [[AVAudioSourceNode alloc] initWithRenderBlock:^OSStatus(BOOL* pIsSilence, const AudioTimeStamp* pTimestamp, AVAudioFrameCount frameCount, AudioBufferList* pOutputData)
+            
+            // Make sure we have expected format and sample rate we want to work with
+            if(outputFormat.commonFormat == AVAudioPCMFormatFloat32 && outputFormat.sampleRate == (Float64)kAudioPrecessingSampleRate)
             {
-                if(pOutputData->mNumberBuffers > 0)
+                AVAudioFormat* inputFormat = [[AVAudioFormat alloc] initWithCommonFormat:outputFormat.commonFormat
+                                                                              sampleRate:outputFormat.sampleRate
+                                                                                channels:1
+                                                                             interleaved:outputFormat.isInterleaved];
+                                                                             
+                self.audioSourceNode = [[AVAudioSourceNode alloc] initWithRenderBlock:^OSStatus(BOOL* pIsSilence, const AudioTimeStamp* pTimestamp, AVAudioFrameCount frameCount, AudioBufferList* pOutputData)
                 {
-                    bool bOutputBufferWritten = false;
-
-                    AudioBuffer* pOutputAudioBuffer = &pOutputData->mBuffers[0];
-                    float* pOutputFloatBuffer = (float*)pOutputAudioBuffer->mData;
-                                        
-                    const bool bAudioSynced = self->m_audioSynced;
-                    int32_t bufferIndexDiff = abs(self->m_writeAudioBuffer - self->m_readAudioBuffer);
-                    
-                    // Audio not currently synced - try to use optimal readbuffer vs writebuffer index before syncing
-                    // Audio currently synced - try to keep going - as long as we have valid data
-                    if (    (!bAudioSynced && bufferIndexDiff > ((kAudioBufferCount / 2) - 1)) ||
-                            ( bAudioSynced && bufferIndexDiff > 0))
+                    if(pOutputData->mNumberBuffers > 0)
                     {
-                        APUAudioBuffer const* pInputAudioBuffer = &self->m_audioBuffers[self->m_readAudioBuffer];
-                        const size_t samplesWritten = pInputAudioBuffer->GetSamplesWritten();
+                        bool bOutputBufferWritten = false;
+
+                        AudioBuffer* pOutputAudioBuffer = &pOutputData->mBuffers[0];
+                        float* pOutputFloatBuffer = (float*)pOutputAudioBuffer->mData;
+                                            
+                        const bool bAudioSynced = self->m_audioSynced;
+                        int32_t bufferIndexDiff = abs(self->m_writeAudioBuffer - self->m_readAudioBuffer);
                         
-                        if(pInputAudioBuffer->IsReady() && samplesWritten == frameCount)
+                        // Audio not currently synced - try to use optimal readbuffer vs writebuffer index before syncing
+                        // Audio currently synced - try to keep going - as long as we have valid data
+                        if (    (!bAudioSynced && bufferIndexDiff > ((kAudioBufferCount / 2) - 1)) ||
+                                ( bAudioSynced && bufferIndexDiff > 0))
                         {
-                            float const* pInputFloatBuffer = pInputAudioBuffer->GetSampleBuffer();
+                            APUAudioBuffer const* pInputAudioBuffer = &self->m_audioBuffers[self->m_readAudioBuffer];
+                            const size_t samplesWritten = pInputAudioBuffer->GetSamplesWritten();
                             
-                            if(pInputAudioBuffer->ShouldReverseBuffer())
+                            if(pInputAudioBuffer->IsReady() && samplesWritten == frameCount)
                             {
-                                for(size_t sampleIdx = 0;sampleIdx < samplesWritten;++sampleIdx)
+                                float const* pInputFloatBuffer = pInputAudioBuffer->GetSampleBuffer();
+                                
+                                if(pInputAudioBuffer->ShouldReverseBuffer())
                                 {
-                                    pOutputFloatBuffer[sampleIdx] = pInputFloatBuffer[samplesWritten - sampleIdx - 1];
+                                    for(size_t sampleIdx = 0;sampleIdx < samplesWritten;++sampleIdx)
+                                    {
+                                        pOutputFloatBuffer[sampleIdx] = pInputFloatBuffer[samplesWritten - sampleIdx - 1];
+                                    }
                                 }
-                            }
-                            else
-                            {
-                                memcpy(pOutputFloatBuffer, pInputFloatBuffer, samplesWritten * sizeof(float));
-                            }
+                                else
+                                {
+                                    memcpy(pOutputFloatBuffer, pInputFloatBuffer, samplesWritten * sizeof(float));
+                                }
 
-                            self->m_readAudioBuffer = (self->m_readAudioBuffer + 1) % kAudioBufferCount;
-                            bOutputBufferWritten = true;
+                                self->m_readAudioBuffer = (self->m_readAudioBuffer + 1) % kAudioBufferCount;
+                                bOutputBufferWritten = true;
+                            }
                         }
+
+                        self->m_audioSynced = bOutputBufferWritten;
+                        *pIsSilence = !bOutputBufferWritten;
                     }
+                    return 0;
+                }];
 
-                    self->m_audioSynced = bOutputBufferWritten;
-                    *pIsSilence = !bOutputBufferWritten;
-                }
-                return 0;
-            }];
-
-            [self.audioEngine attachNode:self.audioSourceNode];
-            [self.audioEngine connect:self.audioSourceNode to:self.audioEngine.mainMixerNode format:inputFormat];
-            [self.audioEngine connect:self.audioEngine.mainMixerNode to:outputNode format:outputFormat];
-            self.audioEngine.mainMixerNode.outputVolume = 0.f;
+                [self.audioEngine attachNode:self.audioSourceNode];
+                [self.audioEngine connect:self.audioSourceNode to:self.audioEngine.mainMixerNode format:inputFormat];
+                [self.audioEngine connect:self.audioEngine.mainMixerNode to:outputNode format:outputFormat];
+                self.audioEngine.mainMixerNode.outputVolume = 0.f;
+            }
         }
         
         // Try load cart data from the command line otherwise throw up a file picker automatically
