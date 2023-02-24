@@ -33,8 +33,7 @@ Decently accurate emulation, try to have most "Top 50" games working well.  But 
 2) Looking like NMI (and maybe IRQ?) signals should be held back some amount of ticks.  Must be as the H/W take time to pull the lines low.  Look at moving any wait logic into the System::SignalXXX() functiions before signaling the CPU
 3) FME-7 (Mapper 69) is missing 5B audio - use the other version of the game.
 4) Looking for MMC5 support? Doesn't exist - Mapper 24 (VRC6) is available though for that game and it supports the extra audio too!
-5) EmulationController needs refactoring but I probably won't bother - it's not the interesting part.
-6) Wrapper App is very bare bones.  It was the emulation core that interested me.
+5) Wrapper App is very bare bones.  It was the emulation core that interested me.
 
 ### Implementation Notes for 6502
 
