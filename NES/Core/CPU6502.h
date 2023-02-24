@@ -79,21 +79,17 @@ private:
 private:
     struct CPUInstruction
     {
-        bool(CPU6502::*m_opOrAddrMode)()  = &CPU6502::ERROR;
+        bool(CPU6502::*m_opOrAddrMode)()  = &CPU6502::HandleError;
         void(CPU6502::*m_operation)()     = nullptr;
-        char const* m_opStr                         = "NOT-IMPLEMENTED";
-        char const* m_opAddressModeStr              = "";
     };
     CPUInstruction m_Instructions[256];
     
 private:
 
+    bool HandleError();
     void InitInstructions();
-    bool ERROR();
     
-    //
     // Address modes + their instructions
-    //
     void ASL(uint8_t& cpuReg); void LSR(uint8_t& cpuReg); void ROL(uint8_t& cpuReg); void ROR(uint8_t& cpuReg); void REG_CMP(uint8_t& cpuReg); void REG_LOAD(uint8_t& cpuReg);
     
     bool Accum_ASL(); bool Accum_LSR(); bool Accum_ROL(); bool Accum_ROR();
@@ -130,8 +126,6 @@ private:
     
     // Extra address mode NOPs FunctionName = Instruction_AddressMode_ByteCount_CycleCount[_(+1)]
     bool NOP_IMPLIED_1_2(); bool NOP_IMMEDIATE_2_2(); bool NOP_ZEROPAGE_2_3(); bool NOP_ZEROPAGE_X_2_4(); bool NOP_ABSOLUTE_3_4(); bool NOP_ABSOLUTE_X_3_4_1();
-    
-    // Illegal opcodes as required
 };
 
 #endif /* CPU6502_h */

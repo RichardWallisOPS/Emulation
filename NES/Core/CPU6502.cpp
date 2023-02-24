@@ -9,18 +9,6 @@
 #include <stdio.h>
 #include <string.h>
 
-// This will spew a lot of logging  - use at own peril!
-#if DEBUG && 0
-    #define EMULATION_LOG
-#endif
-
-#ifdef EMULATION_LOG
-int LineCount = 0;
-int LinePosition = 0;
-const int LineBufferSize = 512;
-char LineBuffer[LineBufferSize];
-#endif
-
 const uint8_t kTnNextOpCodeFetch    = 0xFF;
 const uint8_t kTnOpCodeMax          = 0xFE;
 
@@ -227,13 +215,7 @@ void CPU6502::SignalIRQ(bool bSignal)
 
 uint8_t CPU6502::programCounterReadByte()
 {
-    uint8_t byte = m_bus.cpuRead(m_pc++);
-    
-#ifdef EMULATION_LOG
-    LinePosition += snprintf(&LineBuffer[LinePosition], LineBufferSize - LinePosition, " %02X", byte);
-#endif
-    
-    return byte;
+    return m_bus.cpuRead(m_pc++);
 }
     
 void CPU6502::Tick()
@@ -243,30 +225,6 @@ void CPU6502::Tick()
     {
         (this->*(m_Instructions[m_opCode].m_opOrAddrMode))();
     }
-    
-#ifdef EMULATION_LOG
-    if(m_Tn == kTnNextOpCodeFetch)
-    {
-        if(m_tickCount > 0 && LinePosition > 0)
-        {
-            // Finalize old logging
-            while(LinePosition < 15) LinePosition += snprintf(&LineBuffer[LinePosition], LineBufferSize - LinePosition, " ");
-            CPUInstruction& instruction = m_Instructions[m_opCode];
-            LinePosition += snprintf(&LineBuffer[LinePosition], LineBufferSize - LinePosition, " %s ", instruction.m_opStr ? instruction.m_opStr : "???");
-            LinePosition += snprintf(&LineBuffer[LinePosition], LineBufferSize - LinePosition, " %s ", instruction.m_opAddressModeStr ? instruction.m_opAddressModeStr : "???");
-            while(LinePosition < 49) LinePosition += snprintf(&LineBuffer[LinePosition], LineBufferSize - LinePosition, " ");
-            LinePosition += snprintf(&LineBuffer[LinePosition], LineBufferSize - LinePosition, " A:%02X X:%02X Y:%02X P:%02X SP:%02X", m_a, m_x, m_y, m_flags, m_stack);
-        
-            LineBuffer[LinePosition] = 0;
-            printf("%s", LineBuffer);
-        }
-
-        // begin log of new instruction
-        ++LineCount;
-        LinePosition = 0;
-        LinePosition += snprintf(&LineBuffer[LinePosition], LineBufferSize - LinePosition, "\n%04X ", m_pc);
-    }
-#endif
 
     bool bInstructionTStatesCompleted = false;
     
@@ -317,26 +275,17 @@ void CPU6502::Tick()
     ++m_tickCount;
 }
 
-bool CPU6502::ERROR()
+bool CPU6502::HandleError()
 {
-#ifdef EMULATION_LOG
-    if(LinePosition > 0 && m_Tn == 1)
+#if DEBUG
+    if(m_Tn >= 0 && m_Tn <= 10)
     {
-        LineBuffer[LinePosition] = 0;
-        printf("%s\n", LineBuffer);
-        LinePosition = 0;
+        printf("6502: Halted on instruction Tn=%d opCode=0x%02X\n", m_Tn, m_opCode);
+        m_Tn = kTnOpCodeMax;
     }
 #endif
 
-#if DEBUG
-    if(m_Tn == 1)
-    {
-        CPUInstruction& instruction = m_Instructions[m_opCode];
-        printf("6502: Halted on instruction m_Tn=%d opCode=0x%02X %s %s\n", m_Tn, m_opCode, instruction.m_opStr, instruction.m_opAddressModeStr);
-    }
-#endif
-    
-    // Never complete this instruction
+    // Never complete - force soft lock
     return false;
 }
 
