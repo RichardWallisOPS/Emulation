@@ -14,6 +14,13 @@
     #define EMULATION_LOG
 #endif
 
+#ifdef EMULATION_LOG
+int LineCount = 0;
+int LinePosition = 0;
+const int LineBufferSize = 512;
+char LineBuffer[LineBufferSize];
+#endif
+
 const uint8_t kTnNextOpCodeFetch    = 0xFF;
 const uint8_t kTnOpCodeMax          = 0xFE;
 
@@ -217,13 +224,6 @@ void CPU6502::SignalIRQ(bool bSignal)
 {
     m_bSignalIRQ = bSignal;
 }
-
-#ifdef EMULATION_LOG
-int LineCount = 0;
-int LinePosition = 0;
-const int LineBufferSize = 512;
-char LineBuffer[LineBufferSize];
-#endif
 
 uint8_t CPU6502::programCounterReadByte()
 {

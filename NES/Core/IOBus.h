@@ -21,7 +21,7 @@ public:
     virtual void    ppuWrite(uint16_t address, uint8_t byte) = 0;
     
     // Not everything needs or uses these, but they are available on the bus
-    virtual float   AudioOut() { return 0.f; }
+    virtual float   AudioOut()                      { return 0.f; }
     virtual void    SystemTick(uint64_t cycleCount) {}
 };
 

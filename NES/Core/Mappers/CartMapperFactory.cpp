@@ -17,6 +17,7 @@
 #include "CartMapper_24.h"
 #include "CartMapper_66.h"
 #include "CartMapper_69.h"
+#include "CartMapper_152.h"
 
 #define CART_MAPPER(X) new CartMapper_##X(bus, mapperID, submapperID, pPrg, nProgramSize, pChr, nCharacterSize, pCartPRGRAM, nPrgRamSize, nNVPrgRamSize, pCartCHRRAM, nChrRamSize, nNVChrRamSize)
 
@@ -41,6 +42,7 @@ Mapper* Mapper::CreateMapper(SystemIOBus& bus, uint16_t mapperID, uint16_t subma
     else if(mapperID == 66)                     pMapper = CART_MAPPER(66);
     else if(mapperID == 69)                     pMapper = CART_MAPPER(69);
     else if(mapperID == 71)                     pMapper = CART_MAPPER(2);   // Use existing compatible mapper
+    else if(mapperID == 152)                    pMapper = CART_MAPPER(152);
     else if(mapperID == 206)                    pMapper = CART_MAPPER(4);   // Use existing compatible mapper
     
     if(pMapper != nullptr)  pMapper->Initialise();
