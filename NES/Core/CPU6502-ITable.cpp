@@ -791,7 +791,7 @@ void CPU6502::InitInstructions()
                         m_Instructions[i].m_operation == m_Instructions[j].m_operation )
                     {
                         printf("6502 CPU Startup check: Duplicate instruction found %2X vs %2X!!!", i, j);
-                        ERROR(0);
+                        ERROR();
                     }
                 }
             }
