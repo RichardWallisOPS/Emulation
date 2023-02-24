@@ -78,7 +78,7 @@ public:
     template<typename T>
     void operator<<(T const& object)
     {
-        size_t objSize = sizeof(object);
+        const size_t objSize = sizeof(object);
         
         if(objSize + m_writeHead >= m_memSize)
         {
@@ -107,7 +107,8 @@ public:
     template<typename T>
     void operator>>(T& object)
     {
-        size_t objSize = sizeof(object);
+        const size_t objSize = sizeof(object);
+        
         if(objSize + m_readHead <= m_writeHead)
         {
             T* pReadObjectPtr = (T*)(&m_pMem[m_readHead]);
@@ -127,9 +128,9 @@ public:
     
 private:
 
-    void IncreaseAllocation(size_t AddingByteCount)
+    void IncreaseAllocation(size_t AddByteCount)
     {
-        const size_t minRequiredSize = m_memSize + AddingByteCount;
+        const size_t minRequiredSize = m_memSize + AddByteCount;
         
         while(m_memSize < minRequiredSize)
         {

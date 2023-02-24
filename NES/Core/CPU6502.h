@@ -74,9 +74,8 @@ private:
     
     bool m_bBranch;
     
-
-    // Instructions
 private:
+    
     struct CPUInstruction
     {
         bool(CPU6502::*m_opOrAddrMode)()  = &CPU6502::HandleError;
