@@ -104,8 +104,8 @@ void Cartridge::Initialise(SystemIOBus& bus, const char* pCartPath)
     if(iNes2_0)
     {
         uint16_t extendedMapperInfo = pHeader->m_flags8;
-        mapperID |= (extendedMapperInfo & 0xF) << 4;
-        submapperID = (extendedMapperInfo & 0xF0) >> 4;
+        mapperID    |= (extendedMapperInfo & 0b00001111) << 8;
+        submapperID  = (extendedMapperInfo & 0b11110000) >> 4;
     }
     
     // iNes 1.0 size
