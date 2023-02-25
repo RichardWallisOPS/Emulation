@@ -20,8 +20,8 @@ void CartMapper_4::Initialise()
     m_cycleCount = 0;
     m_systemCycleCount = 0;
 
-    m_prgBank0 = &m_pPrg[0];
-    m_prgBank1 = &m_pPrg[0x2000];
+    m_prgBank0 = &m_pPrg[m_nProgramSize - 0x4000];
+    m_prgBank1 = &m_pPrg[m_nProgramSize - 0x4000];
     m_prgBank2 = &m_pPrg[m_nProgramSize - 0x4000];
     m_prgBank3 = &m_pPrg[m_nProgramSize - 0x2000];
     

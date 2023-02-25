@@ -45,7 +45,20 @@ Mapper* Mapper::CreateMapper(SystemIOBus& bus, uint16_t mapperID, uint16_t subma
     else if(mapperID == 152)                    pMapper = CART_MAPPER(152);
     else if(mapperID == 206)                    pMapper = CART_MAPPER(4);   // Use existing compatible mapper
     
-    if(pMapper != nullptr)  pMapper->Initialise();
+    if(pMapper != nullptr)
+    {
+        pMapper->Initialise();
+        
+#if DEBUG
+        printf("Created Mapper = %d,%d\n", mapperID, submapperID);
+        if(nProgramSize > 0)    printf("PrgROM   = %dKB\n", nProgramSize / 1024);
+        if(nCharacterSize > 0)  printf("ChrROM   = %dKB\n", nCharacterSize / 1024);
+        if(nPrgRamSize > 0)     printf("PrgRAM   = %dKB\n", nPrgRamSize / 1024);
+        if(nNVPrgRamSize > 0)   printf("PrgNVRAM = %dKB\n", nNVPrgRamSize / 1024);
+        if(nChrRamSize > 0)     printf("ChrRAM   = %dKB\n", nChrRamSize / 1024);
+        if(nNVChrRamSize > 0)   printf("ChrNVRAM = %dKB\n", nNVChrRamSize / 1024);
+#endif
+    }
     
     return pMapper;
 }
