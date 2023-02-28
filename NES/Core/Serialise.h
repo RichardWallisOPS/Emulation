@@ -128,9 +128,9 @@ public:
     
 private:
 
-    void IncreaseAllocation(size_t AddByteCount)
+    void IncreaseAllocation(size_t IncByteCount)
     {
-        const size_t minRequiredSize = m_memSize + AddByteCount;
+        const size_t minRequiredSize = m_memSize + IncByteCount;
         
         while(m_memSize < minRequiredSize)
         {
