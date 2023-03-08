@@ -186,7 +186,10 @@
 				A1D57EE91DDB715200CA09B7 /* Products */,
 				A14F253729531B4C007ED30F /* Frameworks */,
 			);
+			indentWidth = 4;
 			sourceTree = "<group>";
+			tabWidth = 4;
+			usesTabs = 0;
 		};
 		A1D57EE91DDB715200CA09B7 /* Products */ = {
 			isa = PBXGroup;
