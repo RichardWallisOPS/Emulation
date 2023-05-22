@@ -352,17 +352,7 @@ Vertex const    kQuadVerts[]        = {{{-1.f,-1.f,0.f,1.f},    {0.f,1.f}},
                             {
                                 float const* pInputFloatBuffer = pInputAudioBuffer->GetSampleBuffer();
                                 
-                                if(pInputAudioBuffer->ShouldReverseBuffer())
-                                {
-                                    for(size_t sampleIdx = 0;sampleIdx < samplesWritten;++sampleIdx)
-                                    {
-                                        pOutputFloatBuffer[sampleIdx] = pInputFloatBuffer[samplesWritten - sampleIdx - 1];
-                                    }
-                                }
-                                else
-                                {
-                                    memcpy(pOutputFloatBuffer, pInputFloatBuffer, samplesWritten * sizeof(float));
-                                }
+                                memcpy(pOutputFloatBuffer, pInputFloatBuffer, samplesWritten * sizeof(float));
 
                                 self->m_readAudioBuffer = (self->m_readAudioBuffer + 1) % kAudioBufferCount;
                                 bOutputBufferWritten = true;

@@ -61,17 +61,36 @@ public:
     {
         if(m_samplesWritten < m_bufferSize && m_pBuffer != nullptr)
         {
-            m_pBuffer[m_samplesWritten++] = fSample;
+            if(m_bReverseFlag)
+            {
+                m_pBuffer[m_bufferSize - m_samplesWritten - 1] = fSample;
+            }
+            else
+            {
+                m_pBuffer[m_samplesWritten] = fSample;
+            }
+            ++m_samplesWritten;
         }
     }
     void Finialise()
     {
         if(m_samplesWritten > 0)
         {
-            while(m_samplesWritten < m_bufferSize)
+            if(m_bReverseFlag)
             {
-                m_pBuffer[m_samplesWritten] = m_pBuffer[m_samplesWritten - 1];
-                ++m_samplesWritten;
+                while(m_samplesWritten < m_bufferSize)
+                {
+                    m_pBuffer[m_bufferSize - m_samplesWritten - 1] = m_pBuffer[m_bufferSize - m_samplesWritten];
+                    ++m_samplesWritten;
+                }
+            }
+            else
+            {
+                while(m_samplesWritten < m_bufferSize)
+                {
+                    m_pBuffer[m_samplesWritten] = m_pBuffer[m_samplesWritten - 1];
+                    ++m_samplesWritten;
+                }
             }
             
             m_bReady = true;
@@ -80,10 +99,6 @@ public:
     void SetShouldReverseBuffer(bool bReverse)
     {
         m_bReverseFlag = bReverse;
-    }
-    bool ShouldReverseBuffer() const
-    {
-        return m_bReverseFlag;
     }
     float const* GetSampleBuffer() const
     {
