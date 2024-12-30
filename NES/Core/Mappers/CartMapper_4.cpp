@@ -16,7 +16,6 @@ void CartMapper_4::Initialise()
     m_scanlineEnable = 0;
     m_scanlineReload = 0;
     m_lastA12 = 0;
-    m_delay = 0;    
     m_cycleCount = 0;
     m_systemCycleCount = 0;
 
@@ -94,7 +93,6 @@ void CartMapper_4::Load(Archive& rArchive)
     rArchive >> m_scanlineEnable;
     rArchive >> m_scanlineReload;
     rArchive >> m_lastA12;
-    rArchive >> m_delay;
     rArchive >> m_cycleCount;
     rArchive >> m_systemCycleCount;
 }
@@ -141,7 +139,6 @@ void CartMapper_4::Save(Archive& rArchive) const
     rArchive << m_scanlineEnable;
     rArchive << m_scanlineReload;
     rArchive << m_lastA12;
-    rArchive << m_delay;
     rArchive << m_cycleCount;
     rArchive << m_systemCycleCount;
 }
@@ -458,23 +455,11 @@ void CartMapper_4::MM3Signal(uint16_t address)
         {
             m_cycleCount = m_systemCycleCount;
         }
-        
-        if(m_delay > 0)
-        {
-            --m_delay;
-            if(m_delay == 0)
-            {
-                if(m_scanlineEnable)
-                {
-                    m_bus.SignalIRQ(true);
-                }
-            }
-        }
 
         // Its gone high but also have enough cycles passed
         if(m_lastA12 == 0 && currentA12 == 1 && m_systemCycleCount - m_cycleCount > 16)
         {
-            if(m_scanlineReload)
+            if(m_scanlineReload || m_scanlineCounter == 0)
             {
                 m_scanlineReload = 0;
                 m_scanlineCounter = m_scanlineLatch;
@@ -482,12 +467,13 @@ void CartMapper_4::MM3Signal(uint16_t address)
             else
             {
                 --m_scanlineCounter;
-
                 if(m_scanlineCounter == 0)
                 {
                     m_scanlineReload = 1;
-
-                    m_delay = 4;
+                    if(m_scanlineEnable)
+                    {
+                        m_bus.SignalIRQ(true);
+                    }
                 }
             }
         }
