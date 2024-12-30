@@ -315,7 +315,7 @@ Vertex const    kQuadVerts[]        = {{{-1.f,-1.f,0.f,1.f},    {0.f,1.f}},
         {
             self.audioEngine = [AVAudioEngine new];
             
-            AudioUnitSetProperty(self.audioEngine.inputNode.audioUnit, kAudioDevicePropertyBufferFrameSize, kAudioUnitScope_Global, 0, &kAudioSampleBuffserElementSize, sizeof(kAudioSampleBuffserElementSize));
+            AudioUnitSetProperty(self.audioEngine.outputNode.audioUnit, kAudioDevicePropertyBufferFrameSize, kAudioUnitScope_Global, 0, &kAudioSampleBuffserElementSize, sizeof(kAudioSampleBuffserElementSize));
                         
             AVAudioNode* outputNode = self.audioEngine.outputNode;
             AVAudioFormat* outputFormat = [outputNode inputFormatForBus:0];
