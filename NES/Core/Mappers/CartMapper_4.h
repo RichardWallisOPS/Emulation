@@ -49,6 +49,7 @@ private:
     uint8_t m_scanlineEnable;
     uint8_t m_scanlineReload;
     uint8_t m_lastA12;
+    uint8_t m_delay;
     uint64_t m_cycleCount;
     uint64_t m_systemCycleCount;
 };
