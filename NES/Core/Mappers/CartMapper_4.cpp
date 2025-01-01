@@ -41,6 +41,7 @@ void CartMapper_4::Initialise()
     
     // There is a bug in the IRQ handling
     // Provide a per game workaround
+    // TODO: Fix this so we don't need this game "detection"
     uint32_t signature = 0;
     if(m_pPrg != nullptr && m_nProgramSize > 0)
     {
