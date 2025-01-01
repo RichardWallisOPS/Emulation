@@ -52,6 +52,8 @@ private:
     uint8_t m_delay;
     uint64_t m_cycleCount;
     uint64_t m_systemCycleCount;
+    
+    bool m_bIRQWorkaround;
 };
 
 #endif /* CartMapper_4_h */

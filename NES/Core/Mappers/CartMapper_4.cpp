@@ -38,6 +38,27 @@ void CartMapper_4::Initialise()
     m_chrBank5 = &m_pChr[0x0400 * 5];
     m_chrBank6 = &m_pChr[0x0400 * 6];
     m_chrBank7 = &m_pChr[0x0400 * 7];
+    
+    // There is a bug in the IRQ handling
+    // Provide a per game workaround
+    uint32_t signature = 0;
+    if(m_pPrg != nullptr && m_nProgramSize > 0)
+    {
+        for(uint32_t byteIdx = 0;byteIdx < m_nProgramSize;++byteIdx)
+        {
+            uint8_t byte = m_pPrg[byteIdx];
+            signature += byte;
+        }
+    }
+    if(m_pChr != nullptr && m_nCharacterSize > 0)
+    {
+        for(uint32_t byteIdx = 0;byteIdx < m_nCharacterSize;++byteIdx)
+        {
+            uint8_t byte = m_pChr[byteIdx];
+            signature += byte;
+        }
+    }
+    m_bIRQWorkaround = signature == 23721245; // Buckie 'O Hare
 }
 
 void CartMapper_4::Load(Archive& rArchive)
@@ -344,7 +365,7 @@ void CartMapper_4::cpuWrite(uint16_t address, uint8_t byte)
         if((address & 1) == 0)  // even registers
         {
             // IRQ latch
-            m_scanlineLatch = byte - 1;
+            m_scanlineLatch = byte - (m_bIRQWorkaround ? 0 : 1);
         }
         else                    // odd registers
         {
