@@ -94,6 +94,7 @@ void CartMapper_4::Load(Archive& rArchive)
     rArchive >> m_scanlineEnable;
     rArchive >> m_scanlineReload;
     rArchive >> m_lastA12;
+    rArchive >> m_delay;
     rArchive >> m_cycleCount;
     rArchive >> m_systemCycleCount;
 }
